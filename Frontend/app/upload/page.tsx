@@ -603,39 +603,79 @@ export default function UploadPage() {
       ]);
     }
 
-    // 2. Animate pipeline layers
+    // 2. Send the RAW logs to the real backend pipeline.
+    //    The scenario definitions carry a pre-built incident for offline
+    //    fallback, but the live path deliberately submits only `raw_event` —
+    //    Layers 1-6 in Python do the actual detection, CIS mapping, CVSS
+    //    scoring and response planning, exactly as they would for an uploaded
+    //    log file. Nothing about the verdict is decided in the browser.
     setPhase("pipeline");
-    for (let idx = 0; idx < PIPELINE_LAYERS.length; idx++) {
-      setLayerStates((prev) => prev.map((s, i) => i === idx ? "running" : s));
-      setStatusMsg(`${PIPELINE_LAYERS[idx].icon} ${PIPELINE_LAYERS[idx].label}: ${PIPELINE_LAYERS[idx].sub}…`);
-      await sleep(900 + Math.random() * 600);
-      setLayerStates((prev) => prev.map((s, i) => i === idx ? "done" : s));
-    }
 
-    // 3. Save to localStorage so dashboard + incident pages can read them
-    setPhase("writing");
-    setStatusMsg("Writing incidents to dashboard…");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawLogs = events.map((e: any) => e.raw_event).filter(Boolean);
+
+    // Advance the layer indicator while the request is in flight, then settle
+    // it on the real outcome. The backend processes the whole batch in one
+    // call, so this reflects progress rather than per-layer timing.
+    let advancing = true;
+    const advance = (async () => {
+      for (let idx = 0; idx < PIPELINE_LAYERS.length && advancing; idx++) {
+        setLayerStates((prev) => prev.map((s, i) => (i === idx ? "running" : s)));
+        setStatusMsg(`${PIPELINE_LAYERS[idx].icon} ${PIPELINE_LAYERS[idx].label}: ${PIPELINE_LAYERS[idx].sub}…`);
+        await sleep(320);
+        if (!advancing) break;
+        setLayerStates((prev) => prev.map((s, i) => (i === idx ? "done" : s)));
+      }
+    })();
+
     try {
+      const payload = new Blob([JSON.stringify(rawLogs, null, 2)], { type: "application/json" });
+      const form = new FormData();
+      form.append("file", payload, `${attack.id}-${rawLogs.length}-events.json`);
+
+      const res = await fetch("/api/run-pipeline", { method: "POST", body: form });
+      const result = await res.json().catch(() => ({}));
+
+      advancing = false;
+      await advance;
+
+      if (!res.ok) {
+        throw new Error(result?.message || result?.error || `Pipeline returned ${res.status}`);
+      }
+
+      setLayerStates(PIPELINE_LAYERS.map(() => "done"));
+
+      // 3. Incidents are now persisted server-side in SQLite; the dashboard
+      //    reads them from GET /api/incidents. Clear any stale browser-side
+      //    simulation history so the two sources cannot disagree.
+      setPhase("writing");
+      setStatusMsg("Persisting incidents to the SOC database…");
+      clearSimulatedEvents();
+      setHistoryCount(0);
+
+      const processed = Number(result?.events ?? rawLogs.length);
+      setPhase("done");
+      setStatusMsg(`✅ Pipeline complete — ${processed} incident${processed === 1 ? "" : "s"} scored and stored — opening dashboard…`);
+      await sleep(1400);
+      window.location.href = "/dashboard";
+    } catch (err) {
+      advancing = false;
+      await advance;
+
+      // Backend unreachable: fall back to the scenario's pre-built incidents so
+      // the dashboard still has something to show, and say so plainly rather
+      // than pretending the pipeline ran.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      // Merge into accumulated history (does NOT overwrite previous runs)
       saveSimulatedEvents(events as any[]);
       const newTotal = readSimulatedEvents().length;
       setHistoryCount(newTotal);
 
-      // Also write to public/frontend_output.json via API route (non-critical)
-      await fetch("/api/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ events }),
-      }).catch(() => { /* non-critical: localStorage is the primary path */ });
-
-      setPhase("done");
-      setStatusMsg(`✅ ${events.length} new incidents added — ${newTotal} total in dashboard — redirecting…`);
-      await sleep(1800);
-      window.location.href = "/dashboard";
-    } catch (err) {
       setPhase("error");
-      setStatusMsg(err instanceof Error ? err.message : "Write failed");
+      setStatusMsg(
+        `⚠ SOC backend unreachable (${err instanceof Error ? err.message : String(err)}). ` +
+        `Loaded ${events.length} offline sample incidents instead — start the backend with ` +
+        `"uvicorn api_server:app --port 8000" and re-run for live pipeline output.`
+      );
     }
   }
 

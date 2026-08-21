@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 class Severity(str, Enum):
@@ -49,7 +49,7 @@ class Playbook(BaseModel):
     requires_approval: bool
     confidence_score: float = 0.0
     status: PlaybookStatus = PlaybookStatus.CANDIDATE
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version: int = 1
 
 class Incident(BaseModel):
@@ -57,7 +57,7 @@ class Incident(BaseModel):
     summary: str
     cvss: CVSSData
     confidence: float
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     source_ip: str
     affected_user: str
     asset_id: str
@@ -85,4 +85,4 @@ class Ticket(BaseModel):
     ticket_id: str
     incident_id: str
     status: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

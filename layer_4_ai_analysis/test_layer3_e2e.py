@@ -1,151 +1,98 @@
-from ai_orchestrator import run_ai_analysis
+"""
+Layer 4 fallback test.
 
-# 🔥 Mixed realistic events
-events = [
-    # 🔴 SSH brute force
-    {
-        "type": "ssh_bruteforce",
-        "src": "45.33.12.99",
-        "dst": "10.0.1.5",
-        "port": 22,
-        "failures": 15,
-        "score": 0.89
-    },
+Ollama is not available in this environment (and is not part of the demo), so the
+important property is that the rule-based fallback still returns a complete,
+useful analysis for every incident. Previously this file was an ad-hoc script
+with no test functions.
+"""
 
-    # 🔴 Possible data exfiltration
-    {
-        "type": "data_exfiltration",
-        "src": "10.0.2.15",
-        "dst": "185.199.110.153",
-        "port": 443,
-        "failures": 0,
-        "score": 0.91
-    },
+import json
+from pathlib import Path
 
-    # 🟡 Suspicious login (new IP)
-    {
-        "type": "suspicious_login",
-        "src": "203.0.113.77",
-        "dst": "10.0.3.20",
-        "port": 22,
-        "failures": 2,
-        "score": 0.72
-    },
+import pytest
 
-    # 🔴 Port scanning
-    {
-        "type": "port_scan",
-        "src": "192.168.1.100",
-        "dst": "10.0.0.0/24",
-        "port": "multiple",
-        "failures": 0,
-        "score": 0.85
-    },
+from layer_4_ai_analysis.incident_report_builder import run_layer4
 
-    # 🟢 Normal-ish (low anomaly)
-    {
-        "type": "normal_activity",
-        "src": "10.0.1.10",
-        "dst": "10.0.1.20",
-        "port": 80,
-        "failures": 0,
-        "score": 0.32
-    }
-]
+ROOT = Path(__file__).resolve().parent.parent
+PIPELINE_OUTPUT = ROOT / "frontend_output.json"
+
+REQUIRED_FIELDS = (
+    "intent",
+    "summary",
+    "narrative",
+    "attack_vector",
+    "attack_complexity",
+    "privileges_required",
+    "user_interaction",
+    "scope",
+    "impact",
+)
 
 
-def build_incident(event, idx):
-    return {
-        "event_id": f"TEST-{idx}",
-        "timestamp": "2024-03-17T10:28:00Z",
+@pytest.fixture(scope="module")
+def enriched_events():
+    if not PIPELINE_OUTPUT.exists():
+        pytest.skip("run dev_run.py first to generate frontend_output.json")
 
-        "raw_event": {
-            "source_ip": event["src"],
-            "destination_ip": event["dst"],
-            "affected_user": "user_" + str(idx),
-            "affected_host": "host_" + str(idx),
-            "port": event["port"],
-            "failed_attempts": event["failures"],
-            "process": "ssh" if event["port"] == 22 else "unknown",
-            "parent_process": "system"
-        },
+    data = json.loads(PIPELINE_OUTPUT.read_text(encoding="utf-8"))
+    events = data.get("events") if isinstance(data, dict) else data
+    if not events:
+        pytest.skip("no events in frontend_output.json")
 
-        "anomaly_detection": {
-            "pyod_score": event["score"],
-            "is_outlier": event["score"] > 0.8,
-            "ueba_flags": ["new_ip"] if event["type"] == "suspicious_login" else [],
-            "ueba_risk_boost": 0.2 if event["type"] != "normal_activity" else 0.0,
-            "anomaly_score": event["score"],
-            "anomaly_flagged": event["score"] > 0.6
-        },
+    # Strip any existing analysis so we exercise Layer 4 from scratch.
+    stripped = []
+    for event in events:
+        copy = dict(event)
+        copy.pop("ai_analysis", None)
+        stripped.append(copy)
 
-        "threat_analysis": {
-            "threat_intel_match": event["type"] != "normal_activity",
-            "mitre_tactic": "Credential Access" if event["type"] == "ssh_bruteforce"
-                            else "Exfiltration" if event["type"] == "data_exfiltration"
-                            else "Discovery" if event["type"] == "port_scan"
-                            else "Initial Access"
-        },
-        "ioc_enrichment": {
-            "ioc_matches": ["malicious_ip"] if event["type"] in ["ssh_bruteforce", "data_exfiltration"] else []
-        },
-        "cis": {
-            "cis_violations": []
-        },
-
-        "correlation_analysis": {
-            "linked_events": [],
-            "event_count": 10 if event["type"] == "port_scan" else 2,
-            "attack_timeline": []
-        },
-
-        "feature_engineering": {
-            "is_off_hours": event["type"] != "normal_activity",
-            "time_of_day": "night",
-            "hour_of_day": 2,
-            "deviation_score": 0.8 if event["type"] != "normal_activity" else 0.2,
-            "is_new_ip_for_user": event["type"] in ["suspicious_login", "ssh_bruteforce"],
-            "excessive_failed_logins": event["failures"] > 5
-        }
-    }
+    return run_layer4(stripped)
 
 
-print("\n================ NEW TEST START ================\n")
+def test_every_event_gets_an_analysis(enriched_events):
+    assert enriched_events
+    for event in enriched_events:
+        assert event.get("ai_analysis"), f"no ai_analysis for {event.get('event_id')}"
 
-for i, event in enumerate(events, 1):
-    print(f"\n--- Event {i}: {event['type']} ---")
 
-    incident = build_incident(event, i)
-    result = run_ai_analysis(incident)
-    analysis = result.get("ai_analysis")
+def test_analysis_has_all_required_fields(enriched_events):
+    for event in enriched_events:
+        analysis = event["ai_analysis"]
+        for field in REQUIRED_FIELDS:
+            assert field in analysis, f"{field} missing for {event.get('event_id')}"
+            assert analysis[field] not in (None, "", {}), f"{field} empty for {event.get('event_id')}"
 
-    print("\n================ AI ANALYSIS ================\n")
 
-    if not analysis:
-        print("❌ AI Analysis Failed\n")
-        continue
+def test_impact_uses_valid_cvss_levels(enriched_events):
+    allowed = {"none", "low", "high"}
+    for event in enriched_events:
+        impact = event["ai_analysis"]["impact"]
+        for dimension in ("confidentiality", "integrity", "availability"):
+            assert impact.get(dimension) in allowed, (
+                f"{dimension}={impact.get(dimension)!r} is not a valid CVSS impact level"
+            )
 
-    print(f"📌 Summary: {analysis.get('summary', 'N/A')}")
-    print("🎯 Attack Type:", analysis.get("attack_type", "N/A"))
-    print("⚠️ Severity:", analysis.get("severity", "N/A"))
 
-    print("\n🔍 Indicators:")
-    for k in analysis.get("key_indicators", [])[:3]:
-        print("  •", k)
+def test_narratives_are_substantive_and_specific(enriched_events):
+    """A fallback that emits 'N/A' is worse than useless on an analyst's screen."""
+    narratives = []
+    for event in enriched_events:
+        narrative = event["ai_analysis"]["narrative"]
+        assert len(narrative) > 80, f"narrative too thin: {narrative!r}"
+        assert "N/A" not in narrative
+        narratives.append(narrative)
 
-    print("\n🧠 Analysis:", analysis.get("attack_analysis", "N/A"))
+    # Different incidents must not all share one boilerplate narrative.
+    assert len(set(narratives)) > 1, "every incident produced an identical narrative"
 
-    print("\n💻 Assets:")
-    for a in analysis.get("affected_assets", [])[:2]:
-        print("  •", a)
 
-    print("\n📈 Multi-stage:", analysis.get("is_multi_stage", "N/A"))
-    print("💥 Impact:", analysis.get("impact", "N/A"))
+def test_metrics_map_onto_the_cvss_engine(enriched_events):
+    """Layer 4's output must be directly consumable by Layer 5."""
+    from layer_5_cvss.cvss_orchestrator import run_cvss
 
-    print("\n🛠 Actions:")
-    for a in analysis.get("recommended_actions", [])[:3]:
-        print("  •", a)
-
-    print("\n============================================\n")
-
-print("\n================ NEW TEST END ==================\n")
+    for event in enriched_events:
+        result = run_cvss(event["ai_analysis"])
+        assert isinstance(result.get("base_score"), (int, float))
+        assert 0.0 <= result["base_score"] <= 10.0
+        assert result.get("vector_string", "").startswith("AV:")

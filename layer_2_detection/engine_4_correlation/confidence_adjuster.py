@@ -13,22 +13,34 @@ def adjust_confidence(event: dict, matched_result: dict) -> dict:
 
     base_confidence = max(anomaly_score, threat_confidence)
 
+    # Corroborating evidence should move confidence toward certainty without ever
+    # reaching it. Bonuses are applied against the REMAINING headroom rather than
+    # added outright, so stacking signals converges instead of saturating — a
+    # detection that claims 0.99 confidence on three weak signals is not credible.
+    bonus = 0.0
+
     if ioc_matched:
         if ioc_risk == "high":
-            base_confidence += 0.20
+            bonus += 0.45
         elif ioc_risk == "medium":
-            base_confidence += 0.10
+            bonus += 0.25
         else:
-            base_confidence += 0.05
+            bonus += 0.12
 
     if correlation_strength == "strong":
-        base_confidence += 0.15
+        bonus += 0.35
     elif correlation_strength == "medium":
-        base_confidence += 0.08
+        bonus += 0.18
     elif correlation_strength == "weak":
-        base_confidence += 0.03
+        bonus += 0.07
 
-    adjusted_confidence = min(round(base_confidence, 2), 0.99)
+    bonus = min(bonus, 0.80)
+    adjusted = base_confidence + (1.0 - base_confidence) * bonus
+
+    # 0.95 is the practical ceiling: rule-based detection does not get to claim
+    # near-certainty, and analysts need to see the difference between a 0.78 and
+    # a 0.93 to triage in the right order.
+    adjusted_confidence = min(round(adjusted, 2), 0.95)
 
     return {
         "adjusted_confidence": adjusted_confidence

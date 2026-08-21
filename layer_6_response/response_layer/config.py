@@ -1,5 +1,5 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     elasticsearch_url: str = os.getenv("ELASTICSEARCH_URL", "http://localhost:9200")
@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3.1")
     hitl_timeout_seconds: int = int(os.getenv("HITL_TIMEOUT_SECONDS", "300"))
     
-    class Config:
-        env_file = ".env"
+    # Pydantic v2 style: class-based Config is deprecated.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

@@ -1,5 +1,7 @@
 import pytest
-from response_layer.models import Incident, Severity, Playbook, Action
+from response_layer.models import Severity, Playbook, Action
+
+from ._helpers import make_incident
 from response_layer.workflow import SeverityWorkflowEngine, PlaybookMatcher
 from response_layer.orchestrator import ActionOrchestrator
 from response_layer.hitl import HITLInterface, DecisionAction, ApprovalResult
@@ -31,10 +33,17 @@ async def test_workflow_medium_severity():
     
     engine = SeverityWorkflowEngine(matcher, orchestrator, hitl, ticketing)
     
-    incident = Incident(
-        id="INC-MED", summary="Test Medium", severity=Severity.MEDIUM, confidence=0.8,
-        source_ip="2.2.2.2", affected_user="user", asset_id="asset",
-        mitre_tactics=[{"id": "TA0001", "name": "Initial Access"}], anomaly_score=0.7, asset_criticality="Medium"
+    incident = make_incident(
+        Severity.MEDIUM,
+        id="INC-MED",
+        summary="Test Medium",
+        confidence=0.8,
+        source_ip="2.2.2.2",
+        affected_user="user",
+        asset_id="asset",
+        mitre_tactics=[{"id": "TA0001", "name": "Initial Access"}],
+        anomaly_score=0.7,
+        asset_criticality="Medium",
     )
     
     # Should flow through hitl Mock and execute playbook

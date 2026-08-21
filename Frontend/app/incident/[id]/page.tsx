@@ -11,10 +11,11 @@ import ResponseCard from "@/components/cards/ResponseCard";
 import AlertSummaryPanel from "@/components/cards/AlertSummaryPanel";
 import IncidentNavTabs from "@/components/shared/IncidentNavTabs";
 import CardBlock from "@/components/cards/CardBlock";
+import CISCard from "@/components/cards/CISCard";
 import SeverityGauge from "@/components/visuals/SeverityGauge";
 
 import ThreatFlow from "@/components/visuals/ThreatFlow";
-import { getPipelineById } from "@/lib/mockData";
+import { getPipelineById, EventPipeline } from "@/lib/mockData";
 import { usePipeline } from "@/hooks/usePipeline";
 
 const containerVariants = {
@@ -218,11 +219,7 @@ export default function IncidentPage() {
 					<summary className="cursor-pointer text-sm font-semibold uppercase tracking-widest text-slate-400">View Additional Details</summary>
 					<div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
 						<SummaryCard pipeline={pipeline} />
-						<CardBlock title="CIS Compliance" tag="SECURITY">
-							<pre className="max-h-[300px] overflow-auto rounded-sm border border-slate-700/50 bg-slate-950/70 p-4 font-mono text-xs leading-relaxed text-slate-500">
-								{JSON.stringify(pipeline?.cis ?? {}, null, 2)}
-							</pre>
-						</CardBlock>
+						<CISCard pipeline={pipeline} />
 					</div>
 				</details>
 			</motion.div>

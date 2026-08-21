@@ -2,9 +2,10 @@ from fastapi import FastAPI, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import json
+from contextlib import asynccontextmanager
 from pathlib import Path
 
-from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
+from layer_1_feature_engineering.ingestion_orchestrator import process_json_text, process_jsonl_text
 from layer_2_detection.detection_orchestrator import run_detection_batch
 from layer_3_cis.orchestrator import run_layer3
 from frontend_formatter import format_pipeline_for_frontend
@@ -24,7 +25,14 @@ from db_manager import (
     get_feedback_for_incident,
 )
 
-app = FastAPI(title="SENTRA SOC API Backend")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    print("[api_server] Initializing SQLite database...")
+    init_db()
+    yield
+
+
+app = FastAPI(title="SENTRA SOC API Backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,20 +43,66 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_PATH = BASE_DIR / "Frontend" / "public" / "frontend_output.json"
 
-@app.on_event("startup")
-async def startup_event():
-    print("[api_server] Initializing SQLite database...")
-    init_db()
+# Keep both copies in step. dev_run.py writes both, so if the API only wrote the
+# one under Frontend/public the repo-root copy would silently go stale and the two
+# would disagree about what the last run produced.
+OUTPUT_PATHS = (
+    BASE_DIR / "Frontend" / "public" / "frontend_output.json",
+    BASE_DIR / "frontend_output.json",
+)
+
+MAX_UPLOAD_RECORDS = 5000
+
 
 @app.post("/run-pipeline")
 async def run_pipeline(file: UploadFile = File(...)):
     content = await file.read()
-    content_str = content.decode("utf-8")
 
-    # Layer 1
-    normalized = process_json_text(content_str)
+    if not content or not content.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Uploaded file is empty. Provide a JSON array of log records."},
+        )
+
+    try:
+        content_str = content.decode("utf-8")
+    except UnicodeDecodeError:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "File is not valid UTF-8 text. Upload a JSON or JSONL log file."},
+        )
+
+    # Layer 1 — accept JSON first, fall back to JSONL (one object per line).
+    try:
+        normalized = process_json_text(content_str)
+    except ValueError as json_err:
+        try:
+            normalized = process_jsonl_text(content_str)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": f"Could not parse the uploaded file as JSON or JSONL. {json_err}",
+                },
+            )
+
+    if not normalized:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "No log records found in the uploaded file."},
+        )
+
+    if len(normalized) > MAX_UPLOAD_RECORDS:
+        return JSONResponse(
+            status_code=413,
+            content={
+                "status": "error",
+                "message": f"File contains {len(normalized)} records; the limit is {MAX_UPLOAD_RECORDS}. Split the file and retry.",
+            },
+        )
+
     from layer_1_feature_engineering.feature_orchestrator import run_feature_engineering
     layer1 = [run_feature_engineering(rec) for rec in normalized]
 
@@ -79,12 +133,34 @@ async def run_pipeline(file: UploadFile = File(...)):
     for event in enriched:
         save_incident(event)
 
-    # Save to public/frontend_output.json for static fallback
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(frontend_output, f, indent=2)
+    # Save the static fallback copies used by the dashboard and by offline review.
+    for output_path in OUTPUT_PATHS:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(frontend_output, f, indent=2, ensure_ascii=False)
 
     return {"status": "success", "events": len(enriched)}
+
+
+@app.get("/")
+async def root():
+    """Service banner — confirms the API is up and points at the docs."""
+    return {
+        "status": "ok",
+        "service": "SENTRA SOC API Backend",
+        "docs": "/docs",
+        "endpoints": [
+            "POST /run-pipeline",
+            "GET /api/incidents",
+            "GET /api/incidents/{event_id}",
+            "POST /api/incidents/{event_id}/action",
+            "POST /api/incidents/{event_id}/feedback",
+            "GET /api/incidents/{event_id}/feedback",
+            "GET /api/suppression-rules",
+            "POST /api/simulate",
+            "DELETE /api/incidents",
+        ],
+    }
 
 @app.get("/api/incidents")
 async def list_incidents():

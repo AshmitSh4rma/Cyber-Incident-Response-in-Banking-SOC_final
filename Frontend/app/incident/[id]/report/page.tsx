@@ -8,6 +8,7 @@ import { getPipelineById, EventPipeline } from "@/lib/mockData";
 import { usePipeline } from "@/hooks/usePipeline";
 import AlertSummaryPanel from "@/components/cards/AlertSummaryPanel";
 import CardBlock from "@/components/cards/CardBlock";
+import CISCard from "@/components/cards/CISCard";
 import ReportCard from "@/components/cards/ReportCard";
 import CVSSCard from "@/components/cards/CVSSCard";
 
@@ -76,6 +77,10 @@ export default function ReportPage() {
 					</CardBlock>
 				</div>
 			</div>
+
+			{/* The control mapping is the audit artifact for this incident — show it
+			    properly on the report, not only as raw JSON below. */}
+			<CISCard pipeline={pipeline} />
 
 			<details className="rounded-sm border border-slate-700/50 bg-slate-900/70 p-6">
 				<summary className="cursor-pointer text-sm font-semibold uppercase tracking-widest text-slate-400">View Technical Details</summary>

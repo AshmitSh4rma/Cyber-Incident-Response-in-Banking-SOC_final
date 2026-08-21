@@ -32,6 +32,24 @@ def adapt_layer1_event(event: dict) -> dict:
         or ""
     )
 
+    # Layer 1 normalises the request path to url_path; Layer 2's pattern rules
+    # look for `url`. Bridge it so web payload signatures actually get evaluated.
+    adapted["url"] = (
+        event.get("url")
+        or event.get("url_path")
+        or raw_event.get("url")
+        or raw_event.get("url_path")
+        or ""
+    )
+
+    # Carry the declared log type through so pattern rules gated on it can fire.
+    adapted["log_type"] = (
+        event.get("log_type")
+        or raw_event.get("log_type")
+        or event.get("log_family")
+        or ""
+    )
+
     temporal = dict(event.get("temporal_features", {}) or {})
     temporal["is_off_hours"] = time_windows.get("is_off_hours", False)
     adapted["temporal_features"] = temporal

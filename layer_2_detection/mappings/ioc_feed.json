@@ -1,0 +1,116 @@
+[
+  {
+    "observable": "91.240.118.33",
+    "type": "ip",
+    "threat_type": "web_attack_infrastructure",
+    "confidence": 0.92,
+    "source": "simulated_ti_feed",
+    "first_seen": "2026-03-02",
+    "note": "Host repeatedly observed sending SQL injection probes at financial-sector login endpoints."
+  },
+  {
+    "observable": "185.199.110.153",
+    "type": "ip",
+    "threat_type": "webshell_staging_host",
+    "confidence": 0.84,
+    "source": "simulated_ti_feed",
+    "first_seen": "2026-03-18",
+    "note": "Associated with upload of PHP webshells to exposed admin endpoints."
+  },
+  {
+    "observable": "203.0.113.55",
+    "type": "ip",
+    "threat_type": "c2_server",
+    "confidence": 0.95,
+    "source": "simulated_ti_feed",
+    "first_seen": "2026-02-11",
+    "note": "Known command-and-control endpoint; periodic HTTPS beaconing on 443."
+  },
+  {
+    "observable": "192.0.2.45",
+    "type": "ip",
+    "threat_type": "iot_botnet_node",
+    "confidence": 0.88,
+    "source": "simulated_ti_feed",
+    "first_seen": "2026-01-27",
+    "note": "Mirai-style scanner brute-forcing Telnet on embedded devices."
+  },
+  {
+    "observable": "185.14.22.91",
+    "type": "ip",
+    "threat_type": "c2_server",
+    "confidence": 0.93,
+    "source": "simulated_ti_feed",
+    "first_seen": "2026-04-01",
+    "note": "High-risk ASN; PowerShell downloader callbacks observed."
+  },
+  {
+    "observable": "185.220.101.1",
+    "type": "ip",
+    "threat_type": "tor_exit_node",
+    "confidence": 0.90,
+    "source": "simulated_ti_feed",
+    "note": "Tor exit node — anonymised access to banking endpoints."
+  },
+  {
+    "observable": "10.0.20.15",
+    "type": "ip",
+    "threat_type": "internal_suspicious_ip",
+    "confidence": 0.70,
+    "source": "simulated_ti_feed",
+    "note": "Internal host previously implicated in lateral movement."
+  },
+  {
+    "observable": "10.10.1.50",
+    "type": "ip",
+    "threat_type": "compromised_internal_host",
+    "confidence": 0.86,
+    "source": "simulated_ti_feed",
+    "note": "Internal workstation flagged for east-west movement toward database tier."
+  },
+  {
+    "observable": "cdn-update-check.net",
+    "type": "domain",
+    "threat_type": "c2_domain",
+    "confidence": 0.94,
+    "source": "simulated_ti_feed",
+    "note": "Masquerades as a CDN update service; used for staged payload retrieval."
+  },
+  {
+    "observable": "secure-bank-login.com",
+    "type": "domain",
+    "threat_type": "phishing_domain",
+    "confidence": 0.95,
+    "source": "simulated_ti_feed",
+    "note": "Credential-harvesting page imitating retail banking login."
+  },
+  {
+    "observable": "evil.com",
+    "type": "domain",
+    "threat_type": "phishing_domain",
+    "confidence": 0.91,
+    "source": "simulated_ti_feed"
+  },
+  {
+    "observable": "http://malicious.test/login",
+    "type": "url",
+    "threat_type": "malicious_url",
+    "confidence": 0.88,
+    "source": "simulated_ti_feed"
+  },
+  {
+    "observable": "/admin/upload.php",
+    "type": "url",
+    "threat_type": "webshell_upload_path",
+    "confidence": 0.87,
+    "source": "simulated_ti_feed",
+    "note": "Common webshell drop path on compromised PHP applications."
+  },
+  {
+    "observable": "/admin",
+    "type": "url",
+    "threat_type": "sensitive_endpoint_access",
+    "confidence": 0.60,
+    "source": "simulated_ti_feed"
+  }
+]

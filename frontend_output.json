@@ -4,7 +4,7 @@
   "events": [
     {
       "summary": "Suspicious port_scan from 192.168.1.100 targeting target",
-      "event_id": "174d8fd0-a683-4392-8ec3-68d7901f47f4",
+      "event_id": "evt-114d612960dd",
       "raw_event": {
         "timestamp": "2026-04-07T10:00:01Z",
         "log_type": "network",
@@ -20,7 +20,7 @@
         "source_ip": "192.168.1.100",
         "dest_ip": "10.0.0.5",
         "src_port": 0,
-        "dest_port": 0,
+        "dest_port": 22,
         "protocol": "tcp",
         "action": "port_scan",
         "bytes_in": 0,
@@ -72,18 +72,18 @@
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 0,
+          "unique_ports_seen": 1,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
+          "unique_hosts_seen": 1
         },
         "network_traffic_features": {
           "traffic_direction": "east_west",
           "src_is_internal": true,
           "dst_is_internal": true,
           "bytes_ratio": 0.0,
-          "dest_port_service": "unknown",
-          "is_known_port": false,
+          "dest_port_service": "ssh",
+          "is_known_port": true,
           "is_high_risk_port": false,
           "has_tcp_flags": false,
           "tcp_flag_value": null,
@@ -117,7 +117,7 @@
           "risky_signin": false
         },
         "classification_scores": {
-          "network": 1,
+          "network": 2,
           "web": 0,
           "iot": 0
         },
@@ -137,15 +137,20 @@
       },
       "detection": {
         "label": "suspicious",
-        "threat_type": "reconnaissance",
+        "threat_type": "port_scan",
         "severity": "medium",
-        "confidence": 0.3,
+        "confidence": 0.66,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Sequential port probing consistent with service discovery",
+          "Classified as port_scan",
+          "Threat analysis mapped event to port_scan"
         ]
       },
       "anomaly_detection": {
@@ -161,11 +166,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "port_scan"
+        ],
+        "mapped_pattern": "port_scan",
+        "severity": "medium",
+        "confidence": 0.58,
+        "reasoning": [
+          "Sequential port probing consistent with service discovery",
+          "Source IP appears unusual for this activity",
+          "Classified as port_scan"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -182,19 +193,49 @@
         "matched_iocs": []
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 2,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to port_scan"
+        ],
+        "adjusted_confidence": 0.66
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "1.4.3.5",
+        "framework": "CIS",
+        "title": "Ensure 'aaa authentication ssh console' is configured correctly",
+        "description": "Authenticates users who access the device using SSH.",
+        "remediation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
+        "rationale": "Using AAA authentication for interactive management access to the device provides\nconsistent, centralized control of your network. The default under AAA (local or network)\nis to require users to log in using a valid user name and password. This rule applies for\nboth local and network AAA. Fallback mode should also be enabled to allow emergency\naccess to the firewall in the event that the AAA server was unreachable, by utilizing the\nLOCAL keyword after the AAA server-tag.",
+        "section": "Management Plane",
+        "profile_level": "Level 1 - Cisco ASA 8.x\nLevel 1 - Cisco ASA 9.x",
+        "audit_procedure": "Step 1: Perform the following to determine if aaa authentication ssh is configured.\nhostname#sh run aaa authentication | i ssh.console\nThe output should look like\naaa authentication ssh console server_group_name\nExample:\nAsa#sh run aaa authentication | i ssh.console\naaa authentication ssh console cisco_tacacs\nHere the remote servers group name is cisco_tacacs\nStep 2: If an output is displayed, the system is compliant. If not, it is a finding.",
+        "references": "1. http://www.cisco.com/en/US/docs/security/asa/asa90/command/reference/a1.h\ntml#wp1594161\n52 | P ag e",
+        "source_benchmark": "cisco_firewall",
+        "catalog": "network_controls_catalog",
+        "match_type": "catalog_retrieval",
+        "retrieval_query": {
+          "query_tags": [
+            "ssh",
+            "authentication",
+            "remote_access"
+          ],
+          "query_keywords": [
+            "ssh",
+            "port 22",
+            "tcp"
+          ],
+          "section_hint": [
+            "ssh",
+            "authentication"
+          ]
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
@@ -206,10 +247,10 @@
         "scope": "unchanged",
         "impact": {
           "confidentiality": "low",
-          "integrity": "low",
-          "availability": "low"
+          "integrity": "none",
+          "availability": "none"
         },
-        "narrative": "The source 192.168.1.100 appears to be performing reconnaissance by probing 22 on 10.0.0.5. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: port scan."
+        "narrative": "The source 192.168.1.100 appears to be performing reconnaissance by probing 22 on 10.0.0.5. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: port scan."
       },
       "cvss": {
         "vector": {
@@ -218,26 +259,69 @@
           "PR": "N",
           "UI": "N",
           "C": "L",
-          "I": "L",
-          "A": "L",
+          "I": "N",
+          "A": "N",
           "S": "U"
         },
-        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 7.3,
-        "severity": "high"
+        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+        "base_score": 5.3,
+        "severity": "medium"
       },
       "response": {
-        "priority": "P1",
+        "priority": "P2",
         "recommended_actions": [
-          "Immediately escalate to Incident Response team."
+          "Confirm whether the scan came from an authorised vulnerability scanner before escalating.",
+          "Review which scanned ports are genuinely exposed and close any that are unnecessary.",
+          "Check whether the same source later attempted authentication or exploitation."
         ],
         "containment_steps": [
-          "Block offender IP at edge firewall."
+          "Block the source IP at the perimeter firewall.",
+          "Enable port-scan signatures on the IDS/IPS for this source range."
         ],
-        "analyst_notes": "The source 192.168.1.100 appears to be performing reconnaissance by probing 22 on 10.0.0.5. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: port scan."
+        "analyst_notes": "The source 192.168.1.100 appears to be performing reconnaissance by probing 22 on 10.0.0.5. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: port scan.",
+        "playbook": "port_scan",
+        "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
+        "cvss_basis": {
+          "base_score": 5.3,
+          "severity": "medium"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-114d612960dd",
+        "verdict": "suspicious",
+        "severity": "medium",
+        "threat_type": "port_scan",
+        "confidence": 0.66,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Sequential port probing consistent with service discovery",
+          "Classified as port_scan",
+          "Threat analysis mapped event to port_scan"
+        ],
+        "cis_control": "1.4.3.5",
+        "cis_control_title": "Ensure 'aaa authentication ssh console' is configured correctly",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Port Scan from 192.168.1.100 against server-01",
+        "severity": "medium",
+        "threat_type": "port_scan",
+        "confidence": 0.66,
+        "source_ip": "192.168.1.100",
+        "destination_ip": "10.0.0.5",
+        "affected_user": "unattributed",
+        "affected_host": "server-01",
+        "log_family": "network",
+        "timestamp": "2026-04-07T10:00:01Z",
+        "cis_benchmark_id": "1.4.3.5"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -246,12 +330,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "1.4.3.5",
+          "benchmark_title": "Ensure 'aaa authentication ssh console' is configured correctly",
+          "matched_domain": "CIS",
+          "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
+          "rationale": "Authenticates users who access the device using SSH.",
+          "confidence": 0.66
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -272,8 +356,8 @@
       }
     },
     {
-      "summary": "Suspicious beaconing from 203.0.113.55 targeting target",
-      "event_id": "94331302-5b34-498a-a730-2cac1045ae7c",
+      "summary": "Malicious beaconing from 203.0.113.55 targeting target",
+      "event_id": "evt-72af37e3653f",
       "raw_event": {
         "timestamp": "2026-04-07T10:01:10Z",
         "log_type": "network",
@@ -289,7 +373,7 @@
         "source_ip": "203.0.113.55",
         "dest_ip": "10.0.0.8",
         "src_port": 0,
-        "dest_port": 0,
+        "dest_port": 443,
         "protocol": "https",
         "action": "beaconing",
         "bytes_in": 0,
@@ -341,18 +425,18 @@
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 0,
+          "unique_ports_seen": 1,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
+          "unique_hosts_seen": 1
         },
         "network_traffic_features": {
           "traffic_direction": "north_south",
           "src_is_internal": false,
           "dst_is_internal": true,
           "bytes_ratio": 0.0,
-          "dest_port_service": "unknown",
-          "is_known_port": false,
+          "dest_port_service": "https",
+          "is_known_port": true,
           "is_high_risk_port": false,
           "has_tcp_flags": false,
           "tcp_flag_value": null,
@@ -363,12 +447,12 @@
         },
         "network_protocol_features": {
           "protocol": "https",
-          "is_protocol_expected": true,
+          "is_protocol_expected": false,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": true,
           "is_new_protocol_for_source": true,
           "unique_protocols_for_source": 1,
-          "protocol_anomaly_detected": false
+          "protocol_anomaly_detected": true
         },
         "user_profile": {
           "user_key": "203.0.113.55",
@@ -386,7 +470,7 @@
           "risky_signin": false
         },
         "classification_scores": {
-          "network": 1,
+          "network": 2,
           "web": 0,
           "iot": 0
         },
@@ -405,16 +489,24 @@
         "log_family": "network"
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "suspicious_activity",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "beaconing",
+        "severity": "high",
+        "confidence": 0.9,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Periodic outbound callbacks consistent with C2 beaconing",
+          "Classified as beaconing",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to beaconing",
+          "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
@@ -430,11 +522,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "beaconing"
+        ],
+        "mapped_pattern": "beaconing",
+        "severity": "high",
+        "confidence": 0.72,
+        "reasoning": [
+          "Periodic outbound callbacks consistent with C2 beaconing",
+          "Source IP appears unusual for this activity",
+          "Classified as beaconing"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -445,40 +543,72 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "203.0.113.55",
+            "type": "ip",
+            "threat_type": "c2_server",
+            "confidence": 0.95,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to beaconing",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.9
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "1.7.2",
+        "framework": "CIS",
+        "title": "Ensure 'TLS 1.0' is set for HTTPS access",
+        "description": "Enable SSL server version to TLS 1.0",
+        "remediation": "90 | P ag e\n\nFor version 8.x, run the following command to enable AES 256 algorithm\nhostname(config)# ssl encryption aes256-sha1\nFor version 9.x, run the following command to enable AES 256 algorithm\nhostname(config)# ssl cipher tlsv1 custom AES256-SHA",
+        "rationale": "Given that the network may be prone to sniffing, the HTTP access to the security appliance\nmust be secured with SSL or TLS protocols. The latest version of SSL that is SSL v3 is now\ninclined to many vulnerabilities and systems should use at least TLS 1.0 as SSL server\nversion.",
+        "section": "Management Plane",
+        "profile_level": "Level 1 - Cisco ASA 8.x\nLevel 1 - Cisco ASA 9.x",
+        "audit_procedure": "Step 1: For Software version 8.x, run the following to check that AES 256 algorithm\nis enabled\nhostname#sh run ssl | in encryption.aes256-sha1$\nExample:\nCorp_fw#sh run ssl | in encryption.aes256-sha1$\nssl encryption aes256-sha1\nFor Software version 9.x, run the following to check that AES 256 algorithm is enabled\nhostname#sh run ssl | in custom_\"AES256-SHA\"$\nExample:\nCorp_fw#sh run ssl | in custom_\"AES256-SHA\"$\nssl cipher tlsv1 custom \"AES256-SHA\"\nStep 2: If an output is displayed, the system is compliant. If not, it is a finding.",
+        "references": "1. http://www.cisco.com/c/en/us/td/docs/security/asa/asa83/asdm63/configuratio\nn_guide/config/ssl.html\n91 | P ag e",
+        "source_benchmark": "cisco_firewall",
+        "catalog": "network_controls_catalog",
+        "match_type": "catalog_retrieval",
+        "retrieval_query": {
+          "query_tags": [],
+          "query_keywords": [
+            "https"
+          ],
+          "section_hint": []
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
-        "intent": "Network Suspicious Activity",
-        "summary": "Suspicious network activity from 203.0.113.55 to 10.0.0.8 over https was detected.",
+        "intent": "Command-and-Control Beaconing",
+        "summary": "Possible beaconing behavior was detected between 203.0.113.55 and 10.0.0.8.",
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
         "user_interaction": "none",
         "scope": "unchanged",
         "impact": {
-          "confidentiality": "low",
+          "confidentiality": "high",
           "integrity": "low",
-          "availability": "low"
+          "availability": "none"
         },
-        "narrative": "A suspicious network event was identified involving source 203.0.113.55 and destination 10.0.0.8. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: beaconing."
+        "narrative": "Repeated or patterned communication suggests possible beaconing activity from 203.0.113.55 toward 10.0.0.8. This may indicate malware establishing command-and-control connectivity or maintaining persistence. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: beaconing."
       },
       "cvss": {
         "vector": {
@@ -486,27 +616,74 @@
           "AC": "L",
           "PR": "N",
           "UI": "N",
-          "C": "L",
+          "C": "H",
           "I": "L",
-          "A": "L",
+          "A": "N",
           "S": "U"
         },
-        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 7.3,
+        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+        "base_score": 8.2,
         "severity": "high"
       },
       "response": {
         "priority": "P1",
         "recommended_actions": [
-          "Immediately escalate to Incident Response team."
+          "Escalate to the Incident Response team immediately.",
+          "Identify the process owning the outbound connection on the affected host.",
+          "Collect a memory image before rebooting or reimaging.",
+          "Pivot on the destination indicator across all egress logs for other affected hosts."
         ],
         "containment_steps": [
-          "Block offender IP at edge firewall."
+          "Block the destination domain and IP at the egress proxy and DNS resolver.",
+          "Isolate the affected host from the network pending triage."
         ],
-        "analyst_notes": "A suspicious network event was identified involving source 203.0.113.55 and destination 10.0.0.8. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: beaconing."
+        "analyst_notes": "Repeated or patterned communication suggests possible beaconing activity from 203.0.113.55 toward 10.0.0.8. This may indicate malware establishing command-and-control connectivity or maintaining persistence. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: beaconing.",
+        "playbook": "beaconing",
+        "escalation": "P1 — escalate to SOC Tier-2 now. A high 'beaconing' finding requires containment within the current shift.",
+        "cvss_basis": {
+          "base_score": 8.2,
+          "severity": "high"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-72af37e3653f",
+        "verdict": "malicious",
+        "severity": "high",
+        "threat_type": "beaconing",
+        "confidence": 0.9,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Periodic outbound callbacks consistent with C2 beaconing",
+          "Classified as beaconing",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to beaconing",
+          "IOC enrichment found matching indicators"
+        ],
+        "cis_control": "1.7.2",
+        "cis_control_title": "Ensure 'TLS 1.0' is set for HTTPS access",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Beaconing from 203.0.113.55 against endpoint-23",
+        "severity": "high",
+        "threat_type": "beaconing",
+        "confidence": 0.9,
+        "source_ip": "203.0.113.55",
+        "destination_ip": "10.0.0.8",
+        "affected_user": "unattributed",
+        "affected_host": "endpoint-23",
+        "log_family": "network",
+        "timestamp": "2026-04-07T10:01:10Z",
+        "cis_benchmark_id": "1.7.2"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -515,12 +692,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "1.7.2",
+          "benchmark_title": "Ensure 'TLS 1.0' is set for HTTPS access",
+          "matched_domain": "CIS",
+          "recommendation": "90 | P ag e\n\nFor version 8.x, run the following command to enable AES 256 algorithm\nhostname(config)# ssl encryption aes256-sha1\nFor version 9.x, run the following command to enable AES 256 algorithm\nhostname(config)# ssl cipher tlsv1 custom AES256-SHA",
+          "rationale": "Enable SSL server version to TLS 1.0",
+          "confidence": 0.9
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -531,7 +708,7 @@
           "confidentiality_impact": "low",
           "integrity_impact": "low",
           "availability_impact": "low",
-          "suggested_severity": "medium",
+          "suggested_severity": "high",
           "requires_cvss_layer_validation": true
         },
         "next_layer_status": {
@@ -541,8 +718,8 @@
       }
     },
     {
-      "summary": "Suspicious suspicious_request from 91.240.118.33 targeting /login?user=admin' OR '1'='1",
-      "event_id": "661564c5-b8fe-403d-b501-1eb9ee3b419d",
+      "summary": "Malicious suspicious_request from 91.240.118.33 targeting /login?user=admin' OR '1'='1",
+      "event_id": "evt-5c5f316d5206",
       "raw_event": {
         "timestamp": "2026-04-07T10:02:20Z",
         "log_type": "web",
@@ -611,7 +788,7 @@
           "unique_ports_seen": 0,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
+          "unique_hosts_seen": 1
         },
         "user_profile": {
           "user_key": "91.240.118.33",
@@ -630,7 +807,7 @@
         },
         "classification_scores": {
           "network": 0,
-          "web": 0,
+          "web": 2,
           "iot": 0
         },
         "time_windows": {
@@ -648,16 +825,26 @@
         "log_family": "web"
       },
       "detection": {
-        "label": "suspicious",
+        "label": "malicious",
         "threat_type": "web_attack",
-        "severity": "medium",
-        "confidence": 0.3,
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Request to a sensitive or unexpected endpoint",
+          "SQL injection payload detected in request",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
@@ -673,11 +860,20 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "suspicious_web_access",
+          "web_attack"
+        ],
+        "mapped_pattern": "web_attack",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Request to a sensitive or unexpected endpoint",
+          "SQL injection payload detected in request",
+          "Sensitive endpoint accessed",
+          "Source IP appears unusual for this activity",
+          "Classified as web_attack"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -690,40 +886,76 @@
           ],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "91.240.118.33",
+            "type": "ip",
+            "threat_type": "web_attack_infrastructure",
+            "confidence": 0.92,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "OWASP-A04",
+        "framework": "OWASP",
+        "title": "Insecure Design",
+        "description": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+        "remediation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
+        "rationale": "Weak design choices can leave critical application flows vulnerable even if code quality is good.",
+        "section": "Secure Design",
+        "profile_level": "Top 10",
+        "audit_procedure": "Review threat models, trust boundaries, abuse cases, and security requirements in design.",
+        "references": "OWASP Top 10",
+        "source_benchmark": "",
+        "catalog": "web_owasp_catalog",
+        "match_type": "catalog_retrieval",
+        "retrieval_query": {
+          "query_tags": [
+            "web_application",
+            "application_security"
+          ],
+          "query_keywords": [
+            "web",
+            "application"
+          ],
+          "section_hint": []
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
-        "intent": "Suspicious Web Request",
-        "summary": "Suspicious web request from 91.240.118.33 targeted /login?user=admin' OR '1'='1.",
+        "intent": "Web Application Attack — SQL injection",
+        "summary": "Sql injection attempt from 91.240.118.33 targeted /login?user=admin' OR '1'='1 on web-server-01.",
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
         "user_interaction": "none",
         "scope": "unchanged",
         "impact": {
-          "confidentiality": "low",
+          "confidentiality": "high",
           "integrity": "low",
-          "availability": "low"
+          "availability": "none"
         },
-        "narrative": "A suspicious request was sent from 91.240.118.33 to /login?user=admin' OR '1'='1, indicating possible probing or injection-style behavior. The activity may be an attempt to manipulate application input handling or discover exploitable behavior on web-server-01. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: suspicious request."
+        "narrative": "A request from 91.240.118.33 to /login?user=admin' OR '1'='1 on web-server-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: suspicious request."
       },
       "cvss": {
         "vector": {
@@ -731,27 +963,77 @@
           "AC": "L",
           "PR": "N",
           "UI": "N",
-          "C": "L",
+          "C": "H",
           "I": "L",
-          "A": "L",
+          "A": "N",
           "S": "U"
         },
-        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 7.3,
+        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+        "base_score": 8.2,
         "severity": "high"
       },
       "response": {
         "priority": "P1",
         "recommended_actions": [
-          "Immediately escalate to Incident Response team."
+          "Escalate to the Incident Response team immediately.",
+          "Review application logs for evidence the payload succeeded, not just that it was sent.",
+          "Confirm server-side input validation on the targeted parameter.",
+          "Check the web root and upload directories for unexpected files."
         ],
         "containment_steps": [
-          "Block offender IP at edge firewall."
+          "Enable or tighten WAF rules for this payload class on the affected endpoint.",
+          "Block the source IP at the edge.",
+          "Restrict administrative endpoints to trusted networks."
         ],
-        "analyst_notes": "A suspicious request was sent from 91.240.118.33 to /login?user=admin' OR '1'='1, indicating possible probing or injection-style behavior. The activity may be an attempt to manipulate application input handling or discover exploitable behavior on web-server-01. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: suspicious request."
+        "analyst_notes": "A request from 91.240.118.33 to /login?user=admin' OR '1'='1 on web-server-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: suspicious request.",
+        "playbook": "web_attack",
+        "escalation": "P1 — escalate to SOC Tier-2 now. A high 'web attack' finding requires containment within the current shift.",
+        "cvss_basis": {
+          "base_score": 8.2,
+          "severity": "high"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-5c5f316d5206",
+        "verdict": "malicious",
+        "severity": "high",
+        "threat_type": "web_attack",
+        "confidence": 0.92,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Request to a sensitive or unexpected endpoint",
+          "SQL injection payload detected in request",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "cis_control": "OWASP-A04",
+        "cis_control_title": "Insecure Design",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Web Attack from 91.240.118.33 against web-server-01",
+        "severity": "high",
+        "threat_type": "web_attack",
+        "confidence": 0.92,
+        "source_ip": "91.240.118.33",
+        "destination_ip": "",
+        "affected_user": "unattributed",
+        "affected_host": "web-server-01",
+        "log_family": "web",
+        "timestamp": "2026-04-07T10:02:20Z",
+        "cis_benchmark_id": "OWASP-A04"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -760,12 +1042,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "OWASP-A04",
+          "benchmark_title": "Insecure Design",
+          "matched_domain": "OWASP",
+          "recommendation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
+          "rationale": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+          "confidence": 0.92
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -776,7 +1058,7 @@
           "confidentiality_impact": "low",
           "integrity_impact": "low",
           "availability_impact": "low",
-          "suggested_severity": "medium",
+          "suggested_severity": "high",
           "requires_cvss_layer_validation": true
         },
         "next_layer_status": {
@@ -786,8 +1068,8 @@
       }
     },
     {
-      "summary": "Suspicious web_attack from 185.199.110.153 targeting /admin/upload.php",
-      "event_id": "0f710cdd-d735-4450-bbe4-8b9aef7db7c9",
+      "summary": "Malicious web_attack from 185.199.110.153 targeting /admin/upload.php",
+      "event_id": "evt-0a7fcc73e9ac",
       "raw_event": {
         "timestamp": "2026-04-07T10:03:30Z",
         "log_type": "web",
@@ -856,7 +1138,7 @@
           "unique_ports_seen": 0,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
+          "unique_hosts_seen": 1
         },
         "user_profile": {
           "user_key": "185.199.110.153",
@@ -875,7 +1157,7 @@
         },
         "classification_scores": {
           "network": 0,
-          "web": 0,
+          "web": 2,
           "iot": 0
         },
         "time_windows": {
@@ -893,16 +1175,26 @@
         "log_family": "web"
       },
       "detection": {
-        "label": "suspicious",
+        "label": "malicious",
         "threat_type": "web_attack",
-        "severity": "medium",
-        "confidence": 0.3,
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Request pattern consistent with web application attack",
+          "Request targets an uploadable or executable endpoint",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
@@ -918,11 +1210,20 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "web_attack",
+          "suspicious_web_access"
+        ],
+        "mapped_pattern": "web_attack",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Request pattern consistent with web application attack",
+          "Request targets an uploadable or executable endpoint",
+          "Sensitive endpoint accessed",
+          "Source IP appears unusual for this activity",
+          "Classified as web_attack"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -935,40 +1236,83 @@
           ],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 2,
+        "matched_iocs": [
+          {
+            "observable": "185.199.110.153",
+            "type": "ip",
+            "threat_type": "webshell_staging_host",
+            "confidence": 0.84,
+            "source": "simulated_ti_feed"
+          },
+          {
+            "observable": "/admin/upload.php",
+            "type": "url",
+            "threat_type": "webshell_upload_path",
+            "confidence": 0.87,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "OWASP-A04",
+        "framework": "OWASP",
+        "title": "Insecure Design",
+        "description": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+        "remediation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
+        "rationale": "Weak design choices can leave critical application flows vulnerable even if code quality is good.",
+        "section": "Secure Design",
+        "profile_level": "Top 10",
+        "audit_procedure": "Review threat models, trust boundaries, abuse cases, and security requirements in design.",
+        "references": "OWASP Top 10",
+        "source_benchmark": "",
+        "catalog": "web_owasp_catalog",
+        "match_type": "catalog_retrieval",
+        "retrieval_query": {
+          "query_tags": [
+            "web_application",
+            "application_security"
+          ],
+          "query_keywords": [
+            "web",
+            "application"
+          ],
+          "section_hint": []
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
-        "intent": "Web Application Attack Attempt",
-        "summary": "Potential web application attack from 185.199.110.153 targeted /admin/upload.php.",
+        "intent": "Web Application Attack — webshell / file upload abuse",
+        "summary": "Webshell / file upload abuse attempt from 185.199.110.153 targeted /admin/upload.php on web-server-02.",
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
         "user_interaction": "none",
         "scope": "unchanged",
         "impact": {
-          "confidentiality": "low",
+          "confidentiality": "high",
           "integrity": "low",
-          "availability": "low"
+          "availability": "none"
         },
-        "narrative": "A web-focused attack attempt was identified from 185.199.110.153 against /admin/upload.php on web-server-02. The pattern is consistent with hostile application-layer activity that could lead to unauthorized data access or application misuse if successful. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: web attack."
+        "narrative": "A request from 185.199.110.153 to /admin/upload.php on web-server-02 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: web attack."
       },
       "cvss": {
         "vector": {
@@ -976,27 +1320,77 @@
           "AC": "L",
           "PR": "N",
           "UI": "N",
-          "C": "L",
+          "C": "H",
           "I": "L",
-          "A": "L",
+          "A": "N",
           "S": "U"
         },
-        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 7.3,
+        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:N",
+        "base_score": 8.2,
         "severity": "high"
       },
       "response": {
         "priority": "P1",
         "recommended_actions": [
-          "Immediately escalate to Incident Response team."
+          "Escalate to the Incident Response team immediately.",
+          "Review application logs for evidence the payload succeeded, not just that it was sent.",
+          "Confirm server-side input validation on the targeted parameter.",
+          "Check the web root and upload directories for unexpected files."
         ],
         "containment_steps": [
-          "Block offender IP at edge firewall."
+          "Enable or tighten WAF rules for this payload class on the affected endpoint.",
+          "Block the source IP at the edge.",
+          "Restrict administrative endpoints to trusted networks."
         ],
-        "analyst_notes": "A web-focused attack attempt was identified from 185.199.110.153 against /admin/upload.php on web-server-02. The pattern is consistent with hostile application-layer activity that could lead to unauthorized data access or application misuse if successful. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: web attack."
+        "analyst_notes": "A request from 185.199.110.153 to /admin/upload.php on web-server-02 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: web attack.",
+        "playbook": "web_attack",
+        "escalation": "P1 — escalate to SOC Tier-2 now. A high 'web attack' finding requires containment within the current shift.",
+        "cvss_basis": {
+          "base_score": 8.2,
+          "severity": "high"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-0a7fcc73e9ac",
+        "verdict": "malicious",
+        "severity": "high",
+        "threat_type": "web_attack",
+        "confidence": 0.92,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Request pattern consistent with web application attack",
+          "Request targets an uploadable or executable endpoint",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "cis_control": "OWASP-A04",
+        "cis_control_title": "Insecure Design",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Web Attack from 185.199.110.153 against web-server-02",
+        "severity": "high",
+        "threat_type": "web_attack",
+        "confidence": 0.92,
+        "source_ip": "185.199.110.153",
+        "destination_ip": "",
+        "affected_user": "unattributed",
+        "affected_host": "web-server-02",
+        "log_family": "web",
+        "timestamp": "2026-04-07T10:03:30Z",
+        "cis_benchmark_id": "OWASP-A04"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -1005,12 +1399,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "OWASP-A04",
+          "benchmark_title": "Insecure Design",
+          "matched_domain": "OWASP",
+          "recommendation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
+          "rationale": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+          "confidence": 0.92
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -1021,7 +1415,7 @@
           "confidentiality_impact": "low",
           "integrity_impact": "low",
           "availability_impact": "low",
-          "suggested_severity": "medium",
+          "suggested_severity": "high",
           "requires_cvss_layer_validation": true
         },
         "next_layer_status": {
@@ -1031,8 +1425,8 @@
       }
     },
     {
-      "summary": "Suspicious credential_abuse from 192.0.2.45 targeting target",
-      "event_id": "e6764f6b-d0bd-4cb1-90df-a2bcade625ff",
+      "summary": "Malicious credential_abuse from 192.0.2.45 targeting target",
+      "event_id": "evt-551e824b99fd",
       "raw_event": {
         "timestamp": "2026-04-07T10:04:45Z",
         "log_type": "iot",
@@ -1101,31 +1495,7 @@
           "unique_ports_seen": 0,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
-        },
-        "network_traffic_features": {
-          "traffic_direction": "external",
-          "src_is_internal": false,
-          "dst_is_internal": false,
-          "bytes_ratio": 0.0,
-          "dest_port_service": "unknown",
-          "is_known_port": false,
-          "is_high_risk_port": false,
-          "has_tcp_flags": false,
-          "tcp_flag_value": null,
-          "is_syn_only": false,
-          "packet_count": 0,
-          "duration_ms": 0,
-          "bytes_per_packet": 0.0
-        },
-        "network_protocol_features": {
-          "protocol": "telnet",
-          "is_protocol_expected": true,
-          "is_deprecated_protocol": true,
-          "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
-          "unique_protocols_for_source": 1,
-          "protocol_anomaly_detected": true
+          "unique_hosts_seen": 1
         },
         "user_profile": {
           "user_key": "192.0.2.45",
@@ -1162,16 +1532,25 @@
         "log_family": "iot"
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "suspicious_activity",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "credential_abuse",
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Credential use inconsistent with the established baseline",
+          "Cleartext management protocol 'telnet' in use",
+          "Classified as credential_abuse",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to credential_abuse",
+          "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
@@ -1187,11 +1566,19 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "credential_abuse",
+          "insecure_protocol_use"
+        ],
+        "mapped_pattern": "credential_abuse",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Credential use inconsistent with the established baseline",
+          "Cleartext management protocol 'telnet' in use",
+          "Source IP appears unusual for this activity",
+          "Classified as credential_abuse"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -1202,25 +1589,57 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "192.0.2.45",
+            "type": "ip",
+            "threat_type": "iot_botnet_node",
+            "confidence": 0.88,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to credential_abuse",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "CIS-5.2",
+        "framework": "CIS Controls v8",
+        "title": "Use Unique Passwords",
+        "description": "Credential use inconsistent with the established baseline for this account or device.",
+        "remediation": "Rotate the affected credentials, disable any shared or default accounts, and require MFA for the exposed service.",
+        "rationale": "",
+        "section": "",
+        "profile_level": "",
+        "audit_procedure": "",
+        "references": [],
+        "source_benchmark": "",
+        "catalog": "iot_cis_catalog",
+        "match_type": "threat_type_fallback",
+        "retrieval_query": {
+          "query_tags": [],
+          "query_keywords": [
+            "iot-camera-01"
+          ],
+          "section_hint": []
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
         "intent": "IoT Device Threat Activity",
@@ -1231,11 +1650,11 @@
         "user_interaction": "none",
         "scope": "unchanged",
         "impact": {
-          "confidentiality": "low",
+          "confidentiality": "high",
           "integrity": "low",
           "availability": "low"
         },
-        "narrative": "An anomalous IoT-related event was detected involving iot-camera-01. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: credential abuse."
+        "narrative": "An anomalous IoT-related event was detected involving iot-camera-01. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Use Unique Passwords. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: credential abuse."
       },
       "cvss": {
         "vector": {
@@ -1243,27 +1662,76 @@
           "AC": "L",
           "PR": "N",
           "UI": "N",
-          "C": "L",
+          "C": "H",
           "I": "L",
           "A": "L",
           "S": "U"
         },
-        "vector_string": "AV:A/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 6.3,
-        "severity": "medium"
+        "vector_string": "AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:L",
+        "base_score": 7.6,
+        "severity": "high"
       },
       "response": {
-        "priority": "P2",
+        "priority": "P1",
         "recommended_actions": [
-          "Review correlation anomalies."
+          "Escalate to the Incident Response team immediately.",
+          "Confirm with the account owner whether the activity was legitimate.",
+          "Review what the account accessed during the suspicious window.",
+          "Check for default or reused credentials on the affected device class."
         ],
         "containment_steps": [
-          "Monitor host cautiously before taking action."
+          "Suspend the affected account pending verification.",
+          "Revoke active sessions and refresh tokens for the account.",
+          "Rotate any shared or service credentials the account could reach."
         ],
-        "analyst_notes": "An anomalous IoT-related event was detected involving iot-camera-01. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: credential abuse."
+        "analyst_notes": "An anomalous IoT-related event was detected involving iot-camera-01. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Use Unique Passwords. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: credential abuse.",
+        "playbook": "credential_abuse",
+        "escalation": "P1 — escalate to SOC Tier-2 now. A high 'credential abuse' finding requires containment within the current shift.",
+        "cvss_basis": {
+          "base_score": 7.6,
+          "severity": "high"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-551e824b99fd",
+        "verdict": "malicious",
+        "severity": "high",
+        "threat_type": "credential_abuse",
+        "confidence": 0.92,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Credential use inconsistent with the established baseline",
+          "Cleartext management protocol 'telnet' in use",
+          "Classified as credential_abuse",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to credential_abuse",
+          "IOC enrichment found matching indicators"
+        ],
+        "cis_control": "CIS-5.2",
+        "cis_control_title": "Use Unique Passwords",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Credential Abuse from 192.0.2.45 against iot-camera-01",
+        "severity": "high",
+        "threat_type": "credential_abuse",
+        "confidence": 0.92,
+        "source_ip": "192.0.2.45",
+        "destination_ip": "",
+        "affected_user": "unattributed",
+        "affected_host": "iot-camera-01",
+        "log_family": "iot",
+        "timestamp": "2026-04-07T10:04:45Z",
+        "cis_benchmark_id": "CIS-5.2"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -1272,12 +1740,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "CIS-5.2",
+          "benchmark_title": "Use Unique Passwords",
+          "matched_domain": "CIS Controls v8",
+          "recommendation": "Rotate the affected credentials, disable any shared or default accounts, and require MFA for the exposed service.",
+          "rationale": "Credential use inconsistent with the established baseline for this account or device.",
+          "confidence": 0.92
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -1288,7 +1756,7 @@
           "confidentiality_impact": "low",
           "integrity_impact": "low",
           "availability_impact": "low",
-          "suggested_severity": "medium",
+          "suggested_severity": "high",
           "requires_cvss_layer_validation": true
         },
         "next_layer_status": {
@@ -1298,8 +1766,8 @@
       }
     },
     {
-      "summary": "Suspicious lateral_movement from 10.10.1.50 targeting target",
-      "event_id": "066d37be-9a19-4328-a178-2afb7beec9dc",
+      "summary": "Malicious lateral_movement from 10.10.1.50 targeting target",
+      "event_id": "evt-b11b3435315a",
       "raw_event": {
         "timestamp": "2026-04-07T10:05:55Z",
         "log_type": "network",
@@ -1368,7 +1836,31 @@
           "unique_ports_seen": 0,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 0
+          "unique_hosts_seen": 1
+        },
+        "network_traffic_features": {
+          "traffic_direction": "east_west",
+          "src_is_internal": true,
+          "dst_is_internal": true,
+          "bytes_ratio": 0.0,
+          "dest_port_service": "unknown",
+          "is_known_port": false,
+          "is_high_risk_port": false,
+          "has_tcp_flags": false,
+          "tcp_flag_value": null,
+          "is_syn_only": false,
+          "packet_count": 0,
+          "duration_ms": 0,
+          "bytes_per_packet": 0.0
+        },
+        "network_protocol_features": {
+          "protocol": "UNKNOWN",
+          "is_protocol_expected": true,
+          "is_deprecated_protocol": false,
+          "is_tunneling_capable": false,
+          "is_new_protocol_for_source": true,
+          "unique_protocols_for_source": 1,
+          "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "10.10.1.50",
@@ -1405,16 +1897,24 @@
         "log_family": "network"
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "suspicious_activity",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "lateral_movement",
+        "severity": "critical",
+        "confidence": 0.93,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Internal host-to-host movement outside normal access paths",
+          "Classified as lateral_movement",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to lateral_movement",
+          "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
@@ -1430,11 +1930,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "lateral_movement"
+        ],
+        "mapped_pattern": "lateral_movement",
+        "severity": "critical",
+        "confidence": 0.8,
+        "reasoning": [
+          "Internal host-to-host movement outside normal access paths",
+          "Source IP appears unusual for this activity",
+          "Classified as lateral_movement"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -1445,68 +1951,146 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "10.10.1.50",
+            "type": "ip",
+            "threat_type": "compromised_internal_host",
+            "confidence": 0.86,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to lateral_movement",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.93
       },
       "cis": {
-        "benchmark_id": "CIS-16",
-        "framework": "CIS Controls",
-        "title": "Application Monitoring",
-        "description": "Monitor web application access patterns",
-        "remediation": "Review unusual access attempts to admin endpoints"
+        "benchmark_id": "CIS-12.2",
+        "framework": "CIS Controls v8",
+        "title": "Establish and Maintain a Secure Network Architecture",
+        "description": "Internal host-to-host traffic that deviates from the expected segmentation model.",
+        "remediation": "Enforce network segmentation between user and server zones and restrict east-west traffic to required ports only.",
+        "rationale": "",
+        "section": "",
+        "profile_level": "",
+        "audit_procedure": "",
+        "references": [],
+        "source_benchmark": "",
+        "catalog": "network_controls_catalog",
+        "match_type": "threat_type_fallback",
+        "retrieval_query": {
+          "query_tags": [],
+          "query_keywords": [],
+          "section_hint": []
+        },
+        "additional_matches": []
       },
       "ai_analysis": {
-        "intent": "Network Suspicious Activity",
-        "summary": "Suspicious network activity from 10.10.1.50 to 10.10.1.75 over unknown protocol was detected.",
-        "attack_vector": "network",
+        "intent": "Internal Lateral Movement",
+        "summary": "Potential lateral movement from 10.10.1.50 toward internal-db-01 was detected.",
+        "attack_vector": "adjacent",
         "attack_complexity": "low",
-        "privileges_required": "none",
+        "privileges_required": "low",
         "user_interaction": "none",
-        "scope": "unchanged",
+        "scope": "changed",
         "impact": {
-          "confidentiality": "low",
-          "integrity": "low",
-          "availability": "low"
+          "confidentiality": "high",
+          "integrity": "high",
+          "availability": "none"
         },
-        "narrative": "A suspicious network event was identified involving source 10.10.1.50 and destination 10.10.1.75. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: lateral movement."
+        "narrative": "The event suggests internal movement from 10.10.1.50 toward internal-db-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Establish and Maintain a Secure Network Architecture. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: lateral movement."
       },
       "cvss": {
         "vector": {
-          "AV": "N",
+          "AV": "A",
           "AC": "L",
-          "PR": "N",
+          "PR": "L",
           "UI": "N",
-          "C": "L",
-          "I": "L",
-          "A": "L",
-          "S": "U"
+          "C": "H",
+          "I": "H",
+          "A": "N",
+          "S": "C"
         },
-        "vector_string": "AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
-        "base_score": 7.3,
+        "vector_string": "AV:A/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:N",
+        "base_score": 8.7,
         "severity": "high"
       },
       "response": {
         "priority": "P1",
         "recommended_actions": [
-          "Immediately escalate to Incident Response team."
+          "Escalate to the Incident Response team immediately.",
+          "Reconstruct the access path to identify the initial point of compromise.",
+          "Review privileged group membership for unauthorised additions.",
+          "Escalate to SOC Tier-2 — lateral movement indicates an active intrusion, not a probe."
         ],
         "containment_steps": [
-          "Block offender IP at edge firewall."
+          "Isolate both the source and destination hosts from the network.",
+          "Disable the account used for the movement.",
+          "Restrict east-west traffic between the affected network segments."
         ],
-        "analyst_notes": "A suspicious network event was identified involving source 10.10.1.50 and destination 10.10.1.75. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Application Monitoring. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: lateral movement."
+        "analyst_notes": "The event suggests internal movement from 10.10.1.50 toward internal-db-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Establish and Maintain a Secure Network Architecture. Observed anomaly indicators: rare_source_ip, rare_user_activity. Observed action: lateral movement.",
+        "playbook": "lateral_movement",
+        "escalation": "P1 — escalate to SOC Tier-2 now. A high 'lateral movement' finding requires containment within the current shift.",
+        "cvss_basis": {
+          "base_score": 8.7,
+          "severity": "high"
+        }
       },
-      "final_report": {},
-      "dashboard": {},
+      "final_report": {
+        "status": "open",
+        "event_id": "evt-b11b3435315a",
+        "verdict": "malicious",
+        "severity": "critical",
+        "threat_type": "lateral_movement",
+        "confidence": 0.93,
+        "triggered_engines": [
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
+        ],
+        "reasoning": [
+          "Source IP appears unusual for this activity",
+          "User behavior appears unusual",
+          "Internal host-to-host movement outside normal access paths",
+          "Classified as lateral_movement",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to lateral_movement",
+          "IOC enrichment found matching indicators"
+        ],
+        "cis_control": "CIS-12.2",
+        "cis_control_title": "Establish and Maintain a Secure Network Architecture",
+        "suppressed": false
+      },
+      "dashboard": {
+        "alert_title": "Lateral Movement from 10.10.1.50 against internal-db-01",
+        "severity": "critical",
+        "threat_type": "lateral_movement",
+        "confidence": 0.93,
+        "source_ip": "10.10.1.50",
+        "destination_ip": "10.10.1.75",
+        "affected_user": "unattributed",
+        "affected_host": "internal-db-01",
+        "log_family": "network",
+        "timestamp": "2026-04-07T10:05:55Z",
+        "cis_benchmark_id": "CIS-12.2"
+      },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -1515,12 +2099,12 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-16",
-          "benchmark_title": "Application Monitoring",
-          "matched_domain": "CIS Controls",
-          "recommendation": "Review unusual access attempts to admin endpoints",
-          "rationale": "Monitor web application access patterns",
-          "confidence": 0.3
+          "benchmark_id": "CIS-12.2",
+          "benchmark_title": "Establish and Maintain a Secure Network Architecture",
+          "matched_domain": "CIS Controls v8",
+          "recommendation": "Enforce network segmentation between user and server zones and restrict east-west traffic to required ports only.",
+          "rationale": "Internal host-to-host traffic that deviates from the expected segmentation model.",
+          "confidence": 0.93
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -1531,7 +2115,7 @@
           "confidentiality_impact": "low",
           "integrity_impact": "low",
           "availability_impact": "low",
-          "suggested_severity": "medium",
+          "suggested_severity": "critical",
           "requires_cvss_layer_validation": true
         },
         "next_layer_status": {

@@ -133,6 +133,12 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
     integrity = "low"
     availability = "low"
 
+    # CVSS impact describes what the attack ACHIEVES, not how alarmed we are.
+    # When a branch below sets impact deliberately for its threat class, it marks
+    # the values authoritative so the severity refinement at the end leaves them
+    # alone. Only the generic default gets nudged by detection severity.
+    impact_is_authoritative = False
+
     # WEB / suspicious request / injection-like behavior
     if log_type == "web" or threat_type in {"web_attack", "suspicious_request"}:
         attack_vector = "network"
@@ -140,37 +146,57 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
 
         url_lower = url.lower()
 
-        if (
-            threat_type == "suspicious_request"
-            or "search?q=" in url_lower
-            or "' or '" in url_lower
-            or " or " in url_lower
-            or "<script" in url_lower
-            or "../" in url_lower
-        ):
+        # Name the specific payload class when we can see it — an actual
+        # injection string is a STRONGER signal than a generic "suspicious
+        # request", so these are checked first.
+        if "' or '" in url_lower or "or 1=1" in url_lower or "union select" in url_lower or "'1'='1" in url_lower:
+            payload_kind = "SQL injection"
+            technique = "T1190 (Exploit Public-Facing Application)"
+        elif "<script" in url_lower or "javascript:" in url_lower or "onerror=" in url_lower:
+            payload_kind = "cross-site scripting"
+            technique = "T1059.007 (JavaScript Execution)"
+        elif "../" in url_lower or "%2e%2e" in url_lower or "/etc/passwd" in url_lower:
+            payload_kind = "path traversal"
+            technique = "T1083 (File and Directory Discovery)"
+        elif any(x in url_lower for x in (".php", ".jsp", ".asp", "shell", "upload")):
+            payload_kind = "webshell / file upload abuse"
+            technique = "T1505.003 (Web Shell)"
+        else:
+            payload_kind = ""
+            technique = "T1595 (Active Scanning)"
+
+        if payload_kind or threat_type == "web_attack":
+            intent = f"Web Application Attack — {payload_kind}" if payload_kind else "Web Application Attack Attempt"
+            summary = (
+                f"{payload_kind.capitalize() or 'Web application attack'} attempt from {source_ip} "
+                f"targeted {url or 'a protected endpoint'} on {affected_host}."
+            )
+            narrative = (
+                f"A request from {source_ip} to {url or 'a protected endpoint'} on {affected_host} carries "
+                f"{('a ' + payload_kind + ' payload') if payload_kind else 'a hostile application-layer pattern'}, "
+                f"consistent with {technique}. If the application does not validate this input server-side, the "
+                f"attacker could read or alter data they are not authorised to reach — which for a banking "
+                f"application means customer records and transaction integrity. "
+                f"Relevant control context: {cis_title}."
+            )
+            confidentiality = "high"
+            integrity = "low"
+            availability = "none"
+            impact_is_authoritative = True
+
+        else:
             intent = "Suspicious Web Request"
             summary = f"Suspicious web request from {source_ip} targeted {url or 'a web endpoint'}."
             narrative = (
                 f"A suspicious request was sent from {source_ip} to {url or 'a web endpoint'}, "
-                f"indicating possible probing or injection-style behavior. "
-                f"The activity may be an attempt to manipulate application input handling or discover exploitable behavior "
-                f"on {affected_host}. Relevant control context: {cis_title}."
+                f"indicating possible probing of application behaviour on {affected_host} "
+                f"(consistent with {technique}). No exploit payload was identified in the request itself. "
+                f"Relevant control context: {cis_title}."
             )
             confidentiality = "low"
-            integrity = "low"
+            integrity = "none"
             availability = "none"
-
-        elif threat_type == "web_attack":
-            intent = "Web Application Attack Attempt"
-            summary = f"Potential web application attack from {source_ip} targeted {url or 'a protected endpoint'}."
-            narrative = (
-                f"A web-focused attack attempt was identified from {source_ip} against {url or 'a protected endpoint'} "
-                f"on {affected_host}. The pattern is consistent with hostile application-layer activity that could lead "
-                f"to unauthorized data access or application misuse if successful. Relevant control context: {cis_title}."
-            )
-            confidentiality = "low"
-            integrity = "low"
-            availability = "low"
+            impact_is_authoritative = True
 
     # PORT SCAN
     elif threat_type == "port_scan" or action in {"port_scan", "scan"}:
@@ -191,9 +217,10 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"This behavior is consistent with service discovery prior to exploitation. "
             f"Relevant control context: {cis_title}."
         )
-        confidentiality = "none"
+        confidentiality = "low"
         integrity = "none"
-        availability = "low"
+        availability = "none"
+        impact_is_authoritative = True
 
     # BEACONING
     elif threat_type == "beaconing":
@@ -202,7 +229,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
         attack_complexity = "low"
         privileges_required = "none"
         user_interaction = "none"
-        scope = "changed"
+        scope = "unchanged"
 
         summary = (
             f"Possible beaconing behavior was detected between {source_ip} and "
@@ -214,9 +241,10 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"This may indicate malware establishing command-and-control connectivity or maintaining persistence. "
             f"Relevant control context: {cis_title}."
         )
-        confidentiality = "low"
+        confidentiality = "high"
         integrity = "low"
-        availability = "low"
+        availability = "none"
+        impact_is_authoritative = True
 
     # LATERAL MOVEMENT
     elif threat_type == "lateral_movement":
@@ -236,8 +264,9 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"Relevant control context: {cis_title}."
         )
         confidentiality = "high"
-        integrity = "low"
-        availability = "low"
+        integrity = "high"
+        availability = "none"
+        impact_is_authoritative = True
 
     # IOT
     elif log_type == "iot" or threat_type in {"iot_anomaly", "firmware_anomaly", "device_compromise"}:
@@ -255,9 +284,10 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"IoT incidents are important because compromised devices can become entry points into segmented environments. "
             f"Relevant control context: {cis_title}."
         )
-        confidentiality = "low"
+        confidentiality = "high"
         integrity = "low"
         availability = "low"
+        impact_is_authoritative = True
 
     # GENERIC NETWORK
     elif log_type == "network" or threat_type in {"network_anomaly", "network_attack"}:
@@ -283,8 +313,13 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
         integrity = "low"
         availability = "low"
 
-    # Severity refinement
-    if severity == "low":
+    # Severity refinement — only for events whose threat class did not set
+    # impact deliberately. Escalating a port scan to "high confidentiality
+    # impact" just because detection was confident produces indefensible CVSS
+    # scores, which is exactly the inconsistency this layer exists to remove.
+    if impact_is_authoritative:
+        pass
+    elif severity == "low":
         pass
     elif severity == "medium":
         confidentiality = "low" if confidentiality == "none" else confidentiality

@@ -77,7 +77,7 @@ async def main():
             severity=Severity.CRITICAL
         ),
         confidence=0.89,
-        timestamp=datetime.datetime.utcnow(),
+        timestamp=datetime.datetime.now(datetime.timezone.utc),
         source_ip="185.220.101.50",
         affected_user="john.doe@bank.com",
         asset_id="laptop-exec-42",

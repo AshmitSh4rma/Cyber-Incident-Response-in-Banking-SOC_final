@@ -3,6 +3,8 @@ import { asList } from "@/lib/utils";
 
 export type EventPipeline = {
   event_id: string;
+  // Human-readable one-line description produced by the backend formatter.
+  summary?: string;
   raw_event: any;
 
   ingestion: any;
@@ -28,6 +30,8 @@ export type EventPipeline = {
     summary?: string;
     blast_radius?: string;
     confidence_note?: string;
+    // Model/rule confidence in the analysis, 0-1.
+    confidence?: number;
     // NEW: AI STORYTELLING FIELDS
     one_liner?: string;
     intent?: string;

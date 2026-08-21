@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { backendUrl } from "@/lib/config";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, context: Params) {
   const { id } = await context.params;
 
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/incidents/${id}`, { cache: "no-store" });
+    const res = await fetch(backendUrl(`/api/incidents/${id}`), { cache: "no-store" });
     if (!res.ok) {
       return NextResponse.json({ error: `Backend returned error: ${res.status}` }, { status: res.status });
     }
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest, context: Params) {
     }
 
     // Forward to FastAPI SQLite Database
-    const res = await fetch(`http://127.0.0.1:8000/api/incidents/${id}/action`, {
+    const res = await fetch(backendUrl(`/api/incidents/${id}/action`), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

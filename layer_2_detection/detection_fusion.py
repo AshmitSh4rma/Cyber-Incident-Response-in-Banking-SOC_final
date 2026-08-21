@@ -81,9 +81,11 @@ def fuse_detection(event: dict) -> dict:
         final_severity = raise_severity(final_severity, "medium")
 
     # 4. Correlation-confidence based raise
-    if adjusted_confidence >= 0.90:
-        final_severity = raise_severity(final_severity, "critical")
-    elif adjusted_confidence >= 0.75:
+    # Confidence says how SURE we are, not how BAD it is. High confidence in a
+    # port scan is still a port scan, so confidence alone caps out at "high" —
+    # only the threat class itself (rule 1) or a malicious verdict on a
+    # critical-class threat can reach "critical".
+    if adjusted_confidence >= 0.75:
         final_severity = raise_severity(final_severity, "high")
     elif adjusted_confidence >= 0.50:
         final_severity = raise_severity(final_severity, "medium")

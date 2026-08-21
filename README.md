@@ -324,7 +324,13 @@ Create a virtual environment:
 python -m venv .venv
 ```
 
-Activate the virtual environment on Windows:
+Activate it on Linux or macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+Or on Windows:
 
 ```bash
 .\.venv\Scripts\activate
@@ -350,6 +356,27 @@ http://127.0.0.1:8000/docs
 
 ---
 
+### 2b. Optional: Local LLM for Layer 4
+
+Layer 4 will use a local [Ollama](https://ollama.com) model for incident narratives
+if one is running:
+
+```bash
+ollama serve
+ollama pull mistral
+```
+
+**This is optional.** With no Ollama available, Layer 4 falls back to a
+deterministic rule-based analyst that produces the same set of fields (intent,
+summary, narrative, CVSS metric suggestions). The pipeline never fails because a
+model is missing — it degrades to explainable rules. Verify either path with:
+
+```bash
+pytest layer_4_ai_analysis/test_layer3_e2e.py -v
+```
+
+---
+
 ### 3. Set Up the Frontend
 
 Open a new terminal:
@@ -365,6 +392,46 @@ Open the frontend at:
 ```text
 http://localhost:3000
 ```
+
+`/` redirects to the incident dashboard at `/dashboard`.
+
+The dashboard proxies all API calls to the FastAPI backend through Next.js route
+handlers, defaulting to `http://127.0.0.1:8000`. Point it elsewhere with an
+environment variable:
+
+```bash
+NEXT_PUBLIC_SOC_API_URL=http://192.168.1.20:8000 npm run dev
+```
+
+---
+
+## Running the Test Suite
+
+```bash
+pytest -q
+```
+
+19 tests covering Layer 2 detection and suppression, the Layer 2 -> Layer 3 CIS
+integration, the Layer 4 rule-based fallback contract, and the Layer 6 response
+orchestrator / workflow / playbook evolution.
+
+---
+
+## Run the Whole Pipeline Offline
+
+To generate all layer outputs and seed the incident database without starting any
+server:
+
+```bash
+python dev_run.py
+```
+
+This reads `layer_1_feature_engineering/sample_logs.json` and writes
+`layer1_output.json`, `layer2_output.json`, `layer3_output.json`,
+`frontend_output.json`, `Frontend/public/frontend_output.json`, and
+`soc_incidents.db`. It completes in about one second and is idempotent — incident
+IDs are derived from log content, so re-running updates incidents in place
+instead of creating duplicates.
 
 ---
 
@@ -392,6 +459,7 @@ http://localhost:3000
 
 | Method   | Endpoint                             | Description                               |
 | -------- | ------------------------------------ | ----------------------------------------- |
+| `GET`    | `/`                                  | Service banner and endpoint index         |
 | `POST`   | `/run-pipeline`                      | Upload logs and run the full SOC pipeline |
 | `GET`    | `/api/incidents`                     | Get all stored incidents                  |
 | `GET`    | `/api/incidents/{event_id}`          | Get one incident by ID                    |
@@ -464,14 +532,36 @@ Planned improvements could include:
 * PostgreSQL database support
 * Authentication and role-based access control
 * SIEM integration
-* EDR integration
-* Firewall automation
-* Threat intelligence feed integration
-* MITRE ATT&CK mapping
+* EDR integration (automated host isolation rather than recommended isolation)
+* Firewall automation (automated blocking rather than recommended blocking)
+* Live threat intelligence feeds — the current feed is a local simulated file at
+  `layer_2_detection/mappings/ioc_feed.json`
+* Broader MITRE ATT&CK coverage — Layer 4 currently cites techniques for web
+  attack classes only
 * Analyst audit logs
 * Docker-based deployment
 * Cloud deployment support
-* Advanced model-backed incident analysis
+
+### Known Limitations
+
+Stated plainly, because they matter when reading the output:
+
+* **Detection is rule-based, not machine-learned.** Anomaly scoring uses
+  thresholds and field heuristics, not a trained model. This is a deliberate
+  trade-off: every verdict is explainable and reproducible.
+* **The IOC feed is simulated.** `layer_2_detection/mappings/ioc_feed.json` is a
+  local file of demo indicators, not a live commercial feed.
+* **Behavioural baselines are per-run.** There is no persistent user/host
+  baseline across pipeline invocations, so "rare source IP" is judged within the
+  batch being processed.
+* **`layer_6_response/response_layer/` is a forward-looking design.** The live
+  demo path is `layer_6_response/response_orchestrator.py`. The larger package
+  (HITL approval, ticketing, playbook evolution) is unit-tested against mocks but
+  is not wired into the pipeline and would need Elasticsearch, Redis and
+  PostgreSQL to run for real.
+* **`layer_3_cis/tuxSOC-layer_CIS/` is a vendored historical copy** of the CIS
+  extraction work, kept for the benchmark catalogs it produced. Nothing on the
+  live path imports it.
 
 ---
 

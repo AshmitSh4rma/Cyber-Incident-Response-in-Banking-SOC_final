@@ -6,9 +6,10 @@
       "source_ip": "192.168.1.100",
       "dest_ip": "10.0.0.5",
       "src_port": 0,
-      "dest_port": 0,
+      "dest_port": 22,
       "protocol": "tcp",
       "action": "port_scan",
+      "log_type": "network",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -18,7 +19,7 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "server-01",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
@@ -48,18 +49,16 @@
         "action": "port_scan",
         "affected_host": "server-01"
       },
-      "additional_fields": {
-        "log_type": "network",
-        "port": 22,
-        "affected_host": "server-01"
-      },
+      "additional_fields": {},
       "log_family": "network",
+      "declared_log_type": "network",
       "classification_scores": {
-        "network": 1,
+        "network": 2,
         "web": 0,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:00:01+00:00",
         "window_1m": "2026-04-07T10:00",
@@ -120,18 +119,18 @@
         "brute_force_detected": false,
         "exfiltration_detected": false,
         "lateral_movement_detected": false,
-        "unique_ports_seen": 0,
+        "unique_ports_seen": 1,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
       "network_traffic_features": {
         "traffic_direction": "east_west",
         "src_is_internal": true,
         "dst_is_internal": true,
         "bytes_ratio": 0.0,
-        "dest_port_service": "unknown",
-        "is_known_port": false,
+        "dest_port_service": "ssh",
+        "is_known_port": true,
         "is_high_risk_port": false,
         "has_tcp_flags": false,
         "tcp_flag_value": null,
@@ -150,6 +149,7 @@
         "protocol_anomaly_detected": false
       },
       "destination_ip": "",
+      "url": "",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -170,11 +170,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "port_scan"
+        ],
+        "mapped_pattern": "port_scan",
+        "severity": "medium",
+        "confidence": 0.58,
+        "reasoning": [
+          "Sequential port probing consistent with service discovery",
+          "Source IP appears unusual for this activity",
+          "Classified as port_scan"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -191,24 +197,34 @@
         "matched_iocs": []
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 2,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to port_scan"
+        ],
+        "adjusted_confidence": 0.66
       },
       "detection": {
         "label": "suspicious",
-        "threat_type": "unknown",
+        "threat_type": "port_scan",
         "severity": "medium",
-        "confidence": 0.3,
+        "confidence": 0.66,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Sequential port probing consistent with service discovery",
+          "Classified as port_scan",
+          "Threat analysis mapped event to port_scan"
         ]
       }
     },
@@ -217,9 +233,10 @@
       "source_ip": "203.0.113.55",
       "dest_ip": "10.0.0.8",
       "src_port": 0,
-      "dest_port": 0,
+      "dest_port": 443,
       "protocol": "https",
       "action": "beaconing",
+      "log_type": "network",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -229,7 +246,7 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "endpoint-23",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
@@ -259,18 +276,16 @@
         "action": "beaconing",
         "affected_host": "endpoint-23"
       },
-      "additional_fields": {
-        "log_type": "network",
-        "port": 443,
-        "affected_host": "endpoint-23"
-      },
+      "additional_fields": {},
       "log_family": "network",
+      "declared_log_type": "network",
       "classification_scores": {
-        "network": 1,
+        "network": 2,
         "web": 0,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:01:10+00:00",
         "window_1m": "2026-04-07T10:01",
@@ -331,18 +346,18 @@
         "brute_force_detected": false,
         "exfiltration_detected": false,
         "lateral_movement_detected": false,
-        "unique_ports_seen": 0,
+        "unique_ports_seen": 1,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
       "network_traffic_features": {
         "traffic_direction": "north_south",
         "src_is_internal": false,
         "dst_is_internal": true,
         "bytes_ratio": 0.0,
-        "dest_port_service": "unknown",
-        "is_known_port": false,
+        "dest_port_service": "https",
+        "is_known_port": true,
         "is_high_risk_port": false,
         "has_tcp_flags": false,
         "tcp_flag_value": null,
@@ -353,14 +368,15 @@
       },
       "network_protocol_features": {
         "protocol": "https",
-        "is_protocol_expected": true,
+        "is_protocol_expected": false,
         "is_deprecated_protocol": false,
         "is_tunneling_capable": true,
         "is_new_protocol_for_source": true,
         "unique_protocols_for_source": 1,
-        "protocol_anomaly_detected": false
+        "protocol_anomaly_detected": true
       },
       "destination_ip": "",
+      "url": "",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -381,11 +397,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "beaconing"
+        ],
+        "mapped_pattern": "beaconing",
+        "severity": "high",
+        "confidence": 0.72,
+        "reasoning": [
+          "Periodic outbound callbacks consistent with C2 beaconing",
+          "Source IP appears unusual for this activity",
+          "Classified as beaconing"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -396,30 +418,54 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "203.0.113.55",
+            "type": "ip",
+            "threat_type": "c2_server",
+            "confidence": 0.95,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to beaconing",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.9
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "unknown",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "beaconing",
+        "severity": "high",
+        "confidence": 0.9,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Periodic outbound callbacks consistent with C2 beaconing",
+          "Classified as beaconing",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to beaconing",
+          "IOC enrichment found matching indicators"
         ]
       }
     },
@@ -431,6 +477,7 @@
       "dest_port": 0,
       "protocol": null,
       "action": "suspicious_request",
+      "log_type": "web",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -440,12 +487,12 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "web-server-01",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
       "http_status_code": null,
-      "url_path": null,
+      "url_path": "/login?user=admin' OR '1'='1",
       "response_size": null,
       "request_size": null,
       "user_agent": null,
@@ -468,18 +515,16 @@
         "action": "suspicious_request",
         "affected_host": "web-server-01"
       },
-      "additional_fields": {
-        "log_type": "web",
-        "url": "/login?user=admin' OR '1'='1",
-        "affected_host": "web-server-01"
-      },
-      "log_family": "unknown",
+      "additional_fields": {},
+      "log_family": "web",
+      "declared_log_type": "web",
       "classification_scores": {
         "network": 0,
-        "web": 0,
+        "web": 2,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:02:20+00:00",
         "window_1m": "2026-04-07T10:02",
@@ -543,12 +588,36 @@
         "unique_ports_seen": 0,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
-      "feature_warnings": [
-        "log_family is unknown — family-specific features skipped"
-      ],
+      "web_http_features": {
+        "http_method": null,
+        "status_code": null,
+        "is_client_error": false,
+        "is_server_error": false,
+        "is_sensitive_method": false,
+        "url_path": "/login?user=admin' OR '1'='1",
+        "path_depth": 1,
+        "is_suspicious_path": true,
+        "is_bot_user_agent": false,
+        "error_rate": 0.0,
+        "avg_payload_size": 0.0,
+        "total_requests_seen": 1
+      },
+      "web_session_features": {
+        "session_key": "91.240.118.33",
+        "is_new_session": true,
+        "request_count": 1,
+        "unique_ips_in_session": 1,
+        "is_multi_ip_session": false,
+        "unique_agents_in_session": 0,
+        "is_agent_consistent": true,
+        "session_duration_seconds": 0.0,
+        "is_direct_deep_access": false,
+        "has_referrer": false
+      },
       "destination_ip": "",
+      "url": "/login?user=admin' OR '1'='1",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -569,11 +638,20 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "suspicious_web_access",
+          "web_attack"
+        ],
+        "mapped_pattern": "web_attack",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Request to a sensitive or unexpected endpoint",
+          "SQL injection payload detected in request",
+          "Sensitive endpoint accessed",
+          "Source IP appears unusual for this activity",
+          "Classified as web_attack"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -586,30 +664,56 @@
           ],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "91.240.118.33",
+            "type": "ip",
+            "threat_type": "web_attack_infrastructure",
+            "confidence": 0.92,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "unknown",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "web_attack",
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Request to a sensitive or unexpected endpoint",
+          "SQL injection payload detected in request",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
         ]
       }
     },
@@ -621,6 +725,7 @@
       "dest_port": 0,
       "protocol": null,
       "action": "web_attack",
+      "log_type": "web",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -630,12 +735,12 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "web-server-02",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
       "http_status_code": null,
-      "url_path": null,
+      "url_path": "/admin/upload.php",
       "response_size": null,
       "request_size": null,
       "user_agent": null,
@@ -658,18 +763,16 @@
         "action": "web_attack",
         "affected_host": "web-server-02"
       },
-      "additional_fields": {
-        "log_type": "web",
-        "url": "/admin/upload.php",
-        "affected_host": "web-server-02"
-      },
-      "log_family": "unknown",
+      "additional_fields": {},
+      "log_family": "web",
+      "declared_log_type": "web",
       "classification_scores": {
         "network": 0,
-        "web": 0,
+        "web": 2,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:03:30+00:00",
         "window_1m": "2026-04-07T10:03",
@@ -733,12 +836,36 @@
         "unique_ports_seen": 0,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
-      "feature_warnings": [
-        "log_family is unknown — family-specific features skipped"
-      ],
+      "web_http_features": {
+        "http_method": null,
+        "status_code": null,
+        "is_client_error": false,
+        "is_server_error": false,
+        "is_sensitive_method": false,
+        "url_path": "/admin/upload.php",
+        "path_depth": 2,
+        "is_suspicious_path": true,
+        "is_bot_user_agent": false,
+        "error_rate": 0.0,
+        "avg_payload_size": 0.0,
+        "total_requests_seen": 1
+      },
+      "web_session_features": {
+        "session_key": "185.199.110.153",
+        "is_new_session": true,
+        "request_count": 1,
+        "unique_ips_in_session": 1,
+        "is_multi_ip_session": false,
+        "unique_agents_in_session": 0,
+        "is_agent_consistent": true,
+        "session_duration_seconds": 0.0,
+        "is_direct_deep_access": false,
+        "has_referrer": false
+      },
       "destination_ip": "",
+      "url": "/admin/upload.php",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -759,11 +886,20 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "web_attack",
+          "suspicious_web_access"
+        ],
+        "mapped_pattern": "web_attack",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Request pattern consistent with web application attack",
+          "Request targets an uploadable or executable endpoint",
+          "Sensitive endpoint accessed",
+          "Source IP appears unusual for this activity",
+          "Classified as web_attack"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -776,30 +912,63 @@
           ],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 2,
+        "matched_iocs": [
+          {
+            "observable": "185.199.110.153",
+            "type": "ip",
+            "threat_type": "webshell_staging_host",
+            "confidence": 0.84,
+            "source": "simulated_ti_feed"
+          },
+          {
+            "observable": "/admin/upload.php",
+            "type": "url",
+            "threat_type": "webshell_upload_path",
+            "confidence": 0.87,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "unknown",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "web_attack",
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Request pattern consistent with web application attack",
+          "Request targets an uploadable or executable endpoint",
+          "Sensitive endpoint accessed",
+          "Classified as web_attack",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to web_attack",
+          "IOC enrichment found matching indicators"
         ]
       }
     },
@@ -811,6 +980,7 @@
       "dest_port": 0,
       "protocol": "telnet",
       "action": "credential_abuse",
+      "log_type": "iot",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -820,7 +990,7 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "iot-camera-01",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
@@ -848,17 +1018,16 @@
         "action": "credential_abuse",
         "protocol": "telnet"
       },
-      "additional_fields": {
-        "log_type": "iot",
-        "affected_host": "iot-camera-01"
-      },
-      "log_family": "network",
+      "additional_fields": {},
+      "log_family": "iot",
+      "declared_log_type": "iot",
       "classification_scores": {
         "network": 1,
         "web": 0,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:04:45+00:00",
         "window_1m": "2026-04-07T10:04",
@@ -922,33 +1091,36 @@
         "unique_ports_seen": 0,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
-      "network_traffic_features": {
-        "traffic_direction": "external",
-        "src_is_internal": false,
-        "dst_is_internal": false,
-        "bytes_ratio": 0.0,
-        "dest_port_service": "unknown",
-        "is_known_port": false,
-        "is_high_risk_port": false,
-        "has_tcp_flags": false,
-        "tcp_flag_value": null,
-        "is_syn_only": false,
-        "packet_count": 0,
-        "duration_ms": 0,
-        "bytes_per_packet": 0.0
+      "iot_device_features": {
+        "device_id": null,
+        "device_type": null,
+        "firmware_version": null,
+        "is_new_device": true,
+        "ip_change_detected": false,
+        "firmware_change_detected": false,
+        "new_destination_detected": false,
+        "suspicious_port_detected": false,
+        "is_known_iot_protocol": false,
+        "unique_ips_seen": 1,
+        "unique_destinations_seen": 1,
+        "total_device_events": 1
       },
-      "network_protocol_features": {
-        "protocol": "telnet",
-        "is_protocol_expected": true,
-        "is_deprecated_protocol": true,
-        "is_tunneling_capable": false,
-        "is_new_protocol_for_source": true,
-        "unique_protocols_for_source": 1,
-        "protocol_anomaly_detected": true
+      "iot_telemetry_features": {
+        "mqtt_topic": null,
+        "sensor_reading": null,
+        "reporting_interval_sec": 0.0,
+        "is_interval_anomalous": false,
+        "is_value_out_of_range": false,
+        "value_zscore": 0.0,
+        "is_value_spike": false,
+        "payload_injection_detected": false,
+        "unique_topics_seen": 0,
+        "sampling_interval": null
       },
       "destination_ip": "",
+      "url": "",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -969,11 +1141,19 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "credential_abuse",
+          "insecure_protocol_use"
+        ],
+        "mapped_pattern": "credential_abuse",
+        "severity": "high",
+        "confidence": 0.78,
+        "reasoning": [
+          "Credential use inconsistent with the established baseline",
+          "Cleartext management protocol 'telnet' in use",
+          "Source IP appears unusual for this activity",
+          "Classified as credential_abuse"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -984,30 +1164,55 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "192.0.2.45",
+            "type": "ip",
+            "threat_type": "iot_botnet_node",
+            "confidence": 0.88,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to credential_abuse",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.92
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "unknown",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "credential_abuse",
+        "severity": "high",
+        "confidence": 0.92,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Credential use inconsistent with the established baseline",
+          "Cleartext management protocol 'telnet' in use",
+          "Classified as credential_abuse",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to credential_abuse",
+          "IOC enrichment found matching indicators"
         ]
       }
     },
@@ -1019,6 +1224,7 @@
       "dest_port": 0,
       "protocol": null,
       "action": "lateral_movement",
+      "log_type": "network",
       "bytes_in": 0,
       "bytes_out": 0,
       "packets": 0,
@@ -1028,7 +1234,7 @@
       "event_type": "unknown",
       "severity": "low",
       "user": null,
-      "hostname": null,
+      "hostname": "internal-db-01",
       "flagged": false,
       "raw_source": "uploaded_log",
       "http_method": null,
@@ -1056,17 +1262,16 @@
         "action": "lateral_movement",
         "affected_host": "internal-db-01"
       },
-      "additional_fields": {
-        "log_type": "network",
-        "affected_host": "internal-db-01"
-      },
-      "log_family": "unknown",
+      "additional_fields": {},
+      "log_family": "network",
+      "declared_log_type": "network",
       "classification_scores": {
         "network": 0,
         "web": 0,
         "iot": 0
       },
-      "classification_confidence": "low",
+      "classification_confidence": "high",
+      "classification_basis": "declared_log_type",
       "time_windows": {
         "timestamp_parsed": "2026-04-07T10:05:55+00:00",
         "window_1m": "2026-04-07T10:05",
@@ -1130,12 +1335,34 @@
         "unique_ports_seen": 0,
         "failed_login_count": 0,
         "avg_bytes_out": 0.0,
-        "unique_hosts_seen": 0
+        "unique_hosts_seen": 1
       },
-      "feature_warnings": [
-        "log_family is unknown — family-specific features skipped"
-      ],
+      "network_traffic_features": {
+        "traffic_direction": "east_west",
+        "src_is_internal": true,
+        "dst_is_internal": true,
+        "bytes_ratio": 0.0,
+        "dest_port_service": "unknown",
+        "is_known_port": false,
+        "is_high_risk_port": false,
+        "has_tcp_flags": false,
+        "tcp_flag_value": null,
+        "is_syn_only": false,
+        "packet_count": 0,
+        "duration_ms": 0,
+        "bytes_per_packet": 0.0
+      },
+      "network_protocol_features": {
+        "protocol": "UNKNOWN",
+        "is_protocol_expected": true,
+        "is_deprecated_protocol": false,
+        "is_tunneling_capable": false,
+        "is_new_protocol_for_source": true,
+        "unique_protocols_for_source": 1,
+        "protocol_anomaly_detected": false
+      },
       "destination_ip": "",
+      "url": "",
       "statistical_features": {
         "z_score": 0.0,
         "event_count_window": 1
@@ -1156,11 +1383,17 @@
         ]
       },
       "threat_analysis": {
-        "matched_patterns": [],
-        "mapped_pattern": "unknown",
-        "severity": "low",
-        "confidence": 0.0,
-        "reasoning": []
+        "matched_patterns": [
+          "lateral_movement"
+        ],
+        "mapped_pattern": "lateral_movement",
+        "severity": "critical",
+        "confidence": 0.8,
+        "reasoning": [
+          "Internal host-to-host movement outside normal access paths",
+          "Source IP appears unusual for this activity",
+          "Classified as lateral_movement"
+        ]
       },
       "ioc_enrichment": {
         "observables": {
@@ -1171,30 +1404,54 @@
           "urls": [],
           "hashes": []
         },
-        "matched": false,
-        "risk_level": "low",
-        "match_count": 0,
-        "matched_iocs": []
+        "matched": true,
+        "risk_level": "high",
+        "match_count": 1,
+        "matched_iocs": [
+          {
+            "observable": "10.10.1.50",
+            "type": "ip",
+            "threat_type": "compromised_internal_host",
+            "confidence": 0.86,
+            "source": "simulated_ti_feed"
+          }
+        ]
       },
       "correlation_analysis": {
-        "correlated": false,
-        "correlation_strength": "none",
-        "signal_count": 0,
-        "supporting_signals": [],
-        "reasoning": [],
-        "adjusted_confidence": 0.3
+        "correlated": true,
+        "correlation_strength": "medium",
+        "signal_count": 4,
+        "supporting_signals": [
+          "threat_pattern_identified",
+          "high_threat_confidence",
+          "ioc_match_found",
+          "elevated_ioc_risk"
+        ],
+        "reasoning": [
+          "Threat analysis mapped event to lateral_movement",
+          "IOC enrichment found matching indicators"
+        ],
+        "adjusted_confidence": 0.93
       },
       "detection": {
-        "label": "suspicious",
-        "threat_type": "unknown",
-        "severity": "medium",
-        "confidence": 0.3,
+        "label": "malicious",
+        "threat_type": "lateral_movement",
+        "severity": "critical",
+        "confidence": 0.93,
         "triggered_engines": [
-          "anomaly"
+          "anomaly",
+          "threat_analysis",
+          "ioc_enrichment",
+          "correlation"
         ],
         "reasoning": [
           "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "User behavior appears unusual",
+          "Internal host-to-host movement outside normal access paths",
+          "Classified as lateral_movement",
+          "IOC enrichment contributed supporting threat context",
+          "Threat analysis mapped event to lateral_movement",
+          "IOC enrichment found matching indicators"
         ]
       }
     }

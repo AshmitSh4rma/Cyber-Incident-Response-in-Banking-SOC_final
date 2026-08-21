@@ -1,29 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { backendUrl } from "@/lib/config";
 
+/**
+ * Forwards simulated incidents to the FastAPI backend so they are persisted in
+ * SQLite alongside pipeline-generated incidents.
+ *
+ * This used to write directly over Frontend/public/frontend_output.json, which
+ * could clobber real pipeline output and left the dashboard reading from two
+ * sources that disagreed. The database is the single source of truth.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
     if (!body || !Array.isArray(body.events)) {
-      return NextResponse.json({ error: "Invalid payload — expected { events: [] }" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid payload — expected { events: [] }" },
+        { status: 400 },
+      );
     }
 
-    const output = {
-      status: "success",
-      total_events: body.events.length,
-      events: body.events,
-    };
+    const res = await fetch(backendUrl("/api/simulate"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events: body.events }),
+    });
 
-    // Write to Frontend/public/frontend_output.json (served statically by Next.js)
-    const outputPath = path.join(process.cwd(), "public", "frontend_output.json");
-    await writeFile(outputPath, JSON.stringify(output, null, 2), "utf-8");
+    const data = await res.json().catch(() => ({}));
 
-    return NextResponse.json({ status: "success", events: body.events.length });
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: (data as { message?: string })?.message ?? `Backend returned ${res.status}` },
+        { status: res.status },
+      );
+    }
+
+    return NextResponse.json(data);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[simulate route] Error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error("[simulate proxy] Error:", msg);
+    return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

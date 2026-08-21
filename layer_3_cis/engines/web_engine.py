@@ -6,6 +6,7 @@ def process_web_event(entry: dict) -> dict:
     enriched = deepcopy(entry)
     raw_event = entry.get("raw_event", {}) or {}
     threat = entry.get("engine_2_threat_intel", {}) or {}
+    correlation = entry.get("engine_3_correlation", {}) or {}
     detection = entry.get("detection", {}) or {}
 
     # Pull from MORE fields, not just mitre_technique_name
@@ -35,8 +36,6 @@ def process_web_event(entry: dict) -> dict:
     if any(w in combined_signal for w in ["dos", "flood", "rate", "exhaustion"]):
         query_tags.extend(["availability", "rate_limiting", "dos_protection"])
         section_hint.append("availability")
-
-    # ... rest of function unchanged
 
     timeline = correlation.get("attack_timeline", []) or []
     if timeline:

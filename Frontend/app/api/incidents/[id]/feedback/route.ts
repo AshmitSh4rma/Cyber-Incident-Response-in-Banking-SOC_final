@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { backendUrl } from "@/lib/config";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest, context: Params) {
       analyst_notes: body.analyst_notes ?? "",
     };
 
-    const res = await fetch(`http://127.0.0.1:8000/api/incidents/${id}/feedback`, {
+    const res = await fetch(backendUrl(`/api/incidents/${id}/feedback`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(feedbackPayload),
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest, context: Params) {
   const { id } = await context.params;
 
   try {
-    const res = await fetch(`http://127.0.0.1:8000/api/incidents/${id}/feedback`, {
+    const res = await fetch(backendUrl(`/api/incidents/${id}/feedback`), {
       cache: "no-store",
     });
 

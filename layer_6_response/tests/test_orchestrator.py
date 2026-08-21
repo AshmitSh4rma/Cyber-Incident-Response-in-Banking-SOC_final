@@ -1,15 +1,13 @@
 import pytest
 import datetime
-from response_layer.models import Incident, Severity, Playbook, Action
+from response_layer.models import Severity, Playbook, Action
+
+from ._helpers import make_incident
 from response_layer.orchestrator import ActionOrchestrator
 
 @pytest.mark.asyncio
 async def test_orchestrator_success():
-    incident = Incident(
-        id="INC-1", summary="Test", severity=Severity.HIGH, confidence=0.9,
-        source_ip="1.1.1.1", affected_user="user1", asset_id="asset1",
-        mitre_tactics=[], anomaly_score=0.9, asset_criticality="High"
-    )
+    incident = make_incident(Severity.HIGH)
     
     pb = Playbook(
         id="PB-1",
@@ -32,11 +30,8 @@ async def test_orchestrator_success():
 
 @pytest.mark.asyncio
 async def test_orchestrator_rollback():
-    incident = Incident(
-        id="INC-1", summary="Test", severity=Severity.HIGH, confidence=0.9,
-        source_ip="1.1.1.1", affected_user="user1", asset_id="fail_user", # Triggers mock failure logic
-        mitre_tactics=[], anomaly_score=0.9, asset_criticality="High"
-    )
+    # asset_id "fail_user" trips the deliberate failure path in the mock IAM executor.
+    incident = make_incident(Severity.HIGH, asset_id="fail_user")
     
     pb = Playbook(
         id="PB-1",

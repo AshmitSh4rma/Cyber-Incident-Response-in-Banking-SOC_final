@@ -121,7 +121,9 @@ def save_incident_with_cursor(cursor, event, overwrite=True):
     affected_user = dashboard.get("affected_user") or raw_event.get("affected_user") or raw_event.get("user") or "anonymous"
     affected_host = raw_event.get("affected_host") or raw_event.get("host") or raw_event.get("hostname") or "workstation"
     source_ip = dashboard.get("source_ip") or raw_event.get("source_ip") or "N/A"
-    status = final_report.get("status") or event.get("status") or "open"
+    # Normalise casing — seed data uses "Open" while pipeline output uses "open",
+    # and the dashboard filters on the raw value in some views.
+    status = str(final_report.get("status") or event.get("status") or "open").lower()
     
     payload = json.dumps(event)
     

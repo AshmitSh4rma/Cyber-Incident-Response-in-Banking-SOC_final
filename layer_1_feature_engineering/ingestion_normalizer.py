@@ -1,19 +1,30 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
+
+
+def _utc_now_iso() -> str:
+    """Current UTC time as an ISO-8601 string with a trailing Z."""
+    return datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+
+
+def _utc_from_epoch(value) -> str:
+    """Epoch seconds as an ISO-8601 UTC string with a trailing Z."""
+    return datetime.fromtimestamp(value, tz=timezone.utc).replace(tzinfo=None).isoformat() + "Z"
 
 
 FIELD_ALIASES = {
     "timestamp": ["timestamp", "time", "@timestamp", "TimeGenerated", "CreationTime"],
     "source_ip": ["source_ip", "src_ip", "client_ip", "IpAddress", "ClientIP", "ip"],
     "dest_ip": ["dest_ip", "destination_ip", "dst_ip", "server_ip", "DestinationIP"],
+    "log_type": ["log_type", "logType", "LogType", "event_source", "channel"],
     "src_port": ["src_port", "source_port", "SourcePort"],
-    "dest_port": ["dest_port", "destination_port", "dst_port", "DestinationPort"],
+    "dest_port": ["dest_port", "destination_port", "dst_port", "port", "DestinationPort", "Port"],
     "protocol": ["protocol", "Protocol"],
     "action": ["action", "Action", "ResultStatus", "Status"],
     "event_type": ["event_type", "Operation", "OperationName", "ActivityDisplayName", "EventName"],
     "severity": ["severity", "Severity", "RiskLevel"],
-    "user": ["user", "username", "UserId", "UserPrincipalName", "AccountName"],
-    "hostname": ["hostname", "host", "DeviceName", "Computer", "HostName"],
+    "user": ["user", "username", "affected_user", "UserId", "UserPrincipalName", "AccountName"],
+    "hostname": ["hostname", "host", "affected_host", "DeviceName", "Computer", "HostName"],
     "flagged": ["flagged"],
     "raw_source": ["raw_source", "source", "Source", "Workload", "LogSource"],
 
@@ -25,8 +36,8 @@ FIELD_ALIASES = {
     "icmp_type": ["icmp_type", "IcmpType"],
 
     "http_method": ["http_method", "HttpMethod", "Method"],
-    "http_status_code": ["http_status_code", "HttpStatusCode", "StatusCode", "ResponseCode"],
-    "url_path": ["url_path", "UrlPath", "Uri", "URL", "RequestUri", "SourceRelativeUrl"],
+    "http_status_code": ["http_status_code", "http_status", "status_code", "HttpStatusCode", "StatusCode", "ResponseCode"],
+    "url_path": ["url_path", "url", "uri", "request_path", "UrlPath", "Uri", "URL", "RequestUri", "SourceRelativeUrl"],
     "response_size": ["response_size", "ResponseSize"],
     "request_size": ["request_size", "RequestSize"],
     "user_agent": ["user_agent", "UserAgent"],
@@ -80,15 +91,15 @@ def safe_bool(value, default=False):
 
 def normalize_timestamp(value: Any) -> str:
     if not value:
-        return datetime.utcnow().isoformat() + "Z"
+        return _utc_now_iso()
 
     if isinstance(value, (int, float)):
-        return datetime.utcfromtimestamp(value).isoformat() + "Z"
+        return _utc_from_epoch(value)
 
     if isinstance(value, str):
         value = value.strip()
         if not value:
-            return datetime.utcnow().isoformat() + "Z"
+            return _utc_now_iso()
 
         if value.endswith("Z"):
             return value
@@ -97,9 +108,9 @@ def normalize_timestamp(value: Any) -> str:
             dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
             return dt.isoformat().replace("+00:00", "Z")
         except ValueError:
-            return datetime.utcnow().isoformat() + "Z"
+            return _utc_now_iso()
 
-    return datetime.utcnow().isoformat() + "Z"
+    return _utc_now_iso()
 
 
 def get_used_keys(normalized_aliases: Dict[str, List[str]], record: Dict[str, Any]) -> set:
@@ -141,6 +152,7 @@ def normalize_record(record: Dict[str, Any]) -> Dict[str, Any]:
         "dest_port": safe_int(first_present(record, FIELD_ALIASES["dest_port"]), 0),
         "protocol": first_present(record, FIELD_ALIASES["protocol"]),
         "action": first_present(record, FIELD_ALIASES["action"], "unknown"),
+        "log_type": first_present(record, FIELD_ALIASES["log_type"]),
 
         "bytes_in": safe_int(first_present(record, FIELD_ALIASES["bytes_in"]), 0),
         "bytes_out": safe_int(first_present(record, FIELD_ALIASES["bytes_out"]), 0),

@@ -39,6 +39,67 @@ SIGNATURE_MAP = {
 
 
 # ─────────────────────────────────────────
+# DECLARED TYPE MAP
+# Many collectors state the log type outright (log_type / event_source).
+# When they do, that beats guessing from field presence — so we trust it and
+# only fall back to signature scoring when the declared type is absent or
+# names something we have no engine for.
+#
+# auth and endpoint telemetry has no dedicated Layer 1 engine, so it routes to
+# the network engine (it is host-to-host traffic at heart) while the identity
+# engine picks up the credential side separately.
+# ─────────────────────────────────────────
+
+DECLARED_FAMILY_MAP = {
+    "network":  "network",
+    "netflow":  "network",
+    "firewall": "network",
+    "ids":      "network",
+    "ips":      "network",
+    "dns":      "network",
+    "auth":     "network",
+    "identity": "network",
+    "endpoint": "network",
+    "process":  "network",
+    "host":     "network",
+    "web":      "web",
+    "http":     "web",
+    "https":    "web",
+    "waf":      "web",
+    "proxy":    "web",
+    "apache":   "web",
+    "nginx":    "web",
+    "iot":      "iot",
+    "ot":       "iot",
+    "scada":    "iot",
+    "mqtt":     "iot",
+}
+
+
+def _declared_family(log: dict) -> tuple[str | None, str | None]:
+    """
+    Returns (declared_type, mapped_family). Either may be None.
+    Looks at the normalized log_type first, then the raw record, so it works
+    whether or not ingestion carried the field through.
+    """
+    raw_event = log.get("raw_event") or {}
+    additional = log.get("additional_fields") or {}
+
+    for candidate in (
+        log.get("log_type"),
+        raw_event.get("log_type"),
+        additional.get("log_type"),
+        log.get("event_source"),
+        raw_event.get("event_source"),
+    ):
+        if isinstance(candidate, str) and candidate.strip():
+            declared = candidate.strip().lower()
+            return declared, DECLARED_FAMILY_MAP.get(declared)
+
+    return None, None
+
+
+# ─────────────────────────────────────────
 # SCORER
 # Iterates over each family's fields and tallies the score
 # ─────────────────────────────────────────
@@ -104,13 +165,28 @@ def classify_log(log: dict) -> dict:
     scores = _score_log(log)
     total_score = sum(scores.values())
 
+    declared_type, declared_family = _declared_family(log)
+
+    # The collector told us what this is and we have an engine for it — trust it.
+    if declared_family:
+        return {
+            **log,
+            "log_family": declared_family,
+            "declared_log_type": declared_type,
+            "classification_scores": scores,
+            "classification_confidence": "high",
+            "classification_basis": "declared_log_type",
+        }
+
     # If nothing matched at all
     if total_score == 0:
         return {
             **log,
             "log_family": "unknown",
+            "declared_log_type": declared_type,
             "classification_scores": scores,
-            "classification_confidence": "low"
+            "classification_confidence": "low",
+            "classification_basis": "no_signal",
         }
 
     # Find the winning family
@@ -139,6 +215,8 @@ def classify_log(log: dict) -> dict:
     return {
         **log,
         "log_family": winning_family,
+        "declared_log_type": declared_type,
         "classification_scores": scores,
-        "classification_confidence": confidence
+        "classification_confidence": confidence,
+        "classification_basis": "field_signature",
     }
