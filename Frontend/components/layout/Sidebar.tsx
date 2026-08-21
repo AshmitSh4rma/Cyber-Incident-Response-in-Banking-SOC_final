@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   UploadCloud,
   ChevronRight,
+  GitBranch,
   Wifi,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,9 +21,17 @@ const navItems = [
     activeGlow: "shadow-[0_0_16px_rgba(6,182,212,0.18)]",
   },
   {
+    href: "/campaigns",
+    label: "Campaigns",
+    sublabel: "Correlated attack chains",
+    icon: GitBranch,
+    accent: "from-red-500 to-orange-500",
+    activeGlow: "shadow-[0_0_16px_rgba(239,68,68,0.18)]",
+  },
+  {
     href: "/upload",
-    label: "Ingest JSON",
-    sublabel: "Upload & simulate events",
+    label: "Attack Simulation",
+    sublabel: "Replay scenarios through the pipeline",
     icon: UploadCloud,
     accent: "from-violet-500 to-purple-500",
     activeGlow: "shadow-[0_0_16px_rgba(139,92,246,0.18)]",

@@ -7,6 +7,8 @@ and who needs to know. Deliberately deterministic — the same incident always
 yields the same playbook, so two analysts on different shifts respond the same way.
 """
 
+import re
+
 # Priority is driven by CVSS severity, which is itself derived from the CVSS 3.1
 # base score in Layer 5. P1 = act now, P2 = same shift, P3 = queue for review.
 _PRIORITY_BY_SEVERITY = {
@@ -173,6 +175,87 @@ def _escalation_note(priority: str, threat_type: str, severity: str) -> str:
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# HUMAN-IN-THE-LOOP GATING
+#
+# Some containment is safe to automate and some is not. In a bank, isolating the
+# host that clears card transactions, or disabling the service account the
+# payments job runs as, can cause a worse outage than the intrusion being
+# contained — and an outage on a regulated service is itself a reportable event.
+#
+# So every containment step is classified. Reversible, narrow-blast-radius
+# actions can execute automatically; anything that can take a production service
+# down is queued for an analyst to approve. The gate is on BLAST RADIUS, not on
+# severity: a critical incident does not earn the right to break production.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Verbs identifying actions that can interrupt a live service.
+#
+# Matched on WORD BOUNDARIES, not as bare substrings: "lock" as a substring
+# matches "Block", which wrongly gated "block the attacker IP at the edge" —
+# the safest, narrowest action in the whole playbook.
+_DISRUPTIVE_VERBS = (
+    "isolate",
+    "isolating",
+    "suspend",
+    "disable",
+    "revoke",
+    "lock",
+    "lockout",
+    "quarantine",
+    "power",
+    "reimage",
+    "shut",
+    "terminate",
+    "rotate",
+    "reset",
+)
+
+_DISRUPTIVE_RE = re.compile(r"\b(" + "|".join(_DISRUPTIVE_VERBS) + r")\b", re.IGNORECASE)
+
+# Assets whose interruption is customer-facing. Matched loosely against the
+# affected host so a demo dataset and a real CMDB both work.
+_CRITICAL_ASSET_HINTS = ("db-core", "core-app", "payments", "ledger", "swift", "atm", "card", "prod")
+
+
+def _classify_containment(step: str, affected_host: str, affected_user: str) -> dict:
+    """Decide whether a containment step can auto-execute or needs sign-off."""
+    disruptive = bool(_DISRUPTIVE_RE.search(step))
+
+    host = str(affected_host or "").lower()
+    critical_asset = any(hint in host for hint in _CRITICAL_ASSET_HINTS)
+
+    if disruptive and critical_asset:
+        return {
+            "action": step,
+            "execution": "requires_approval",
+            "blast_radius": "service-affecting",
+            "rationale": (
+                f"Would interrupt {affected_host}, which serves customer-facing banking "
+                "functions. An unplanned outage here is itself a reportable operational "
+                "incident, so a human decides."
+            ),
+        }
+
+    if disruptive:
+        return {
+            "action": step,
+            "execution": "requires_approval",
+            "blast_radius": "host-affecting",
+            "rationale": (
+                "Interrupts access for a host or account. Reversible, but disruptive "
+                "enough to warrant analyst confirmation."
+            ),
+        }
+
+    return {
+        "action": step,
+        "execution": "auto",
+        "blast_radius": "contained",
+        "rationale": "Narrow and reversible — safe to apply without waiting for sign-off.",
+    }
+
+
 def run_response(event: dict) -> dict:
     """
     Build the response block for one enriched incident.
@@ -230,10 +313,23 @@ def run_response(event: dict) -> dict:
         or f"Incident classified as {threat_type.replace('_', ' ')} at {severity} severity."
     )
 
+    dashboard = event.get("dashboard") or {}
+    raw_event = event.get("raw_event") or {}
+    affected_host = dashboard.get("affected_host") or raw_event.get("affected_host") or ""
+    affected_user = dashboard.get("affected_user") or raw_event.get("affected_user") or ""
+
+    gated = [_classify_containment(step, affected_host, affected_user) for step in containment_steps]
+    auto_steps = [g for g in gated if g["execution"] == "auto"]
+    approval_steps = [g for g in gated if g["execution"] == "requires_approval"]
+
     return {
         "priority": priority,
         "recommended_actions": recommended_actions,
         "containment_steps": containment_steps,
+        "containment_plan": gated,
+        "auto_executable": len(auto_steps),
+        "awaiting_approval": len(approval_steps),
+        "requires_human_approval": bool(approval_steps),
         "analyst_notes": analyst_notes,
         "playbook": threat_type if threat_type in _PLAYBOOKS else "generic",
         "escalation": _escalation_note(priority, threat_type, severity),

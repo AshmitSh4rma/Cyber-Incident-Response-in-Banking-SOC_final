@@ -1,23 +1,138 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   SENTRA design tokens
+
+   One dark operations theme, committed to deliberately: this is a console meant
+   to be read at 3am on a wall display, so it paints its own ground rather than
+   adapting to the host.
+
+   Colour carries two separate jobs and they are kept apart:
+     - cyan  = interactive / brand. Links, focus, the current selection.
+     - ramp  = severity only (critical -> low). Never decorative.
+     - amber = one meaning only: an action is waiting on a human.
+   ───────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  --background: #0f172a;
-  --foreground: #cbd5f5;
+  /* surfaces, darkest to lightest */
+  --ground: #080c12;
+  --surface: #0f1620;
+  --surface-raised: #16202c;
+  --surface-sunk: #060a0f;
+
+  --rule: #223040;
+  --rule-soft: #18222e;
+
+  --text: #dfe7f2;
+  --text-muted: #8697ad;
+  --text-faint: #5b6b80;
+
+  /* interactive */
+  --accent: #22d3ee;
+  --accent-dim: #0e7490;
+  --accent-glow: rgba(34, 211, 238, 0.14);
+
+  /* severity ramp — semantic, not decorative */
+  --sev-critical: #f2555a;
+  --sev-high: #f89b3c;
+  --sev-medium: #e3c34a;
+  --sev-low: #4bb3d4;
+  --sev-benign: #3f9e78;
+
+  /* the one thing amber means */
+  --gate: #f0a63c;
+  --gate-bg: rgba(240, 166, 60, 0.1);
+
+  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--ground);
+  --color-surface: var(--surface);
+  --color-foreground: var(--text);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-inter), sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-.mono {
-  font-family: var(--font-jetbrains-mono), monospace;
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mono,
+.tabular {
+  font-family: var(--font-mono-stack);
+}
+
+/* Digits that sit in columns must not jitter as values change. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Uppercase micro-labels need air to stay legible at small sizes. */
+.eyebrow {
+  font-family: var(--font-mono-stack);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Wide content scrolls inside its own box; the page body never does. */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-sunk);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e4055;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The pulse used on live/critical indicators. Kept subtle — a console full of
+   animation is harder to read, not more alive. */
+@keyframes sentra-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.pulse-dot {
+  animation: sentra-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

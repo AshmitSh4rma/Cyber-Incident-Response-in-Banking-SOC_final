@@ -5,7 +5,6 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 DB_FILE = Path(__file__).resolve().parent / "soc_incidents.db"
-JSON_FILE = Path(__file__).resolve().parent / "frontend_output.json"
 
 def get_db_connection():
     conn = sqlite3.connect(str(DB_FILE))
@@ -43,6 +42,33 @@ def init_db():
             created_at    TEXT NOT NULL
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaigns (
+            campaign_id     TEXT PRIMARY KEY,
+            name            TEXT,
+            severity        TEXT,
+            incident_count  INTEGER,
+            furthest_stage  TEXT,
+            progression_pct INTEGER,
+            first_seen      TEXT,
+            last_seen       TEXT,
+            payload         TEXT,
+            updated_at      TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS response_approvals (
+            approval_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_id     TEXT NOT NULL,
+            action       TEXT NOT NULL,
+            state        TEXT NOT NULL DEFAULT 'pending',
+            requested_at TEXT NOT NULL,
+            decided_at   TEXT,
+            decided_by   TEXT,
+            note         TEXT
+        )
+    """)
     conn.commit()
 
     # ── Schema Migration ─────────────────────────────────────────────────────
@@ -55,54 +81,8 @@ def init_db():
         print("[db_manager] Migration: added analyst_label column to incidents table.")
     # ─────────────────────────────────────────────────────────────────────────
 
-    # Always seed mock/standard incidents to ensure they are available in the database
-    print("[db_manager] Seeding/Syncing standard mock incidents...")
-    seed_db(cursor)
     conn.commit()
     conn.close()
-
-def seed_db(cursor):
-    events = []
-    
-    # 1. Seed from mock_incidents_seed.json
-    seed_file = Path(__file__).resolve().parent / "mock_incidents_seed.json"
-    if os.path.exists(seed_file):
-        try:
-            with open(seed_file, "r", encoding="utf-8") as f:
-                mock_events = json.load(f)
-                if isinstance(mock_events, list):
-                    events.extend(mock_events)
-        except Exception as e:
-            print(f"[db_manager] Error reading mock_incidents_seed.json: {e}")
-            
-    # 2. Seed from frontend_output.json
-    if os.path.exists(JSON_FILE):
-        try:
-            with open(JSON_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                file_events = []
-                if isinstance(data, dict) and "events" in data:
-                    file_events = data["events"]
-                elif isinstance(data, list):
-                    file_events = data
-                events.extend(file_events)
-        except Exception as e:
-            print(f"[db_manager] Error reading frontend_output.json: {e}")
-            
-    if not events:
-        print("[db_manager] No events found for seeding. Skipping.")
-        return
-
-    # De-duplicate by event_id
-    deduped_events = {}
-    for event in events:
-        eid = event.get("event_id")
-        if eid:
-            deduped_events[eid] = event
-
-    for event in deduped_events.values():
-        save_incident_with_cursor(cursor, event, overwrite=False)
-    print(f"[db_manager] Successfully seeded {len(deduped_events)} incidents.")
 
 def save_incident_with_cursor(cursor, event, overwrite=True):
     event_id = event.get("event_id")
@@ -301,3 +281,136 @@ def get_feedback_for_incident(event_id: str) -> list[dict]:
     conn.close()
 
     return [dict(row) for row in rows]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAMPAIGNS (Layer 2.5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def replace_campaigns(campaigns: list[dict]) -> int:
+    """
+    Replace the stored campaign set.
+
+    Campaigns are a whole-batch conclusion, not a per-incident fact: adding one
+    incident can merge two campaigns or split one. Recomputing and replacing is
+    the only coherent option — incrementally patching rows would leave stale
+    groupings behind.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM campaigns")
+    now = datetime.now(timezone.utc).isoformat()
+    for c in campaigns:
+        cursor.execute(
+            """
+            INSERT INTO campaigns
+                (campaign_id, name, severity, incident_count, furthest_stage,
+                 progression_pct, first_seen, last_seen, payload, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                c.get("campaign_id"),
+                c.get("name"),
+                c.get("severity"),
+                c.get("incident_count"),
+                c.get("furthest_stage"),
+                c.get("progression_pct"),
+                c.get("first_seen"),
+                c.get("last_seen"),
+                json.dumps(c),
+                now,
+            ),
+        )
+    conn.commit()
+    conn.close()
+    return len(campaigns)
+
+
+def get_all_campaigns() -> list[dict]:
+    conn = get_db_connection()
+    rows = conn.execute(
+        "SELECT payload FROM campaigns ORDER BY progression_pct DESC, incident_count DESC"
+    ).fetchall()
+    conn.close()
+    out = []
+    for row in rows:
+        try:
+            out.append(json.loads(row["payload"]))
+        except Exception:
+            pass
+    return out
+
+
+def get_campaign(campaign_id: str) -> dict | None:
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT payload FROM campaigns WHERE campaign_id = ?", (campaign_id,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return None
+    try:
+        return json.loads(row["payload"])
+    except Exception:
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HUMAN-IN-THE-LOOP RESPONSE APPROVALS (Layer 6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def request_approval(event_id: str, action: str) -> int:
+    """Queue a containment action for analyst sign-off. Returns the approval id."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO response_approvals (event_id, action, state, requested_at)
+        VALUES (?, ?, 'pending', ?)
+        """,
+        (event_id, action, datetime.now(timezone.utc).isoformat()),
+    )
+    approval_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return approval_id
+
+
+def decide_approval(approval_id: int, approve: bool, decided_by: str, note: str = "") -> bool:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE response_approvals
+        SET state = ?, decided_at = ?, decided_by = ?, note = ?
+        WHERE approval_id = ? AND state = 'pending'
+        """,
+        (
+            "approved" if approve else "rejected",
+            datetime.now(timezone.utc).isoformat(),
+            decided_by or "analyst",
+            note,
+            approval_id,
+        ),
+    )
+    changed = cursor.rowcount > 0
+    conn.commit()
+    conn.close()
+    return changed
+
+
+def get_approvals(event_id: str | None = None, state: str | None = None) -> list[dict]:
+    conn = get_db_connection()
+    sql = "SELECT * FROM response_approvals"
+    clauses, params = [], []
+    if event_id:
+        clauses.append("event_id = ?")
+        params.append(event_id)
+    if state:
+        clauses.append("state = ?")
+        params.append(state)
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY approval_id DESC"
+    rows = conn.execute(sql, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

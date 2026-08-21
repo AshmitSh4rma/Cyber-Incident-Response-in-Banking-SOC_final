@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EventPipeline, getAllMockPipelines, readSimulatedEvents, clearSimulatedEvents } from "@/lib/mockData";
+import { EventPipeline, readSimulatedEvents, clearSimulatedEvents } from "@/lib/mockData";
 import { severityTone } from "@/lib/utils";
 import { usePipeline } from "@/hooks/usePipeline";
 import {
@@ -30,7 +30,9 @@ import {
   Lock,
   LockOpen,
   Zap,
+  GitBranch,
 } from "lucide-react";
+import MetricsHeader from "@/components/soc/MetricsHeader";
 import TemporalSparkline from "@/components/visuals/TemporalSparkline";
 import EventFrequencyBars from "@/components/visuals/EventFrequencyBars";
 
@@ -88,6 +90,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showNoise, setShowNoise] = useState(false);
   const [expandedIncidents, setExpandedIncidents] = useState<Record<string, boolean>>({});
   const [localStatus, setLocalStatus] = useState<Record<string, string>>({});
 
@@ -153,8 +156,10 @@ export default function DashboardPage() {
   };
 
   const incidents = useMemo(() => {
-    const mock = getAllMockPipelines();
-    const base = jsonPipelines.length > 0 ? jsonPipelines : simPipelines.length > 0 ? simPipelines : mock;
+    // Live backend first, then any locally-held simulation results. Deliberately
+    // NO mock fallback: a security console that invents alerts to look busy
+    // teaches the analyst to distrust everything on the screen.
+    const base = jsonPipelines.length > 0 ? jsonPipelines : simPipelines;
     let list = base;
     if (uploadedPipeline) list = [uploadedPipeline, ...base.filter((i) => i.event_id !== uploadedPipeline.event_id)];
     return list;
@@ -162,6 +167,11 @@ export default function DashboardPage() {
 
   const filteredIncidents = useMemo(() => {
     return incidents.filter((inc) => {
+      // Benign and analyst-suppressed events are kept in the store (and counted
+      // in the metrics header) but stay out of the working queue unless the
+      // analyst explicitly filters for them.
+      const verdict = String(inc.detection?.label ?? "").toLowerCase();
+      if (!showNoise && (verdict === "benign" || verdict === "suppressed")) return false;
       const q = searchQuery.toLowerCase();
       const matchesSearch =
         !q ||
@@ -179,7 +189,7 @@ export default function DashboardPage() {
         (statusFilter === "closed" && status === "closed");
       return matchesSearch && matchesSeverity && matchesStatus;
     });
-  }, [incidents, searchQuery, severityFilter, statusFilter, localStatus]);
+  }, [incidents, searchQuery, severityFilter, statusFilter, localStatus, showNoise]);
 
   const summary = useMemo(() => {
     const total = incidents.length;
@@ -215,6 +225,9 @@ export default function DashboardPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
+      {/* ── Value metrics, computed from stored state ─────────────── */}
+      <MetricsHeader />
+
       {/* ── Header ────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 p-6 shadow-2xl">
         {/* Subtle top accent line */}
@@ -300,6 +313,18 @@ export default function DashboardPage() {
                 active={statusFilter}
                 onChange={setStatusFilter}
               />
+              <button
+                onClick={() => setShowNoise((v) => !v)}
+                title="Benign and analyst-suppressed events are excluded from the working queue by default"
+                className={[
+                  "rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition",
+                  showNoise
+                    ? "border-slate-600 bg-slate-700/50 text-slate-200"
+                    : "border-slate-800/60 bg-slate-950/60 text-slate-500 hover:text-slate-300",
+                ].join(" ")}
+              >
+                {showNoise ? "Hiding nothing" : "Filtered"}
+              </button>
             </div>
           </div>
 
@@ -397,6 +422,30 @@ export default function DashboardPage() {
                               </span>
                             )}
                             <span className="font-mono text-[10px] text-slate-600">{id}</span>
+                            {incident.campaign?.campaign_id && (
+                              <Link
+                                href={`/campaigns/${incident.campaign.campaign_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 rounded border border-red-900/50 bg-red-950/25 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-300 transition hover:bg-red-950/50"
+                                title={`Part of ${incident.campaign.name} — ${incident.campaign.incident_count} correlated alerts reaching ${incident.campaign.furthest_stage}`}
+                              >
+                                <GitBranch className="h-2.5 w-2.5" />
+                                {incident.campaign.campaign_id}
+                              </Link>
+                            )}
+                            {incident.mitre_attack?.primary?.technique_id && (
+                              <span className="font-mono rounded border border-cyan-900/50 bg-cyan-950/25 px-1.5 py-0.5 text-[9px] text-cyan-300">
+                                {incident.mitre_attack.primary.technique_id}
+                              </span>
+                            )}
+                            {incident.response?.requires_human_approval && (
+                              <span
+                                className="rounded border border-amber-800/50 bg-amber-950/30 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-400"
+                                title={`${incident.response.awaiting_approval} containment action(s) need analyst approval`}
+                              >
+                                approval
+                              </span>
+                            )}
                           </div>
 
                           {/* Title */}

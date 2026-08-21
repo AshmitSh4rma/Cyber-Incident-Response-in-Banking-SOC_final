@@ -81,6 +81,7 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
             "threat_analysis": {},
             "ioc_enrichment": {},
             "correlation_analysis": {},
+            "mitre_attack": {},
             "cis": {},
             "ai_analysis": {},
             "cvss": {},
@@ -142,6 +143,10 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
         
         # Correlation Analysis
         formatted["correlation_analysis"] = event_dict.get("correlation_analysis", {})
+
+        # MITRE ATT&CK — stamped by Layer 2, needed by the campaign correlator
+        # and rendered on the incident view.
+        formatted["mitre_attack"] = event_dict.get("mitre_attack", {}) or {}
         
         # CIS Benchmark
         # Layer 3 hands us {framework, retrieval_query, matched_benchmarks: [...]}.

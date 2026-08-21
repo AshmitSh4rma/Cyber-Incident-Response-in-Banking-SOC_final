@@ -4,6 +4,7 @@ from layer_2_detection.engine_3_ioc_enrichment.ioc_orchestrator import run_ioc_e
 from layer_2_detection.engine_4_correlation.correlation_orchestrator import run_correlation
 from layer_2_detection.detection_fusion import fuse_detection
 from layer_2_detection.layer1_adapter import adapt_layer1_event
+from layer_2_detection.mitre_mapper import enrich_event as enrich_mitre
 from layer_2_detection.suppression_checker import (
     load_suppression_rules,
     is_suppressed,
@@ -21,7 +22,7 @@ def run_detection(event: dict, suppression_rules: list[dict] | None = None) -> d
     suppressed, suppress_reason = is_suppressed(event, suppression_rules)
     if suppressed:
         print(f"[detection_orchestrator] Event suppressed: {suppress_reason}")
-        return build_suppressed_detection(event, suppress_reason)
+        return enrich_mitre(build_suppressed_detection(event, suppress_reason))
     # ──────────────────────────────────────────────────────────────────────────
 
     event = run_anomaly(event)
@@ -29,6 +30,10 @@ def run_detection(event: dict, suppression_rules: list[dict] | None = None) -> d
     event = run_ioc_enrichment(event)
     event = run_correlation(event)
     event = fuse_detection(event)
+
+    # Stamp ATT&CK once the verdict is known — downstream layers and the
+    # campaign correlator both read from it.
+    event = enrich_mitre(event)
     return event
 
 

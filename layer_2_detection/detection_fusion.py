@@ -34,11 +34,17 @@ def fuse_detection(event: dict) -> dict:
     # ----------------------------
     # Final label
     # ----------------------------
-    if adjusted_confidence >= 0.85:
+    # Precision matters more than recall here. The anomaly engine returns a small
+    # non-zero score for almost every event (an unfamiliar source IP alone earns
+    # 0.3), so "anomaly_score > 0" as a trigger labels ordinary traffic
+    # suspicious and buries the real findings. Require either a NAMED threat
+    # pattern or a genuinely high anomaly score.
+    if adjusted_confidence >= 0.85 and threat_type != "unknown":
         label = "malicious"
-    elif adjusted_confidence >= 0.35:
+    elif threat_type != "unknown" and adjusted_confidence >= 0.35:
         label = "suspicious"
-    elif anomaly_score > 0 or threat_type != "unknown":
+    elif anomaly_score >= 0.60:
+        # Nothing matched a signature, but the behaviour itself is a clear outlier.
         label = "suspicious"
     else:
         label = "benign"
@@ -96,11 +102,14 @@ def fuse_detection(event: dict) -> dict:
     elif correlation_strength == "medium":
         final_severity = raise_severity(final_severity, "medium")
 
-    # 6. Malicious label floor
+    # 6. Label floor. Benign events keep low severity — flooring them to medium
+    # is what turns a clean queue into 46% false positives.
     if label == "malicious":
         final_severity = raise_severity(final_severity, "high")
     elif label == "suspicious":
         final_severity = raise_severity(final_severity, "medium")
+    else:
+        final_severity = "low"
 
     # remove duplicate reasoning while preserving order
     deduped_reasoning = []

@@ -12,7 +12,11 @@ import AlertSummaryPanel from "@/components/cards/AlertSummaryPanel";
 import IncidentNavTabs from "@/components/shared/IncidentNavTabs";
 import CardBlock from "@/components/cards/CardBlock";
 import CISCard from "@/components/cards/CISCard";
+import AttackCard from "@/components/soc/AttackCard";
+import ContainmentPlan from "@/components/soc/ContainmentPlan";
+import CampaignBanner from "@/components/soc/CampaignBanner";
 import SeverityGauge from "@/components/visuals/SeverityGauge";
+import { Download } from "lucide-react";
 
 import ThreatFlow from "@/components/visuals/ThreatFlow";
 import { getPipelineById, EventPipeline } from "@/lib/mockData";
@@ -135,6 +139,23 @@ export default function IncidentPage() {
 				/>
 			</motion.div>
 
+			{/* Campaign context + audit export.
+			    The campaign banner comes before the tabs because knowing this
+			    alert is step three of an intrusion changes how everything below
+			    it should be read. */}
+			<motion.div variants={itemVariants} className="mx-auto max-w-[1600px] space-y-3 px-6 pt-4">
+				<CampaignBanner pipeline={pipeline} />
+				<div className="flex justify-end">
+					<a
+						href={`/api/incidents/${incidentId}/report`}
+						className="inline-flex items-center gap-1.5 rounded border border-cyan-800/60 bg-cyan-950/30 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 transition hover:bg-cyan-950/50"
+					>
+						<Download className="h-3.5 w-3.5" />
+						Export audit record
+					</a>
+				</div>
+			</motion.div>
+
 			{/* Navigation Tabs */}
 			<motion.div variants={itemVariants}>
 				<IncidentNavTabs incidentId={incidentId} />
@@ -176,6 +197,10 @@ export default function IncidentPage() {
 					</motion.div>
 
 					<motion.div variants={itemVariants}>
+						<AttackCard pipeline={pipeline} />
+					</motion.div>
+
+					<motion.div variants={itemVariants}>
 						<ThreatFlow 
 							sourceIp={pipeline?.dashboard?.source_ip}
 							threatType={pipeline?.detection?.threat_type}
@@ -209,6 +234,10 @@ export default function IncidentPage() {
 
 					<motion.div variants={itemVariants}>
 						<CVSSCard pipeline={pipeline} />
+					</motion.div>
+
+					<motion.div variants={itemVariants}>
+						<ContainmentPlan pipeline={pipeline} incidentId={incidentId} />
 					</motion.div>
 				</div>
 			</motion.div>

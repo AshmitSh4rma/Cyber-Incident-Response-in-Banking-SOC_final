@@ -557,6 +557,74 @@ export default function UploadPage() {
 
   const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// ── Full banking intrusion ──────────────────────────────────────────────────
+  // The flagship scenario: 25 logs spanning a real intrusion (recon -> web
+  // exploit -> webshell -> lateral movement -> C2 -> exfiltration), plus benign
+  // business traffic and a scheduled vulnerability scan. Correlation should
+  // reconstruct three separate campaigns from it and leave the benign traffic
+  // alone. Same pipeline path as every other scenario.
+  async function runFullScenario() {
+    setSelected(null);
+    setPhase("pipeline");
+    setLogLines([]);
+    setLayerStates(PIPELINE_LAYERS.map(() => "waiting"));
+    setStatusMsg("Loading the multi-stage banking intrusion…");
+
+    let advancing = true;
+    const advance = (async () => {
+      for (let idx = 0; idx < PIPELINE_LAYERS.length && advancing; idx++) {
+        setLayerStates((prev) => prev.map((s, i) => (i === idx ? "running" : s)));
+        setStatusMsg(`${PIPELINE_LAYERS[idx].icon} ${PIPELINE_LAYERS[idx].label}: ${PIPELINE_LAYERS[idx].sub}…`);
+        await sleep(300);
+        if (!advancing) break;
+        setLayerStates((prev) => prev.map((s, i) => (i === idx ? "done" : s)));
+      }
+    })();
+
+    try {
+      const logsRes = await fetch("/demo_attack_scenario.json", { cache: "no-store" });
+      if (!logsRes.ok) throw new Error("Could not load the scenario file");
+      const logs = await logsRes.json();
+      setEventCount(Array.isArray(logs) ? logs.length : 0);
+
+      const form = new FormData();
+      form.append(
+        "file",
+        new Blob([JSON.stringify(logs)], { type: "application/json" }),
+        "banking-intrusion.json",
+      );
+
+      const res = await fetch("/api/run-pipeline", { method: "POST", body: form });
+      const result = await res.json().catch(() => ({}));
+
+      advancing = false;
+      await advance;
+
+      if (!res.ok) throw new Error(result?.message ?? `Pipeline returned ${res.status}`);
+
+      setLayerStates(PIPELINE_LAYERS.map(() => "done"));
+      clearSimulatedEvents();
+      setHistoryCount(0);
+      setPhase("done");
+
+      const campaigns = Number(result?.campaigns ?? 0);
+      setStatusMsg(
+        `✅ ${result?.events ?? 0} alerts scored in ${result?.seconds ?? "?"}s — ` +
+        `${campaigns} campaign${campaigns === 1 ? "" : "s"} correlated — opening campaigns…`,
+      );
+      await sleep(1600);
+      window.location.href = "/campaigns";
+    } catch (err) {
+      advancing = false;
+      await advance;
+      setPhase("error");
+      setStatusMsg(
+        `⚠ ${err instanceof Error ? err.message : String(err)}. Start the backend with ` +
+        `"uvicorn api_server:app --port 8000" and retry.`,
+      );
+    }
+  }
+
   async function runSim(attack: AttackConfig) {
     setSelected(attack);
     setPhase("logs");
@@ -726,6 +794,38 @@ export default function UploadPage() {
           </div>
         </div>
       </div>
+
+      {/* Flagship scenario — the one to demo */}
+      {phase === "idle" && (
+        <button
+          onClick={runFullScenario}
+          className="group relative w-full overflow-hidden rounded-xl border border-red-900/50 bg-gradient-to-br from-red-950/30 via-slate-900 to-slate-900 p-6 text-left transition hover:border-red-800/70"
+        >
+          <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-red-500/5 blur-3xl" />
+          <div className="relative flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 space-y-1.5">
+              <p className="eyebrow text-red-400">Full scenario · 25 logs</p>
+              <h2 className="text-lg font-bold text-slate-100">
+                Multi-stage banking intrusion
+              </h2>
+              <p className="max-w-2xl text-xs leading-relaxed text-slate-400">
+                Reconnaissance against the DMZ, a SQL injection, a webshell, lateral
+                movement into the core banking database, C2 beaconing and a 486&nbsp;MB
+                exfiltration — mixed with normal customer traffic and a scheduled
+                vulnerability scan. Watch correlation separate one real breach from two
+                harmless clusters.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-lg bg-red-500 px-5 py-2.5 text-xs font-bold text-slate-950 transition group-hover:bg-red-400">
+              Run the intrusion →
+            </span>
+          </div>
+        </button>
+      )}
+
+      {phase === "idle" && (
+        <p className="eyebrow px-1">Or replay a single technique</p>
+      )}
 
       {/* Attack Grid */}
       {phase === "idle" && (

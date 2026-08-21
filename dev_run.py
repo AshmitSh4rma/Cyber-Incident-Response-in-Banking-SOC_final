@@ -1,12 +1,33 @@
+"""
+Run the whole pipeline offline and write every artifact the dashboard reads.
+
+Useful for two things: seeding a demo without starting a server, and seeing the
+per-layer timing breakdown on real data.
+
+    python dev_run.py                      # the multi-stage attack scenario
+    python dev_run.py path/to/logs.json    # any JSON or JSONL log file
+"""
+
 import json
 import logging
+import sys
+import time
 from pathlib import Path
 
-from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
-from layer_2_detection.detection_orchestrator import run_detection_batch
-from layer_3_cis.orchestrator import run_layer3
+from layer_1_feature_engineering.ingestion_orchestrator import (
+    process_json_text,
+    process_jsonl_text,
+)
+from pipeline import run_full_pipeline
+from soc_metrics import compute_metrics
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
+
+BASE_DIR = Path(__file__).resolve().parent
+
+# The flagship demo input: a coherent banking intrusion plus benign traffic and a
+# scheduled scan, so campaign correlation has something real to reconstruct.
+DEFAULT_INPUT = BASE_DIR / "demo_attack_scenario.json"
 
 
 def _write_json(path: Path, data) -> None:
@@ -15,80 +36,81 @@ def _write_json(path: Path, data) -> None:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def main():
-    base_dir = Path(__file__).resolve().parent
+def _parse(content: str) -> list[dict]:
+    try:
+        return process_json_text(content)
+    except ValueError:
+        return process_jsonl_text(content)
 
-    input_file = base_dir / "layer_1_feature_engineering" / "sample_logs.json"
-    layer1_output_path = base_dir / "layer1_output.json"
-    layer2_output_path = base_dir / "layer2_output.json"
-    layer3_output_path = base_dir / "layer3_output.json"
-    root_frontend_output_path = base_dir / "frontend_output.json"
-    frontend_public_output_path = base_dir / "Frontend" / "public" / "frontend_output.json"
 
-    print("Reading sample logs...")
-    with open(input_file, "r", encoding="utf-8") as f:
-        content = f.read()
+def main() -> int:
+    input_file = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_INPUT
+    if not input_file.exists():
+        print(f"Input file not found: {input_file}")
+        return 1
 
-    layer1_result = []
-    print("Running Layer 1...")
-    normalized_records = process_json_text(content)
-    print("Input logs count:", len(normalized_records))
-
-    from layer_1_feature_engineering.feature_orchestrator import run_feature_engineering
-
-    for rec in normalized_records:
-        layer1_result.append(run_feature_engineering(rec))
-
-    _write_json(layer1_output_path, layer1_result)
-
-    print("Running Layer 2...")
-    layer2_output = run_detection_batch(layer1_result)
-    _write_json(layer2_output_path, layer2_output)
-
-    print("Running Layer 3...")
-    layer3_output = run_layer3(layer2_output)
-    _write_json(layer3_output_path, layer3_output)
-
-    print("Running Frontend Formatter...")
-    from frontend_formatter import format_pipeline_for_frontend
-
-    frontend_output = format_pipeline_for_frontend(
-        parsed_logs=None,
-        layer1_output=layer1_result,
-        layer2_output=layer2_output,
-        layer3_output=layer3_output,
-    )
-
-    print("Enriching with AI Analysis (Parallel), CVSS, and Response...")
-    from layer_4_ai_analysis.incident_report_builder import run_layer4
-    from layer_5_cvss.cvss_orchestrator import run_cvss
-    from layer_6_response.response_orchestrator import run_response
-
-    enriched_events = run_layer4(frontend_output["events"])
-
-    for event in enriched_events:
-        event["cvss"] = run_cvss(event["ai_analysis"])
-        event["response"] = run_response(event)
-
-    frontend_output["events"] = enriched_events
-
-    _write_json(root_frontend_output_path, frontend_output)
-    _write_json(frontend_public_output_path, frontend_output)
-
-    # Save to SQLite Database
-    print("Saving to SQLite database...")
-    from db_manager import init_db, save_incident
+    # Schema first: Layer 2 reads the analyst suppression list during detection,
+    # so the tables must exist before the pipeline runs, not after it.
+    from db_manager import init_db
     init_db()
-    for event in enriched_events:
-        save_incident(event)
 
-    print("Pipeline completed gracefully! Check the output files:")
-    print(f"- {layer1_output_path}")
-    print(f"- {layer2_output_path}")
-    print(f"- {layer3_output_path}")
-    print(f"- {root_frontend_output_path}")
-    print(f"- {frontend_public_output_path}")
+    print(f"Reading {input_file.name} ...")
+    records = _parse(input_file.read_text(encoding="utf-8"))
+    print(f"  {len(records)} log records")
+
+    print("Running pipeline (L1 -> L2 -> L2.5 -> L3 -> L4 -> L5 -> L6) ...")
+    started = time.perf_counter()
+    output = run_full_pipeline(records)
+    elapsed = time.perf_counter() - started
+
+    events = output["events"]
+    campaigns = output["campaigns"]
+
+    # Persist. The database is the source of truth the API serves from; the JSON
+    # copies are the static fallback the dashboard can read with no backend.
+    from db_manager import save_incident, replace_campaigns
+
+    for event in events:
+        save_incident(event)
+    replace_campaigns(campaigns)
+
+    _write_json(BASE_DIR / "frontend_output.json", output)
+    _write_json(BASE_DIR / "Frontend" / "public" / "frontend_output.json", output)
+
+    metrics = compute_metrics(events, campaigns, feedback=[], pipeline_seconds=elapsed)
+    _write_json(BASE_DIR / "Frontend" / "public" / "soc_metrics.json", metrics)
+
+    # ── Report ───────────────────────────────────────────────────────────────
+    from collections import Counter
+
+    labels = Counter(e["detection"].get("label") for e in events)
+    sevs = Counter(e["detection"].get("severity") for e in events)
+
+    print()
+    print(f"Completed in {elapsed:.3f}s")
+    print(f"  verdicts   : {dict(labels)}")
+    print(f"  severities : {dict(sevs)}")
+    print()
+    print(f"Campaign correlation found {len(campaigns)} campaign(s):")
+    for c in campaigns:
+        chain = " -> ".join(s["stage"] for s in c["kill_chain"])
+        print(f"  {c['campaign_id']}  [{c['severity']:8s}] {c['incident_count']:2d} alerts  "
+              f"{c['progression_pct']:3d}% progression")
+        print(f"           {c['name']}")
+        print(f"           {chain}")
+    print()
+    con = metrics["consolidation"]
+    print(f"Consolidation: {con['headline']}")
+    print(f"Analyst time saved (modelled): {metrics['time']['hours_saved']}h")
+    print()
+    print("Per-layer timing (seconds):")
+    for stage, secs in output["timing"].items():
+        print(f"  {stage:22s} {secs}")
+    print()
+    print("Wrote frontend_output.json, Frontend/public/frontend_output.json,")
+    print("      Frontend/public/soc_metrics.json, soc_incidents.db")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

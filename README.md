@@ -1,583 +1,255 @@
-# Cyber Incident Response in Banking SOC
+# SENTRA — Cyber Incident Response for Banking SOCs
 
-A full-stack **Security Operations Center (SOC) incident response platform** designed for banking-style cyber incident workflows.
+Raw security telemetry in. A scored, control-mapped, playbook-ready incident out —
+with the CIS control it violated, the ATT&CK technique it maps to, and a
+defensible CVSS 3.1 score attached.
 
-The system takes raw security logs, processes them through a multi-layer SOC pipeline, detects suspicious activity, maps incidents to CIS benchmark controls, generates security recommendations, prepares CVSS scoring context, recommends response actions, and displays everything in an analyst-friendly dashboard.
+Then the part that matters most: **it works out which of those alerts are actually
+the same intrusion.**
 
----
-
-## Overview
-
-Banking environments generate large volumes of security telemetry from networks, web applications, identity systems, endpoints, databases, and cloud infrastructure. SOC analysts often need to manually connect these signals, identify threats, assess impact, and decide the correct response action.
-
-This project solves that problem by building a structured incident response pipeline that converts raw logs into actionable SOC intelligence.
-
-The platform helps answer key SOC questions:
-
-* What happened?
-* Which user, IP, host, or service was affected?
-* Is the event suspicious or malicious?
-* What type of threat does it represent?
-* Which CIS benchmark or security control is relevant?
-* What is the likely business and technical impact?
-* What severity score should be assigned?
-* What should the SOC team do next?
-
----
-
-## What This Project Solves
-
-This project focuses on reducing manual SOC triage effort by automating the core stages of incident analysis and response.
-
-It helps with:
-
-* Log ingestion and normalization
-* Feature extraction from raw events
-* Threat and anomaly detection
-* IOC and correlation analysis
-* CIS benchmark recommendation
-* CIS-based remediation guidance
-* CVSS-style severity scoring
-* Response playbook recommendation
-* Analyst-friendly dashboard visualization
-* Incident storage, review, and feedback tracking
-
-The goal is to simulate how a banking SOC can move from raw telemetry to structured incident decisions.
-
----
-
-## Key Features
-
-* Multi-layer SOC pipeline architecture
-* FastAPI backend for log upload and incident APIs
-* Next.js frontend dashboard
-* SQLite incident database
-* Feature engineering for network, web, identity, IoT, and behavioral signals
-* Detection layer with anomaly, threat-pattern, IOC, and correlation engines
-* CIS benchmark mapping and remediation guidance
-* Single-purpose AI recommendation agent for CIS and CVSS handoff
-* CVSS-style scoring and severity classification
-* Response playbook recommendation layer
-* Analyst feedback and action tracking
-* Sample incidents and generated output for demo use
-
----
-
-## Agentic Component
-
-The project includes a focused agentic layer called the:
-
-## SENTRA CIS–CVSS Advisor Agent
-
-Unlike a generic chatbot, this agent performs one practical SOC function:
-
-> It takes the detection output and CIS benchmark mapping, generates a CIS-based security recommendation, and prepares structured CVSS scoring inputs for the next pipeline layer.
-
-The agent helps bridge the gap between detection, security control mapping, and severity assessment.
-
-### Agent Responsibilities
-
-* Read the detected threat and supporting signals
-* Identify the relevant CIS benchmark or control
-* Generate a remediation recommendation
-* Explain why the benchmark applies
-* Prepare CVSS metric suggestions
-* Forward structured context to the CVSS scoring layer
-
-This keeps the system agentic through actual pipeline behavior rather than visual gimmicks.
-
----
-
-## Architecture
-
-```mermaid
-flowchart TD
-    A[Raw Logs / Uploaded JSON] --> B[FastAPI Backend]
-    B --> C[Layer 1: Feature Engineering]
-    C --> D[Layer 2: Detection]
-    D --> E[Layer 3: CIS Benchmark Mapping]
-    E --> F[SENTRA CIS-CVSS Advisor Agent]
-    F --> G[Layer 5: CVSS Scoring]
-    G --> H[Layer 6: Response Recommendation]
-    H --> I[Frontend Formatter]
-    I --> J[(SQLite Incident Database)]
-    J --> K[Next.js SOC Dashboard]
-    K --> L[Analyst Review / Feedback / Actions]
-    L --> J
+```
+25 raw log records  →  4 investigations  →  1 active breach at Exfiltration
 ```
 
 ---
 
-## Layer-by-Layer Pipeline
+## The problem
 
-### Layer 1: Feature Engineering
+An intrusion does not arrive as an intrusion. It arrives as a dozen unrelated
+alerts across different hosts and hours, and the expensive part of an analyst's
+job is realising they are one thing.
 
-This layer takes raw logs and converts them into structured security events.
+Meanwhile the clock is legal, not discretionary:
 
-It performs:
+| Regime | Deadline | From |
+| --- | --- | --- |
+| EU DORA | **4 hours** | classifying an ICT incident as major |
+| India CERT-In | **6 hours** | noticing the incident |
+| US OCC / Fed / FDIC | **36 hours** | determining a notification incident occurred |
+| US SEC Item 1.05 | **4 business days** | determining materiality |
 
-* Log parsing
-* Field normalization
-* Timestamp normalization
-* Log type classification
-* Temporal feature extraction
-* Behavioral feature extraction
-* Network feature extraction
-* Web feature extraction
-* Identity feature extraction
-* IoT feature extraction
-
-The output is passed to the detection engine.
+Every one of those clocks starts at a *determination*. Determination is triage.
+Triage is the bottleneck.
 
 ---
 
-### Layer 2: Detection
+## What it does
 
-This layer determines whether an event is benign, suspicious, or malicious.
+Seven stages. Each is independently testable, and data flows strictly forward.
 
-It performs:
+| Layer | Function | Output |
+| --- | --- | --- |
+| **L1** | Feature engineering — normalise heterogeneous formats, classify the log family, extract temporal / behavioural / statistical / network / web / IoT / identity features | normalised event + feature blocks |
+| **L2** | Detection — anomaly scoring, threat-pattern matching, IOC enrichment, correlation, fused into one verdict. Analyst-feedback suppression runs *before* any engine | verdict · threat type · severity · confidence · reasoning |
+| **L2** | MITRE ATT&CK mapping — technique and tactic per detection | `T1190` · Initial Access · lifecycle position |
+| **L2.5** | **Campaign correlation** — groups alerts into intrusions and reports lifecycle progression | campaigns · kill chains · linkage evidence |
+| **L3** | CIS benchmark mapping against real catalogs (Cisco ASA / IOS-XE 16 & 17 / IOS-XR 7 / NX-OS / Firepower, plus a web application catalog) | control ID · rationale · audit procedure · remediation |
+| **L4** | Analysis agent (LangGraph) — narrative, intent, technique naming, CVSS metric proposal. Deterministic fallback when no model is present | intent · narrative · CVSS handoff |
+| **L5** | CVSS 3.1 scoring — metric mapping, impact mapping, scoring, validation, using the published equations | base score · severity band · vector string |
+| **L6** | Response playbook + **human-in-the-loop gate** — containment split by blast radius | priority · auto actions · gated actions · escalation |
 
-* Anomaly detection
-* Threat pattern matching
-* IOC enrichment
-* Observable extraction
-* Correlation analysis
-* Suppression rule checks
-* Final detection fusion
+### Campaign correlation is the interesting bit
 
-The output includes:
+Naive correlation groups by shared source IP. That misses the most important hop
+in any real intrusion — once an attacker owns a host, *that host* becomes the
+source of the next alert:
 
-* Detection label
-* Severity
-* Confidence score
-* Threat type
-* Supporting signals
-* Reasoning
-
----
-
-### Layer 3: CIS Benchmark Mapping
-
-This layer maps detected incidents to relevant CIS benchmark controls and security recommendations.
-
-It provides:
-
-* CIS benchmark ID
-* Security framework
-* Control title
-* Control description
-* Remediation guidance
-
-This helps connect technical detections to recognized security best practices.
-
----
-
-### Agent Layer: CIS–CVSS Advisor
-
-This layer acts as a focused recommendation agent between CIS mapping and CVSS scoring.
-
-It provides:
-
-* CIS-based recommendation
-* Recommendation rationale
-* Matched benchmark context
-* CVSS metric handoff
-* Downstream readiness status
-
-This allows the next layers to work with structured, explainable security context.
-
----
-
-### Layer 5: CVSS Scoring
-
-This layer estimates incident severity using CVSS-style logic.
-
-It provides:
-
-* Base score
-* Severity rating
-* CVSS vector string
-* Exploitability mapping
-* Impact mapping
-
-This helps prioritize incidents based on risk.
-
----
-
-### Layer 6: Response Recommendation
-
-This layer recommends what the SOC team should do next.
-
-It provides:
-
-* Response priority
-* Containment steps
-* Recommended actions
-* Playbook-style response guidance
-
-Example response actions include:
-
-* Block suspicious source IP
-* Review exposed firewall rules
-* Enable IDS alerts
-* Isolate affected host
-* Reset user credentials
-* Escalate to SOC Tier-2
-
----
-
-## Folder Structure
-
-```text
-Cyber-Incident-Response-in-Banking-SOC_final/
-|
-|-- Frontend/
-|   |-- app/
-|   |-- components/
-|   |-- hooks/
-|   |-- lib/
-|   |-- public/
-|
-|-- layer_1_feature_engineering/
-|   |-- engine_1_temporal/
-|   |-- engine_2_behavioral/
-|   |-- engine_3_statistical/
-|   |-- engine_4_network/
-|   |-- engine_5_web/
-|   |-- engine_6_iot/
-|   |-- engine_7_identity/
-|
-|-- layer_2_detection/
-|   |-- engine_1_anomaly/
-|   |-- engine_2_threat_analysis/
-|   |-- engine_3_ioc_enrichment/
-|   |-- engine_4_correlation/
-|   |-- mappings/
-|
-|-- layer_3_cis/
-|   |-- engines/
-|   |-- mappings/
-|   |-- tuxSOC-layer_CIS/
-|
-|-- layer_4_ai_analysis/
-|   |-- agent/
-|
-|-- layer_5_cvss/
-|   |-- engine_1_metric_mapping/
-|   |-- engine_2_impact_mapping/
-|   |-- engine_3_scoring/
-|   |-- engine_4_validation/
-|   |-- mappings/
-|
-|-- layer_6_response/
-|   |-- response_layer/
-|   |-- tests/
+```
+alert A:  203.0.113.55   →  dmz-web-01      SQL injection      (Initial Access)
+alert B:  dmz-web-01     →  core-app-02     lateral movement   (Lateral Movement)
+alert C:  core-app-02    →  db-core-01      lateral movement
+alert D:  db-core-01     →  203.0.113.55    486 MB outbound    (Exfiltration)
 ```
 
+A's victim is B's attacker. Chaining on that turns four unrelated-looking alerts
+into one story with a direction of travel.
+
+Two guards keep it honest, both regression-tested:
+
+- **A scan is not a compromise.** The chain only extends from an incident that
+  reached Initial Access or beyond. Without that gate, a scheduled vulnerability
+  scan chains onto everything its targets later did — and an authorised scan ends
+  up inside a breach campaign.
+- **Shared infrastructure is not shared intent.** Grouping on "same asset
+  targeted" bridges every unrelated cluster into one useless mega-campaign,
+  because in a real network everything touches the same servers.
+
+### The human-in-the-loop gate
+
+In a bank, isolating the host that clears card transactions can cause a worse
+outage than the intrusion — and an outage on a regulated service is itself a
+reportable event. So containment is split by **blast radius, not severity**: a
+critical verdict does not earn the right to break production.
+
+```
+Blocking an attacker IP at the edge      →  auto      (contained, reversible)
+Isolating db-core-01                     →  approval  (service-affecting)
+Disabling the payments service account   →  approval  (service-affecting)
+```
+
+Roughly 65% of containment actions auto-execute on the demo dataset; the rest wait
+for a human who is told exactly why they were asked.
+
 ---
 
-## Tech Stack
-
-### Backend
-
-* Python
-* FastAPI
-* SQLite
-* Pydantic
-* Uvicorn
-
-### Frontend
-
-* Next.js
-* React
-* TypeScript
-* Tailwind CSS
-
-### Security Pipeline
-
-* Rule-based detection
-* Anomaly scoring
-* IOC enrichment
-* CIS benchmark mapping
-* CIS–CVSS recommendation agent
-* CVSS-style scoring
-* Response playbook logic
-
----
-
-## How to Run the Project
-
-### 1. Clone the Repository
+## Quick start
 
 ```bash
-git clone https://github.com/atharvbellikar/Cyber-Incident-Response-in-Banking-SOC_final.git
-cd Cyber-Incident-Response-in-Banking-SOC_final
-```
-
----
-
-### 2. Set Up the Backend
-
-Create a virtual environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate it on Linux or macOS:
-
-```bash
-source .venv/bin/activate
-```
-
-Or on Windows:
-
-```bash
-.\.venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
+# Backend
+python -m venv .venv && source .venv/bin/activate    # Windows: .\.venv\Scripts\activate
 pip install -r requirements.txt
+uvicorn api_server:app --reload --port 8000          # docs at /docs
+
+# Frontend (new terminal)
+cd Frontend && npm install && npm run dev            # http://localhost:3000
 ```
 
-Start the backend server:
+`/` redirects to the dashboard. The shipped `soc_incidents.db` already contains a
+processed scenario, so the dashboard has data on first load.
+
+### Run the pipeline offline
 
 ```bash
-uvicorn api_server:app --reload --host 127.0.0.1 --port 8000
+python dev_run.py                       # the multi-stage banking intrusion
+python dev_run.py path/to/your.json     # any JSON or JSONL log file
 ```
 
-Backend API documentation will be available at:
+Prints the verdict spread, the campaigns it reconstructed, the consolidation
+ratio, and per-layer timing. Completes in about 0.15 s on the 25-record scenario
+and is idempotent — incident IDs derive from log content, so re-running updates
+incidents in place instead of duplicating them.
 
-```text
-http://127.0.0.1:8000/docs
-```
-
----
-
-### 2b. Optional: Local LLM for Layer 4
-
-Layer 4 will use a local [Ollama](https://ollama.com) model for incident narratives
-if one is running:
+### Tests
 
 ```bash
-ollama serve
-ollama pull mistral
+pytest -q        # 49 tests
 ```
 
-**This is optional.** With no Ollama available, Layer 4 falls back to a
-deterministic rule-based analyst that produces the same set of fields (intent,
-summary, narrative, CVSS metric suggestions). The pipeline never fails because a
-model is missing — it degrades to explainable rules. Verify either path with:
+### Optional: local LLM for Layer 4
 
 ```bash
-pytest layer_4_ai_analysis/test_layer3_e2e.py -v
+ollama serve && ollama pull mistral
 ```
+
+**Entirely optional.** With no model reachable, Layer 4 returns the same field
+contract from deterministic rules. A SOC tool that stops working when an inference
+endpoint is down is not a SOC tool.
+
+The dashboard reads the backend through Next.js route handlers, defaulting to
+`http://127.0.0.1:8000`. Point it elsewhere with
+`NEXT_PUBLIC_SOC_API_URL=http://host:8000 npm run dev`.
 
 ---
 
-### 3. Set Up the Frontend
+## API
 
-Open a new terminal:
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/` | Service banner and endpoint index |
+| `POST` | `/run-pipeline` | Upload JSON/JSONL logs, run every layer |
+| `GET` | `/api/incidents` | All stored incidents |
+| `GET` | `/api/incidents/{id}` | One incident |
+| `POST` | `/api/incidents/{id}/action` | Update status |
+| `DELETE` | `/api/incidents` | Clear incidents and campaigns |
+| `GET` | `/api/campaigns` | Correlated campaigns, worst first |
+| `GET` | `/api/campaigns/{id}` | One campaign with its member incidents |
+| `GET` | `/api/metrics` | SOC value metrics computed from stored state |
+| `POST` | `/api/incidents/{id}/feedback` | Analyst feedback; `false_positive` writes a suppression rule |
+| `GET` | `/api/incidents/{id}/feedback` | Feedback history |
+| `GET` | `/api/suppression-rules` | Active suppression rules |
+| `GET` | `/api/approvals` | Containment actions queued for sign-off |
+| `POST` | `/api/incidents/{id}/approvals` | Queue an action for approval |
+| `POST` | `/api/approvals/{id}/decision` | Approve or reject |
+| `GET` | `/api/incidents/{id}/report` | Incident as a Markdown audit record |
+| `GET` | `/api/campaigns/{id}/report` | Campaign as a Markdown audit report |
+
+---
+
+## The feedback loop actually closes
+
+Marking an incident a false positive writes a suppression rule that Layer 2
+consults **before running any engine** on the next batch. The same benign pattern
+stops arriving.
 
 ```bash
-cd Frontend
-npm install
-npm run dev
-```
+# Mark the scheduled vulnerability scan a false positive, then re-run
+curl -X POST localhost:8000/api/incidents/<id>/feedback \
+  -H 'Content-Type: application/json' \
+  -d '{"label":"false_positive","reason":"authorized_scan"}'
 
-Open the frontend at:
-
-```text
-http://localhost:3000
-```
-
-`/` redirects to the incident dashboard at `/dashboard`.
-
-The dashboard proxies all API calls to the FastAPI backend through Next.js route
-handlers, defaulting to `http://127.0.0.1:8000`. Point it elsewhere with an
-environment variable:
-
-```bash
-NEXT_PUBLIC_SOC_API_URL=http://192.168.1.20:8000 npm run dev
+python dev_run.py     # those alerts now come back labelled 'suppressed'
 ```
 
 ---
 
-## Running the Test Suite
+## Layout
 
-```bash
-pytest -q
+```
+api_server.py            FastAPI app — endpoints only
+pipeline.py              the layer sequence, in one place
+dev_run.py               offline runner
+frontend_formatter.py    pipeline output -> dashboard contract
+soc_metrics.py           value metrics computed from stored state
+audit_report.py          Markdown audit records
+db_manager.py            SQLite: incidents, feedback, campaigns, approvals
+demo_attack_scenario.json  the 25-record banking intrusion
+
+layer_1_feature_engineering/   7 feature engines
+layer_2_detection/            4 detection engines + suppression
+  mitre_mapper.py             ATT&CK techniques and tactics
+  campaign_correlator.py      Layer 2.5
+layer_3_cis/                  CIS/OWASP catalogs + matcher
+layer_4_ai_analysis/          LangGraph agent + rule-based fallback
+layer_5_cvss/                 4 CVSS engines
+layer_6_response/             playbooks + human-in-the-loop gate
+tests/                        cross-layer tests
+Frontend/                     Next.js 16 dashboard
 ```
 
-19 tests covering Layer 2 detection and suppression, the Layer 2 -> Layer 3 CIS
-integration, the Layer 4 rule-based fallback contract, and the Layer 6 response
-orchestrator / workflow / playbook evolution.
+---
+
+## Verified, not asserted
+
+Measured on the shipped scenario:
+
+| | |
+| --- | --- |
+| Full pipeline, ingest to stored incident | **≈0.15 s** (25 records) |
+| Test suite | **49 / 49** |
+| CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
+| Incidents mapped to a named CIS control | **100%** |
+| Incidents mapped to an ATT&CK technique | **84%** |
+| Detection engines contributing per actionable incident | **3–4 of 4** |
+| Benign business traffic correctly not flagged | **4 / 4** |
+| Malformed / empty / non-JSON uploads | **4xx, never 500** |
+| Re-processing the same logs | **no duplicates** |
 
 ---
 
-## Run the Whole Pipeline Offline
+## Known limitations
 
-To generate all layer outputs and seed the incident database without starting any
-server:
+Stated plainly, because they matter when reading the output.
 
-```bash
-python dev_run.py
-```
-
-This reads `layer_1_feature_engineering/sample_logs.json` and writes
-`layer1_output.json`, `layer2_output.json`, `layer3_output.json`,
-`frontend_output.json`, `Frontend/public/frontend_output.json`, and
-`soc_incidents.db`. It completes in about one second and is idempotent — incident
-IDs are derived from log content, so re-running updates incidents in place
-instead of creating duplicates.
-
----
-
-## How to Use
-
-1. Start the backend server.
-2. Start the frontend dashboard.
-3. Open the dashboard in the browser.
-4. Upload a JSON log file or use the included sample incident data.
-5. Review generated incidents.
-6. Open an incident to inspect:
-
-   * Raw event details
-   * Feature engineering output
-   * Detection output
-   * CIS benchmark recommendation
-   * CIS–CVSS advisor recommendation
-   * CVSS score
-   * Response recommendation
-7. Submit analyst feedback or update response actions if needed.
+- **Detection is rule-based, not machine-learned.** Anomaly scoring uses
+  thresholds and field heuristics, not a trained model. A deliberate trade:
+  every verdict is explainable and reproducible, which is what a regulated
+  environment needs first.
+- **The threat-intelligence feed is simulated.** `layer_2_detection/mappings/ioc_feed.json`
+  is a local indicator file, not a live commercial feed. Swapping it is an
+  interface change, not an architecture change.
+- **Behavioural baselines are per-run.** There is no persistent cross-run
+  baseline, so "rare source IP" is judged within the batch being processed.
+- **Approved containment actions are recorded, not executed.** The gate, the
+  queue and the decision are real and persisted; there is no EDR or firewall
+  integration behind them yet.
+- **Analyst time saved is modelled, not measured.** It depends on manual triage
+  time, which cannot be observed from inside this system. The assumption is
+  returned in the API response next to the number so it can be challenged and
+  recomputed.
 
 ---
 
-## Main Backend API Endpoints
+## Stack
 
-| Method   | Endpoint                             | Description                               |
-| -------- | ------------------------------------ | ----------------------------------------- |
-| `GET`    | `/`                                  | Service banner and endpoint index         |
-| `POST`   | `/run-pipeline`                      | Upload logs and run the full SOC pipeline |
-| `GET`    | `/api/incidents`                     | Get all stored incidents                  |
-| `GET`    | `/api/incidents/{event_id}`          | Get one incident by ID                    |
-| `POST`   | `/api/incidents/{event_id}/action`   | Update incident action/status             |
-| `POST`   | `/api/incidents/{event_id}/feedback` | Submit analyst feedback                   |
-| `GET`    | `/api/incidents/{event_id}/feedback` | Get analyst feedback                      |
-| `POST`   | `/api/simulate`                      | Add simulated incident events             |
-| `DELETE` | `/api/incidents`                     | Clear stored incidents                    |
-| `GET`    | `/api/suppression-rules`             | View suppression rules                    |
-
----
-
-## Example Incident Output
-
-Each processed incident can include:
-
-* Event ID
-* Timestamp
-* Source IP
-* Destination IP
-* Affected user or host
-* Threat type
-* Detection confidence
-* Severity
-* CIS benchmark recommendation
-* CIS–CVSS advisor output
-* CVSS score
-* Response priority
-* Recommended containment steps
-* Final dashboard summary
-
----
-
-## Sample Data
-
-The repository includes sample data and pre-generated outputs for testing and demonstration.
-
-These allow the dashboard and backend to work with sample incidents even before uploading new logs.
-
-Sample data supports:
-
-* Pipeline testing
-* Dashboard preview
-* Incident review
-* Demo walkthroughs
-* API validation
-
----
-
-## Why This Matters for Banking SOCs
-
-Banking environments are high-value targets and require fast, accurate incident response. SOC teams must quickly identify whether an event is benign, suspicious, or malicious, then determine impact, severity, and response priority.
-
-This project demonstrates how layered automation can support analysts by:
-
-* Reducing manual triage time
-* Connecting related signals
-* Providing consistent incident scoring
-* Mapping detections to security controls
-* Generating structured recommendations
-* Improving incident visibility through a dashboard
-
----
-
-## Future Improvements
-
-Planned improvements could include:
-
-* Real-time log streaming
-* PostgreSQL database support
-* Authentication and role-based access control
-* SIEM integration
-* EDR integration (automated host isolation rather than recommended isolation)
-* Firewall automation (automated blocking rather than recommended blocking)
-* Live threat intelligence feeds — the current feed is a local simulated file at
-  `layer_2_detection/mappings/ioc_feed.json`
-* Broader MITRE ATT&CK coverage — Layer 4 currently cites techniques for web
-  attack classes only
-* Analyst audit logs
-* Docker-based deployment
-* Cloud deployment support
-
-### Known Limitations
-
-Stated plainly, because they matter when reading the output:
-
-* **Detection is rule-based, not machine-learned.** Anomaly scoring uses
-  thresholds and field heuristics, not a trained model. This is a deliberate
-  trade-off: every verdict is explainable and reproducible.
-* **The IOC feed is simulated.** `layer_2_detection/mappings/ioc_feed.json` is a
-  local file of demo indicators, not a live commercial feed.
-* **Behavioural baselines are per-run.** There is no persistent user/host
-  baseline across pipeline invocations, so "rare source IP" is judged within the
-  batch being processed.
-* **`layer_6_response/response_layer/` is a forward-looking design.** The live
-  demo path is `layer_6_response/response_orchestrator.py`. The larger package
-  (HITL approval, ticketing, playbook evolution) is unit-tested against mocks but
-  is not wired into the pipeline and would need Elasticsearch, Redis and
-  PostgreSQL to run for real.
-* **`layer_3_cis/tuxSOC-layer_CIS/` is a vendored historical copy** of the CIS
-  extraction work, kept for the benchmark catalogs it produced. Nothing on the
-  live path imports it.
-
----
-
-## Project Summary
-
-**Cyber Incident Response in Banking SOC** is a full-stack cybersecurity project that demonstrates how raw security logs can be transformed into structured incident intelligence.
-
-It combines:
-
-* Backend APIs
-* Multi-layer security analysis
-* Detection engineering
-* CIS benchmark mapping
-* Agentic recommendation generation
-* CVSS-style severity scoring
-* Response recommendation
-* Frontend visualization
-
-The project is designed as a practical SOC simulation for banking incident response workflows.
+Python · FastAPI · SQLite · Pydantic · LangGraph · Next.js 16 · React 19 ·
+TypeScript · Tailwind 4

@@ -26,6 +26,23 @@ export type EventPipeline = {
   };
 
   cis: any;
+
+  // Stamped by Layer 2 (ATT&CK) and Layer 2.5 (campaign correlation).
+  mitre_attack?: {
+    primary?: { technique_id?: string; technique_name?: string; tactic_name?: string; url?: string };
+    techniques?: { technique_id: string; technique_name: string; tactic_name: string; url: string }[];
+    tactics?: { id: string; name: string; order: number }[];
+    kill_chain_stage?: string;
+    kill_chain_order?: number;
+  };
+  campaign?: {
+    campaign_id: string;
+    name: string;
+    severity: string;
+    incident_count: number;
+    furthest_stage: string;
+    progression_pct: number;
+  } | null;
   ai_analysis: {
     summary?: string;
     blast_radius?: string;
@@ -54,6 +71,20 @@ export type EventPipeline = {
     recommended_actions: string[];
     containment_steps?: string[];
     analyst_notes?: string;
+    playbook?: string;
+    escalation?: string;
+    // Layer 6 human-in-the-loop gate: which containment steps can auto-execute
+    // and which are held because they could interrupt a live service.
+    containment_plan?: {
+      action: string;
+      execution: "auto" | "requires_approval";
+      blast_radius: "contained" | "host-affecting" | "service-affecting";
+      rationale: string;
+    }[];
+    auto_executable?: number;
+    awaiting_approval?: number;
+    requires_human_approval?: boolean;
+    cvss_basis?: { base_score?: number; severity?: string };
   };
   status?: string;
   analyst_label?: string | null;

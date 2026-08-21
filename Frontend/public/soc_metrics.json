@@ -1,0 +1,62 @@
+{
+  "queue": {
+    "total_alerts": 25,
+    "benign_filtered": 4,
+    "analyst_suppressed": 0,
+    "actionable": 21,
+    "severity": {
+      "critical": 3,
+      "high": 14,
+      "medium": 4,
+      "low": 4
+    }
+  },
+  "consolidation": {
+    "actionable_alerts": 21,
+    "investigations": 4,
+    "campaigns": 3,
+    "standalone": 1,
+    "ratio": 5.2,
+    "headline": "21 actionable alerts consolidated into 4 investigations"
+  },
+  "coverage": {
+    "cis_mapped": 25,
+    "cis_mapped_pct": 100,
+    "attack_mapped": 21,
+    "attack_mapped_pct": 84,
+    "cvss_scored": 25,
+    "cvss_scored_pct": 100
+  },
+  "time": {
+    "pipeline_seconds": 0.14,
+    "manual_baseline_minutes": 375,
+    "assisted_minutes": 16,
+    "minutes_saved": 359,
+    "hours_saved": 6.0,
+    "assumptions": {
+      "manual_triage_minutes_per_alert": 15.0,
+      "review_minutes_per_incident": 4.0,
+      "note": "Manual triage time cannot be measured from inside this system. These are stated assumptions, chosen conservatively; adjust them and the saving recomputes."
+    }
+  },
+  "feedback_loop": {
+    "analyst_decisions": 0,
+    "false_positives_marked": 0,
+    "suppression_rules_active": 0,
+    "alerts_suppressed": 0
+  },
+  "response": {
+    "gated_actions": 21,
+    "auto_executable_actions": 39,
+    "incidents_needing_approval": 13,
+    "auto_share_pct": 65
+  },
+  "worst_campaign": {
+    "campaign_id": "CMP-003",
+    "name": "Data theft originating from 203.0.113.55",
+    "severity": "critical",
+    "furthest_stage": "Exfiltration",
+    "progression_pct": 93,
+    "incident_count": 9
+  }
+}
