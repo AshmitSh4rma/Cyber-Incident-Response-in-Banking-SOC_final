@@ -7,57 +7,73 @@
    a wall display at 3am, so it paints its own ground rather than adapting to the
    host.
 
-   Colour does exactly two jobs and they never mix:
-     · cyan   — interactive. Links, focus, the current selection. Never data.
+   The ground is near-black with a green cast, and the interactive colour is
+   phosphor green. That is a deliberate identity — an instrument panel, not a
+   business dashboard — but the discipline underneath is unchanged:
+
+     · green  — interactive. Links, focus, the current selection. Never data.
      · status — severity only, on a fixed reserved scale. Never decoration.
 
-   Every value below was measured, not chosen by eye. Contrast against the card
-   surface #0f1620:
-     text     #dfe7f2  14.58:1
-     muted    #8697ad   6.09:1
-     faint    #7a8ca3   5.28:1   (was #5b6b80 at 3.34:1 — failed small text)
-     critical #d03b3b   3.78:1
-     high     #ec835a   6.89:1
-     medium   #fab219   9.90:1
-     low      #3b9eff   6.51:1
-     benign   #0ca30c   5.42:1
-   All marks clear the 3:1 floor; all text tokens clear 4.5:1.
+   One consequence of a green interface is worth stating, because it constrains the
+   palette: green cannot also be a status colour. No green with enough chroma to
+   avoid reading grey sits further than ΔE 14 (OKLab ×100) from the accent, so
+   `sev-benign` is the dullest green that clears the chroma floor and always ships
+   with a label. Alarm states are red / orange / yellow / blue, which contrast
+   strongly against a green ground — the scale reads better here than it did on
+   slate.
 
-   Severity is a STATUS scale, so red/orange/yellow sit close in hue by design and
-   cannot be separated by colour alone under colour-vision deficiency. Every
-   severity indicator in this app therefore ships with a text label — colour is
-   never the only channel.
+   Every value below was measured with the palette validator, not chosen by eye.
+   Contrast against the card surface #071008:
+     text     #d6f5dd  16.53:1
+     muted    #7fbe8f   8.89:1
+     faint    #56916a   5.20:1
+     accent   #00e85a  11.68:1
+     critical #ff4d5e   5.96:1   chroma 0.213
+     high     #ff9838   9.02:1   chroma 0.161
+     medium   #ffd93d  14.03:1   chroma 0.167
+     low      #4db8ff   8.85:1   chroma 0.141
+     benign   #2fb863   7.51:1   chroma 0.168
+   All marks clear the 3:1 floor; all text tokens clear 4.5:1; every mark clears
+   the 0.1 chroma floor, so none of them reads grey.
+
+   Severity is a STATUS scale, so red/orange/yellow sit close in hue by design.
+   Adjacent-pair separation is ΔE 10.9 under deuteranopia but 7.6 under
+   tritanopia — inside the 6–8 floor band, which is only legal with a second
+   channel. It has one: every severity indicator in this app ships a text label,
+   and the severity bar puts a 2px surface gap between segments. Colour is never
+   the only channel.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --ground: #080c12;
-  --surface: #0f1620;
-  --raised: #16202c;
-  --sunk: #060a0f;
+  --ground: #030603;
+  --surface: #071008;
+  --raised: #0c1a0e;
+  --sunk: #010301;
 
-  --rule: #223040;
-  --rule-soft: #18222e;
+  --rule: #17401f;
+  --rule-soft: #0f2913;
 
-  --text: #dfe7f2;
-  --muted: #8697ad;
-  --faint: #7a8ca3;
+  --text: #d6f5dd;
+  --muted: #7fbe8f;
+  --faint: #56916a;
 
-  --accent: #22d3ee;
-  --accent-deep: #0e7490;
+  --accent: #00e85a;
+  --accent-deep: #0a6b2e;
 
-  --sev-critical: #d03b3b;
-  --sev-high: #ec835a;
-  --sev-medium: #fab219;
-  --sev-low: #3b9eff;
-  --sev-benign: #0ca30c;
+  --sev-critical: #ff4d5e;
+  --sev-high: #ff9838;
+  --sev-medium: #ffd93d;
+  --sev-low: #4db8ff;
+  --sev-benign: #2fb863;
 
   /* Meter tracks: a darker step of the mark's own hue, not grey, so the state
-     reads across the whole bar rather than only where it is filled. */
-  --track-critical: #3d1a1a;
-  --track-high: #3d2418;
-  --track-medium: #3a2f10;
-  --track-low: #12283d;
-  --track-neutral: #16202c;
+     reads across the whole bar rather than only where it is filled. Each sits
+     4.9–10.4:1 below its mark and just above the surface. */
+  --track-critical: #3d1219;
+  --track-high: #3a2109;
+  --track-medium: #33290a;
+  --track-low: #0f2b3d;
+  --track-neutral: #0d2e19;
 }
 
 @theme inline {
@@ -103,6 +119,39 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* A faint instrument grid on the page ground.
+   Fixed rather than scrolling, so it reads as the surface the console is painted
+   on rather than as content. Kept at a few per cent: enough that a large empty
+   area is not a flat void, quiet enough that it never competes with a number.
+   Panels paint their own opaque surface on top, so it only shows in the gutters. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgb(0 232 90 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 232 90 / 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Phosphor, not flat green. Applied to the interactive colour only — a glow on
+   body text would blur it at 11px, which is most of this interface. */
+.text-accent {
+  text-shadow: 0 0 8px rgb(0 232 90 / 0.32);
+}
+
+::selection {
+  background: rgb(0 232 90 / 0.28);
+  color: var(--text);
 }
 
 .mono {
@@ -151,7 +200,7 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e4055;
+  background: var(--accent-deep);
 }
 
 :focus-visible {
