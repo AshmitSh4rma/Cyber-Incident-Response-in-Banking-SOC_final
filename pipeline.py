@@ -18,10 +18,12 @@ dashboard can open.
 """
 
 import contextlib
+import hashlib
 import time
 from datetime import UTC, datetime
 from typing import Any
 
+from db_manager import determination_time
 from frontend_formatter import format_pipeline_for_frontend
 from layer_1_feature_engineering.feature_orchestrator import run_feature_engineering
 from layer_2_detection.campaign_correlator import correlate_campaigns
@@ -203,13 +205,25 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
 
     # Regulatory notification clocks.
     #
-    # The clock origin is NOW, not the log timestamp: these deadlines run from the
-    # moment of determination, and determination is what just happened here. Using
-    # the log timestamp would show every historical demo record as overdue.
-    determined_at = datetime.now(UTC).isoformat()
+    # The origin is the determination, not the log timestamp: these deadlines run
+    # from the moment a firm concludes it has a reportable incident, and using the
+    # log timestamp would show every historical demo record as already overdue.
+    #
+    # But determination is a fact about the past, so it is looked up rather than
+    # recomputed. It used to be datetime.now() on every pass, which meant
+    # re-processing the same logs silently reset every deadline to a full window —
+    # the one thing a notification clock must never do, because it hides a
+    # deadline that has already been missed.
+    #
+    # Subjects are keyed by content. A campaign's id is assigned per run, so its
+    # stable identity is the set of incidents inside it.
+    now = datetime.now(UTC).isoformat()
 
     for campaign in campaign_result["campaigns"]:
-        campaign["determined_at"] = determined_at
+        key = "campaign:" + hashlib.sha1(
+            "|".join(sorted(campaign.get("incident_ids") or [])).encode()
+        ).hexdigest()
+        campaign["determined_at"] = determination_time(key, now)
         campaign["notification"] = for_campaign(campaign)
 
     for event in enriched:
@@ -219,8 +233,9 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
             # starting a duplicate deadline.
             event["notification"] = None
         else:
-            event["determined_at"] = determined_at
-            event["notification"] = for_incident({**event, "determined_at": determined_at})
+            determined = determination_time(f"incident:{event.get('event_id')}", now)
+            event["determined_at"] = determined
+            event["notification"] = for_incident({**event, "determined_at": determined})
 
     frontend_output["events"] = enriched
     frontend_output["campaigns"] = campaign_result["campaigns"]

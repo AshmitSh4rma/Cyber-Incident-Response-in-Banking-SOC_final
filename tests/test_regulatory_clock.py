@@ -272,3 +272,57 @@ def test_every_regime_still_carries_a_resolvable_instrument_and_url():
     for regime in REGIMES:
         assert regime["instrument"] and regime["url"].startswith("https://")
         assert regime["effective"], regime["id"]
+
+
+def test_dora_records_that_the_later_deadlines_chain(monkeypatch):
+    """
+    The 72 hours runs from submission of the initial notification and the month
+    from the intermediate report, not all four from one origin. A timeline drawing
+    them off a single t=0 is wrong, and that is the natural way to draw it.
+    """
+    note = next(r for r in REGIMES if r["id"] == "dora")["note"]
+    assert "72 hours of submitting the INITIAL NOTIFICATION" in note
+    assert "one month of the intermediate" in note
+    assert "2024/1772" in note, "name the instrument that defines 'major'"
+
+
+def test_dora_does_not_overstate_the_weekend_carve_out():
+    """
+    Art. 5(5) disapplies the extension for the initial notification and the
+    intermediate report only. A credit institution keeps it for the final report,
+    and claiming otherwise is checkable in one reading.
+    """
+    note = next(r for r in REGIMES if r["id"] == "dora")["note"]
+    assert "keeps the extension for the final report" in note
+
+
+def test_cert_in_states_the_exact_category_count():
+    note = next(r for r in REGIMES if r["id"] == "cert_in")["note"]
+    assert "exactly 20 categories" in note
+    assert "FAQ" in note, "the severity gate is not in the Direction text; say so"
+
+
+def test_a_determination_survives_a_re_run(tmp_path, monkeypatch):
+    """
+    Regulatory clocks run from determination, so the determination time is a fact
+    about the past. It was recomputed as now() on every pipeline pass, which meant
+    re-processing the same logs silently reset every deadline to a full window —
+    the one thing a notification clock must never do, because it hides a deadline
+    that has already been missed.
+    """
+    import db_manager
+
+    monkeypatch.setattr(db_manager, "DB_PATH", tmp_path / "t.db", raising=False)
+    monkeypatch.setattr(db_manager, "DB_FILE", str(tmp_path / "t.db"), raising=False)
+    db_manager.init_db()
+    db_manager.clear_determinations()
+
+    first = db_manager.determination_time("campaign:abc", "2026-08-22T09:00:00+00:00")
+    again = db_manager.determination_time("campaign:abc", "2026-08-22T17:30:00+00:00")
+    assert first == again == "2026-08-22T09:00:00+00:00", (
+        "a second look-up must return the original determination, not the new proposal"
+    )
+
+    # A different subject gets its own clock.
+    other = db_manager.determination_time("campaign:def", "2026-08-22T17:30:00+00:00")
+    assert other == "2026-08-22T17:30:00+00:00"

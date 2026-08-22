@@ -58,6 +58,24 @@ def init_db():
     """)
 
     cursor.execute("""
+        -- When the system FIRST concluded something was reportable.
+        --
+        -- Regulatory clocks run from determination, so the determination time is a
+        -- fact about the past and must survive a re-run. It was previously
+        -- datetime.now() on every pipeline pass, which meant re-processing the same
+        -- logs silently reset every deadline to a full window — the one thing a
+        -- notification clock must never do, since it would hide the fact that a
+        -- deadline had already been missed.
+        --
+        -- Keyed by content, not by campaign number: campaign ids are assigned per
+        -- run, so the stable identity of a campaign is the set of incidents in it.
+        CREATE TABLE IF NOT EXISTS determinations (
+            subject_key   TEXT PRIMARY KEY,
+            determined_at TEXT NOT NULL
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS response_approvals (
             approval_id  INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id     TEXT NOT NULL,
@@ -357,6 +375,44 @@ def get_campaign(campaign_id: str) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # HUMAN-IN-THE-LOOP RESPONSE APPROVALS (Layer 6)
 # ─────────────────────────────────────────────────────────────────────────────
+
+def determination_time(subject_key: str, proposed: str) -> str:
+    """
+    The moment this subject was first determined reportable.
+
+    Returns the stored time if we have seen this subject before, otherwise stores
+    and returns `proposed`. Idempotent by design: running the pipeline again over
+    the same logs must not restart a legal clock, and a deadline that has already
+    passed has to keep saying so.
+    """
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT determined_at FROM determinations WHERE subject_key = ?", (subject_key,)
+        ).fetchone()
+        if row:
+            return row["determined_at"]
+        conn.execute(
+            "INSERT OR IGNORE INTO determinations (subject_key, determined_at) VALUES (?, ?)",
+            (subject_key, proposed),
+        )
+        conn.commit()
+        return proposed
+    except sqlite3.Error:
+        # A clock anchored to now is wrong, but no clock at all is worse.
+        return proposed
+    finally:
+        conn.close()
+
+
+def clear_determinations() -> None:
+    """Forget every determination. For tests and for resetting a demo."""
+    conn = get_db_connection()
+    with contextlib.suppress(sqlite3.Error):
+        conn.execute("DELETE FROM determinations")
+        conn.commit()
+    conn.close()
+
 
 def request_approval(event_id: str, action: str) -> int:
     """Queue a containment action for analyst sign-off. Returns the approval id."""

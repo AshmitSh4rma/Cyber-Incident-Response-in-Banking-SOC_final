@@ -5150,14 +5150,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5521,14 +5521,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -7630,14 +7630,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -9307,14 +9307,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -10625,7 +10625,7 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10633,7 +10633,7 @@
           "Activity reached Initial Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10645,8 +10645,8 @@
             "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
             "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T15:36:13.669696+00:00",
-            "seconds_remaining": 14399,
+            "deadline": "2026-08-22T15:50:28.930387+00:00",
+            "seconds_remaining": 14387,
             "state": "on_track"
           },
           {
@@ -10659,8 +10659,8 @@
             "note": "Six hours from 'noticing such incidents or being brought to notice about such incidents' — so a third-party report starts the clock too. The mandatorily reportable list at Annexure I opens with targeted scanning or probing of critical networks, which means no compromise is required: describing this regime as being about 'breaches' understates it considerably.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T17:36:13.669696+00:00",
-            "seconds_remaining": 21599,
+            "deadline": "2026-08-22T17:50:28.930387+00:00",
+            "seconds_remaining": 21587,
             "state": "on_track"
           },
           {
@@ -10673,8 +10673,8 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determining that a notification incident has occurred. Effective 1 April 2022; compliance required from 1 May 2022.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T23:36:13.669696+00:00",
-            "seconds_remaining": 129599,
+            "deadline": "2026-08-23T23:50:28.930387+00:00",
+            "seconds_remaining": 129587,
             "state": "on_track"
           },
           {
@@ -10687,8 +10687,8 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline. Note also that the clock runs from the materiality DETERMINATION, not from discovery; the link to discovery is indirect, via Instruction 1's requirement that the determination be made without unreasonable delay after discovery. Item 1.05 is the subject of a May 2025 rescission petition from the ABA, BPI, SIFMA, ICBA and IIB, and remains in force pending the Commission's decision.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T11:36:13.669696+00:00",
-            "seconds_remaining": 345599,
+            "deadline": "2026-08-26T11:50:28.930387+00:00",
+            "seconds_remaining": 345587,
             "state": "on_track"
           }
         ],
@@ -10702,8 +10702,8 @@
           "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
           "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T15:36:13.669696+00:00",
-          "seconds_remaining": 14399,
+          "deadline": "2026-08-22T15:50:28.930387+00:00",
+          "seconds_remaining": 14387,
           "state": "on_track"
         },
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -10818,7 +10818,7 @@
         "activity reached 10.20.0.11 at Initial Access, which then originated further activity"
       ],
       "narrative": "9 alerts that were raised separately describe a single sequence of activity involving 3 assets (core-app-02, db-core-01, dmz-web-01), beginning at 203.0.113.55. Observed progression: Reconnaissance -> Initial Access -> Persistence -> Lateral Movement -> Command and Control -> Exfiltration. Correlated because same source address 203.0.113.55. The chain reaches Exfiltration, meaning data may already have left the environment — treat as an active breach and start the regulatory notification clock.",
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": true,
         "confidence": "high",
@@ -10826,7 +10826,7 @@
           "Activity reached Exfiltration, so customer or transaction data may already have been accessed or moved.",
           "Severity is critical."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10838,8 +10838,8 @@
             "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
             "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T15:36:13.669696+00:00",
-            "seconds_remaining": 14399,
+            "deadline": "2026-08-22T15:50:28.930387+00:00",
+            "seconds_remaining": 14387,
             "state": "on_track"
           },
           {
@@ -10852,8 +10852,8 @@
             "note": "Six hours from 'noticing such incidents or being brought to notice about such incidents' — so a third-party report starts the clock too. The mandatorily reportable list at Annexure I opens with targeted scanning or probing of critical networks, which means no compromise is required: describing this regime as being about 'breaches' understates it considerably.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T17:36:13.669696+00:00",
-            "seconds_remaining": 21599,
+            "deadline": "2026-08-22T17:50:28.930387+00:00",
+            "seconds_remaining": 21587,
             "state": "on_track"
           },
           {
@@ -10866,8 +10866,8 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determining that a notification incident has occurred. Effective 1 April 2022; compliance required from 1 May 2022.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T23:36:13.669696+00:00",
-            "seconds_remaining": 129599,
+            "deadline": "2026-08-23T23:50:28.930387+00:00",
+            "seconds_remaining": 129587,
             "state": "on_track"
           },
           {
@@ -10880,8 +10880,8 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline. Note also that the clock runs from the materiality DETERMINATION, not from discovery; the link to discovery is indirect, via Instruction 1's requirement that the determination be made without unreasonable delay after discovery. Item 1.05 is the subject of a May 2025 rescission petition from the ABA, BPI, SIFMA, ICBA and IIB, and remains in force pending the Commission's decision.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T11:36:13.669696+00:00",
-            "seconds_remaining": 345599,
+            "deadline": "2026-08-26T11:50:28.930387+00:00",
+            "seconds_remaining": 345587,
             "state": "on_track"
           }
         ],
@@ -10895,8 +10895,8 @@
           "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
           "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T15:36:13.669696+00:00",
-          "seconds_remaining": 14399,
+          "deadline": "2026-08-22T15:50:28.930387+00:00",
+          "seconds_remaining": 14387,
           "state": "on_track"
         },
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -10965,7 +10965,7 @@
         "same source address 45.128.62.19"
       ],
       "narrative": "7 alerts that were raised separately describe a single sequence of activity involving ssh-bastion-01, beginning at 45.128.62.19. Observed progression: Initial Access -> Credential Access. Correlated because same source address 45.128.62.19. Credentials are being targeted directly; assume account compromise until disproven.",
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10973,7 +10973,7 @@
           "Activity reached Credential Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10985,8 +10985,8 @@
             "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
             "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T15:36:13.669696+00:00",
-            "seconds_remaining": 14399,
+            "deadline": "2026-08-22T15:50:28.930387+00:00",
+            "seconds_remaining": 14387,
             "state": "on_track"
           },
           {
@@ -10999,8 +10999,8 @@
             "note": "Six hours from 'noticing such incidents or being brought to notice about such incidents' — so a third-party report starts the clock too. The mandatorily reportable list at Annexure I opens with targeted scanning or probing of critical networks, which means no compromise is required: describing this regime as being about 'breaches' understates it considerably.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T17:36:13.669696+00:00",
-            "seconds_remaining": 21599,
+            "deadline": "2026-08-22T17:50:28.930387+00:00",
+            "seconds_remaining": 21587,
             "state": "on_track"
           },
           {
@@ -11013,8 +11013,8 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determining that a notification incident has occurred. Effective 1 April 2022; compliance required from 1 May 2022.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T23:36:13.669696+00:00",
-            "seconds_remaining": 129599,
+            "deadline": "2026-08-23T23:50:28.930387+00:00",
+            "seconds_remaining": 129587,
             "state": "on_track"
           },
           {
@@ -11027,8 +11027,8 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline. Note also that the clock runs from the materiality DETERMINATION, not from discovery; the link to discovery is indirect, via Instruction 1's requirement that the determination be made without unreasonable delay after discovery. Item 1.05 is the subject of a May 2025 rescission petition from the ABA, BPI, SIFMA, ICBA and IIB, and remains in force pending the Commission's decision.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T11:36:13.669696+00:00",
-            "seconds_remaining": 345599,
+            "deadline": "2026-08-26T11:50:28.930387+00:00",
+            "seconds_remaining": 345587,
             "state": "on_track"
           }
         ],
@@ -11042,8 +11042,8 @@
           "note": "A hybrid deadline, not a pure determination clock: initial notification within 4 hours of classifying the incident as major AND no later than 24 hours from becoming aware of it. Art. 5(2) means the 24 hours is not an absolute cut-off — classify as major later and a fresh 4 hours runs from that classification. Intermediate report at 72 hours, final within one month. Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon of the next working day, but Art. 5(5) disapplies that for credit institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks.",
           "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T15:36:13.669696+00:00",
-          "seconds_remaining": 14399,
+          "deadline": "2026-08-22T15:50:28.930387+00:00",
+          "seconds_remaining": 14387,
           "state": "on_track"
         },
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -11093,14 +11093,14 @@
         "same source address 10.99.0.5"
       ],
       "narrative": "4 alerts that were raised separately describe a single sequence of activity involving core-app-02, beginning at 10.99.0.5. Observed progression: Reconnaissance. Correlated because same source address 10.99.0.5. Activity is still pre-compromise reconnaissance.",
-      "determined_at": "2026-08-22T11:36:13.669696+00:00",
+      "determined_at": "2026-08-22T11:50:28.930387+00:00",
       "notification": {
         "reportable": false,
         "confidence": "medium",
         "reasons": [
           "Activity has not progressed past reconnaissance and does not meet a materiality threshold on its own."
         ],
-        "determined_at": "2026-08-22T11:36:13.669696+00:00",
+        "determined_at": "2026-08-22T11:50:28.930387+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -11115,14 +11115,14 @@
     "worst_stage_order": 14
   },
   "timing": {
-    "layer1_features": 0.003,
-    "layer2_detection": 0.004,
-    "layer3_cis": 0.036,
+    "layer1_features": 0.002,
+    "layer2_detection": 0.003,
+    "layer3_cis": 0.019,
     "format": 0.004,
     "layer2_5_campaigns": 0.0,
-    "layer4_analysis": 0.009,
-    "layer5_cvss": 0.004,
-    "layer6_response": 0.004,
-    "total": 0.064
+    "layer4_analysis": 0.01,
+    "layer5_cvss": 0.003,
+    "layer6_response": 0.003,
+    "total": 0.046
   }
 }

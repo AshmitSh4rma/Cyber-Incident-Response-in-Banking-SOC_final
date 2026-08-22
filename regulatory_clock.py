@@ -53,10 +53,19 @@ REGIMES: list[dict[str, Any]] = [
             "within 4 hours of classifying the incident as major AND no later than 24 "
             "hours from becoming aware of it. Art. 5(2) means the 24 hours is not an "
             "absolute cut-off — classify as major later and a fresh 4 hours runs from "
-            "that classification. Intermediate report at 72 hours, final within one "
-            "month. Art. 5(4) would let a deadline falling on a weekend or holiday slip "
-            "to noon of the next working day, but Art. 5(5) disapplies that for credit "
-            "institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks."
+            "that classification. The later deadlines chain rather than sharing one "
+            "origin: the intermediate report is due within 72 hours of submitting the "
+            "INITIAL NOTIFICATION (Art. 5(1)(b)), even if nothing has changed, with a "
+            "further updated intermediate report once normal activity is recovered; the "
+            "final report is due within one month of the intermediate — or of the latest "
+            "updated intermediate (Art. 5(1)(c)). Art. 5(3) also requires an entity that "
+            "will miss any of these to tell the authority before the deadline expires. "
+            "Art. 5(4) would let a deadline falling on a weekend or holiday slip to noon "
+            "of the next working day, but Art. 5(5) disapplies that for credit "
+            "institutions on the initial notification and the intermediate report — so a "
+            "bank gets no weekend relief on those two, though it keeps the extension for "
+            "the final report. The test for what counts as 'major' is in a separate "
+            "instrument, Delegated Regulation (EU) 2024/1772."
         ),
         "effective": "17 January 2025",
         "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
@@ -72,9 +81,13 @@ REGIMES: list[dict[str, Any]] = [
         "note": (
             "Six hours from 'noticing such incidents or being brought to notice about "
             "such incidents' — so a third-party report starts the clock too. The "
-            "mandatorily reportable list at Annexure I opens with targeted scanning or "
-            "probing of critical networks, which means no compromise is required: "
-            "describing this regime as being about 'breaches' understates it considerably."
+            "mandatorily reportable list at Annexure I runs to exactly 20 categories, "
+            "numbered i to xx, and opens with targeted scanning or probing of critical "
+            "networks — so no compromise is required, and describing this regime as being "
+            "about 'breaches' understates it considerably. Note that CERT-In's own May "
+            "2022 FAQ (Q30) reads the 6-hour duty as applying where an Annexure-I incident "
+            "also meets a severity or scale filter; that gate is not in the Direction's "
+            "text, and the tension is well known."
         ),
         "effective": "28 April 2022",
         "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
