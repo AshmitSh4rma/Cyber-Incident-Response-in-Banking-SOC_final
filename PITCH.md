@@ -133,7 +133,7 @@ material", "noticed". Determination is triage. Triage is what SENTRA compresses.
 4. **Severity is computed, not guessed.** The CVSS 3.1 equations, implemented
    directly. An LLM asked to rate severity gives a plausible number that drifts
    between runs; a formula gives one a regulator can re-derive from the vector
-   string. *7 of 7 published reference vectors — exact.*
+   string. *9 of 9 NVD-published reference vectors exact, and all 2,592 possible base-metric combinations agree with an independent transcription of the specification's equations.*
 
 5. **The gate is on blast radius, not severity.** Isolating the host that clears
    card transactions can cause a worse outage than the intrusion — and an outage
@@ -164,7 +164,8 @@ Measured on the shipped scenario, not projected:
 | --- | --- |
 | Full pipeline, 25 records | **0.16 s** |
 | Automated test suite | **72 / 72** |
-| CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
+| CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
+| CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
 | Actionable alerts → investigations | **21 → 4 (5.2:1)** |

@@ -263,31 +263,41 @@ def test_a_narrowly_used_account_still_links():
     assert any("r.mehta" in reason for reason in result["campaigns"][0]["linked_by"])
 
 
-def test_correlation_is_not_quadratic():
+def test_correlation_does_not_compare_every_pair(monkeypatch):
     """
     The pairwise scan was O(n^2): 5,000 alerts took 42 seconds and 20,000 took
-    ten minutes. Every link reason is an equality join, so candidates come from
-    an index instead. This asserts the shape of the curve, not a wall-clock
-    number, so it does not fail on a slow machine.
+    ten minutes. Every link reason is an equality join, so candidates now come
+    from an index.
+
+    Asserted by counting pair comparisons rather than by timing anything. A
+    wall-clock ratio is flaky on a loaded machine — this one failed in a full
+    suite run and passed in isolation — and the number of comparisons is the
+    property that actually changed.
     """
-    import time
+    from layer_2_detection import campaign_correlator as cc
 
-    def run(n):
-        events = [
-            _incident(f"e{i}", f"2026-01-01T{i // 3600:02d}:{(i // 60) % 60:02d}:{i % 60:02d}Z",
-                      f"203.0.113.{i % 200}", f"host-{i % 300}", "web_attack", 3, "Initial Access",
-                      user=f"user-{i % 500}")
-            for i in range(n)
-        ]
-        start = time.perf_counter()
-        correlate_campaigns(events)
-        return time.perf_counter() - start
+    calls = 0
+    real = cc._link_reason
 
-    run(200)                      # warm the interpreter
-    small, large = run(500), run(4000)
+    def counting(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return real(*args, **kwargs)
 
-    # 8x the input. Quadratic would be ~64x; linear ~8x. Allow generous slack for
-    # a noisy machine and still catch a return to quadratic.
-    assert large < small * 25, (
-        f"correlation scaled {large / small:.1f}x for 8x the input — this looks quadratic again"
+    monkeypatch.setattr(cc, "_link_reason", counting)
+
+    n = 600
+    events = [
+        _incident(f"e{i}", f"2026-01-01T{i // 3600:02d}:{(i // 60) % 60:02d}:{i % 60:02d}Z",
+                  f"203.0.113.{i % 60}", f"host-{i % 90}", "web_attack", 3, "Initial Access",
+                  user=f"user-{i % 150}")
+        for i in range(n)
+    ]
+    cc.correlate_campaigns(events)
+
+    every_pair = n * (n - 1) // 2
+    assert calls < n * 6, (
+        f"{calls} comparisons for {n} incidents. Indexed candidate generation should "
+        f"be a small multiple of n; comparing every pair would be {every_pair:,}."
     )
+    assert calls < every_pair / 20, "this is within an order of magnitude of the old pairwise scan"

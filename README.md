@@ -357,7 +357,8 @@ Measured on the shipped scenario:
 | --- | --- |
 | Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
 | Test suite | **177 / 177** |
-| CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
+| CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
+| CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
 | Actionable alerts → investigations | **21 → 4 (5.2:1)** |
