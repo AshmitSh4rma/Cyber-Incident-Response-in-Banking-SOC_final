@@ -1,15 +1,20 @@
 # SENTRA — Cyber Incident Response for Banking SOCs
 
-Raw security telemetry in. A scored, control-mapped, playbook-ready incident out —
-with the CIS control it violated, the ATT&CK technique it maps to, and a
-defensible CVSS 3.1 score attached.
+**In one sentence:** it reads a bank's security logs, works out which alerts are
+actually the same break-in, and tells you how long you have left to report it to
+the regulator.
 
-Then the part that matters most: **it works out which of those alerts are actually
-the same intrusion.**
+**For the technical reader:** a seven-stage pipeline that maps every detection to a
+CIS control and an ATT&CK technique, computes a CVSS 3.1 score by formula,
+reconstructs multi-host intrusions by chaining compromised hosts, and gates
+containment on blast radius.
 
 ```
 25 raw log records  →  4 investigations  →  1 active breach at Exfiltration
+                                            → 3h 59m left to notify the EU regulator
 ```
+
+Measured on the shipped scenario, end to end, in 0.16 s.
 
 ---
 
@@ -37,16 +42,17 @@ Triage is the bottleneck.
 
 Seven stages. Each is independently testable, and data flows strictly forward.
 
-| Layer | Function | Output |
+| Stage | In plain terms | Technically |
 | --- | --- | --- |
-| **L1** | Feature engineering — normalise heterogeneous formats, classify the log family, extract temporal / behavioural / statistical / network / web / IoT / identity features | normalised event + feature blocks |
-| **L2** | Detection — anomaly scoring, threat-pattern matching, IOC enrichment, correlation, fused into one verdict. Analyst-feedback suppression runs *before* any engine | verdict · threat type · severity · confidence · reasoning |
-| **L2** | MITRE ATT&CK mapping — technique and tactic per detection | `T1190` · Initial Access · lifecycle position |
-| **L2.5** | **Campaign correlation** — groups alerts into intrusions and reports lifecycle progression | campaigns · kill chains · linkage evidence |
-| **L3** | CIS benchmark mapping against real catalogs (Cisco ASA / IOS-XE 16 & 17 / IOS-XR 7 / NX-OS / Firepower, plus a web application catalog) | control ID · rationale · audit procedure · remediation |
-| **L4** | Analysis agent (LangGraph) — narrative, intent, technique naming, CVSS metric proposal. Deterministic fallback when no model is present | intent · narrative · CVSS handoff |
-| **L5** | CVSS 3.1 scoring — metric mapping, impact mapping, scoring, validation, using the published equations | base score · severity band · vector string |
-| **L6** | Response playbook + **human-in-the-loop gate** — containment split by blast radius | priority · auto actions · gated actions · escalation |
+| **L1** | Reads logs from anything and puts them in one shape | Normalisation, log-family classification, 7 feature engines |
+| **L2** | Decides whether each event is a real threat | Anomaly, threat-pattern, IOC and correlation engines fused into one verdict; analyst-feedback suppression runs first |
+| **L2** | Names the behaviour the way the industry names it | MITRE ATT&CK technique + tactic + lifecycle position |
+| **L2.5** | **Works out which alerts are the same break-in** | Campaign correlation over a compromise chain |
+| **L3** | Says which security rule this breaks | CIS / OWASP benchmark retrieval with rationale and audit procedure |
+| **L4** | Writes it up for a human | Deterministic incident analyst; optional local-LLM enrichment |
+| **L5** | Scores how bad it is, consistently | CVSS 3.1 base score computed from the published equations |
+| **L6** | Says what to do, and what needs a person | Threat-specific playbook + blast-radius approval gate |
+| **Clock** | **Says how long until you must tell the regulator** | Reportability assessment + per-regime countdown |
 
 ### Campaign correlation is the interesting bit
 
@@ -90,6 +96,40 @@ Disabling the payments service account   →  approval  (service-affecting)
 Roughly 65% of containment actions auto-execute on the demo dataset; the rest wait
 for a human who is told exactly why they were asked.
 
+### The regulatory clock
+
+Every incident-response tool tells you how bad something is. In a regulated bank
+the more urgent question is **how long you have left to tell someone** — a missed
+notification deadline is a violation in its own right, independent of what the
+attacker achieved.
+
+Those clocks do not start when the attack starts. They start at a *determination*
+— "classified as a major ICT incident", "determined to be material", "noticed" —
+which is exactly the moment this pipeline produces a verdict. So it starts the
+clock automatically:
+
+```
+CMP-003  Exfiltration, critical   →  reportable (high confidence)
+           EU DORA          4 hours         3h 59m remaining
+           India CERT-In    6 hours         5h 59m remaining
+           US OCC/Fed/FDIC  36 hours        1d 11h remaining
+           US SEC 8-K       4 business days 3d 23h remaining
+
+CMP-001  Reconnaissance, medium  →  not reportable
+           "Activity has not progressed past reconnaissance and does not meet a
+            materiality threshold on its own."
+```
+
+The threshold is deliberately conservative and always explains itself: data
+plausibly gone is enough on its own; otherwise it wants both a foothold *and*
+material severity, because a high-severity probe that never landed is a security
+event, not a reportable operational incident.
+
+**This is decision support, not a compliance filing and not legal advice.** The
+pipeline flags what looks reportable and shows the deadline each regime would
+impose; a bank's compliance function makes the determination and owns the filing.
+That disclaimer ships in every API response.
+
 ---
 
 ## Quick start
@@ -131,9 +171,16 @@ pytest -q        # 49 tests
 ollama serve && ollama pull mistral
 ```
 
-**Entirely optional.** With no model reachable, Layer 4 returns the same field
-contract from deterministic rules. A SOC tool that stops working when an inference
-endpoint is down is not a SOC tool.
+**Entirely optional.** The deterministic analyst is the baseline and always
+produces a complete result; a model, when reachable, writes a better narrative and
+its output is only used if it passes validation against the same closed
+vocabularies (an out-of-vocabulary `attack_vector` would silently corrupt the CVSS
+score downstream).
+
+This layer used to be wrapped in LangGraph. It was a single-node graph — entry,
+one function, END — which is framework decoration rather than agency, so the
+framework was removed and the capability kept. A SOC tool that stops working when
+an inference endpoint is down is not a SOC tool.
 
 The dashboard reads the backend through Next.js route handlers, defaulting to
 `http://127.0.0.1:8000`. Point it elsewhere with
@@ -154,6 +201,8 @@ The dashboard reads the backend through Next.js route handlers, defaulting to
 | `GET` | `/api/campaigns` | Correlated campaigns, worst first |
 | `GET` | `/api/campaigns/{id}` | One campaign with its member incidents |
 | `GET` | `/api/metrics` | SOC value metrics computed from stored state |
+| `GET` | `/api/notifications` | Everything on a reporting clock, soonest deadline first |
+| `GET` | `/api/regimes` | The notification regimes and their deadlines |
 | `POST` | `/api/incidents/{id}/feedback` | Analyst feedback; `false_positive` writes a suppression rule |
 | `GET` | `/api/incidents/{id}/feedback` | Feedback history |
 | `GET` | `/api/suppression-rules` | Active suppression rules |
@@ -189,6 +238,7 @@ api_server.py            FastAPI app — endpoints only
 pipeline.py              the layer sequence, in one place
 dev_run.py               offline runner
 frontend_formatter.py    pipeline output -> dashboard contract
+regulatory_clock.py      reportability + per-regime notification deadlines
 soc_metrics.py           value metrics computed from stored state
 audit_report.py          Markdown audit records
 db_manager.py            SQLite: incidents, feedback, campaigns, approvals
@@ -199,12 +249,32 @@ layer_2_detection/            4 detection engines + suppression
   mitre_mapper.py             ATT&CK techniques and tactics
   campaign_correlator.py      Layer 2.5
 layer_3_cis/                  CIS/OWASP catalogs + matcher
-layer_4_ai_analysis/          LangGraph agent + rule-based fallback
+layer_4_ai_analysis/          deterministic analyst + optional LLM enrichment
 layer_5_cvss/                 4 CVSS engines
-layer_6_response/             playbooks + human-in-the-loop gate
+layer_6_response/             playbooks + blast-radius approval gate
 tests/                        cross-layer tests
-Frontend/                     Next.js 16 dashboard
+Frontend/                     Next.js 16 dashboard (30 source files)
 ```
+
+### On the frontend
+
+Four screens, deliberately: the **queue** (what to look at first), a **campaign**
+(how one intrusion unfolded), an **investigation** (everything about one alert in
+one place), and **compliance** (what is on a clock). Plus scenario replay.
+
+The investigation used to be five tabbed pages. Once an alert becomes a case the
+job is comparing evidence, and evidence you have to navigate between is evidence
+you do not compare — so it is one workspace now.
+
+Every technical panel carries a one-sentence plain-language note, so the screens
+read for a risk officer as well as an analyst.
+
+Colour does exactly two jobs and never mixes them: cyan is interactive, and the
+severity ramp is status-only. Because severity is red/orange/yellow — hues that
+are not separable under colour-vision deficiency — **every severity indicator also
+carries its word**, enforced by the shared `SeverityChip`. Contrast for every
+token and mark was measured against the actual surfaces, not eyeballed; the
+numbers are in `app/globals.css`.
 
 ---
 
@@ -214,13 +284,15 @@ Measured on the shipped scenario:
 
 | | |
 | --- | --- |
-| Full pipeline, ingest to stored incident | **≈0.15 s** (25 records) |
-| Test suite | **49 / 49** |
+| Full pipeline, 25 records ingest to stored incident | **0.16 s** |
+| Test suite | **72 / 72** |
 | CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
-| Detection engines contributing per actionable incident | **3–4 of 4** |
+| Actionable alerts → investigations | **21 → 4 (5.2:1)** |
+| Campaigns correctly flagged reportable | **2 of 3** (recon cluster correctly excluded) |
 | Benign business traffic correctly not flagged | **4 / 4** |
+| Containment actions safe to automate | **65%** |
 | Malformed / empty / non-JSON uploads | **4xx, never 500** |
 | Re-processing the same logs | **no duplicates** |
 
@@ -242,6 +314,10 @@ Stated plainly, because they matter when reading the output.
 - **Approved containment actions are recorded, not executed.** The gate, the
   queue and the decision are real and persisted; there is no EDR or firewall
   integration behind them yet.
+- **Notification clocks are decision support, not a filing.** The reportability
+  threshold is a documented heuristic, and the SEC countdown approximates four
+  business days as 96 calendar hours, so it reads pessimistically across a
+  weekend. Compliance owns the determination.
 - **Analyst time saved is modelled, not measured.** It depends on manual triage
   time, which cannot be observed from inside this system. The assumption is
   returned in the API response next to the number so it can be challenged and
@@ -251,5 +327,6 @@ Stated plainly, because they matter when reading the output.
 
 ## Stack
 
-Python · FastAPI · SQLite · Pydantic · LangGraph · Next.js 16 · React 19 ·
-TypeScript · Tailwind 4
+Python · FastAPI · SQLite · Next.js 16 · React 19 · TypeScript · Tailwind 4
+
+Optional: Ollama for local LLM narrative enrichment.

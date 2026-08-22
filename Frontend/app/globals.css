@@ -3,53 +3,91 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    SENTRA design tokens
 
-   One dark operations theme, committed to deliberately: this is a console meant
-   to be read at 3am on a wall display, so it paints its own ground rather than
-   adapting to the host.
+   One dark operations theme, committed to deliberately: this is a console read on
+   a wall display at 3am, so it paints its own ground rather than adapting to the
+   host.
 
-   Colour carries two separate jobs and they are kept apart:
-     - cyan  = interactive / brand. Links, focus, the current selection.
-     - ramp  = severity only (critical -> low). Never decorative.
-     - amber = one meaning only: an action is waiting on a human.
+   Colour does exactly two jobs and they never mix:
+     · cyan   — interactive. Links, focus, the current selection. Never data.
+     · status — severity only, on a fixed reserved scale. Never decoration.
+
+   Every value below was measured, not chosen by eye. Contrast against the card
+   surface #0f1620:
+     text     #dfe7f2  14.58:1
+     muted    #8697ad   6.09:1
+     faint    #7a8ca3   5.28:1   (was #5b6b80 at 3.34:1 — failed small text)
+     critical #d03b3b   3.78:1
+     high     #ec835a   6.89:1
+     medium   #fab219   9.90:1
+     low      #3b9eff   6.51:1
+     benign   #0ca30c   5.42:1
+   All marks clear the 3:1 floor; all text tokens clear 4.5:1.
+
+   Severity is a STATUS scale, so red/orange/yellow sit close in hue by design and
+   cannot be separated by colour alone under colour-vision deficiency. Every
+   severity indicator in this app therefore ships with a text label — colour is
+   never the only channel.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* surfaces, darkest to lightest */
   --ground: #080c12;
   --surface: #0f1620;
-  --surface-raised: #16202c;
-  --surface-sunk: #060a0f;
+  --raised: #16202c;
+  --sunk: #060a0f;
 
   --rule: #223040;
   --rule-soft: #18222e;
 
   --text: #dfe7f2;
-  --text-muted: #8697ad;
-  --text-faint: #5b6b80;
+  --muted: #8697ad;
+  --faint: #7a8ca3;
 
-  /* interactive */
   --accent: #22d3ee;
-  --accent-dim: #0e7490;
-  --accent-glow: rgba(34, 211, 238, 0.14);
+  --accent-deep: #0e7490;
 
-  /* severity ramp — semantic, not decorative */
-  --sev-critical: #f2555a;
-  --sev-high: #f89b3c;
-  --sev-medium: #e3c34a;
-  --sev-low: #4bb3d4;
-  --sev-benign: #3f9e78;
+  --sev-critical: #d03b3b;
+  --sev-high: #ec835a;
+  --sev-medium: #fab219;
+  --sev-low: #3b9eff;
+  --sev-benign: #0ca30c;
 
-  /* the one thing amber means */
-  --gate: #f0a63c;
-  --gate-bg: rgba(240, 166, 60, 0.1);
-
-  --font-display: var(--font-inter), system-ui, sans-serif;
-  --font-mono-stack: var(--font-jetbrains-mono), ui-monospace, monospace;
+  /* Meter tracks: a darker step of the mark's own hue, not grey, so the state
+     reads across the whole bar rather than only where it is filled. */
+  --track-critical: #3d1a1a;
+  --track-high: #3d2418;
+  --track-medium: #3a2f10;
+  --track-low: #12283d;
+  --track-neutral: #16202c;
 }
 
 @theme inline {
-  --color-background: var(--ground);
+  --color-ground: var(--ground);
   --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunk: var(--sunk);
+  --color-rule: var(--rule);
+  --color-rule-soft: var(--rule-soft);
+
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+
+  --color-sev-critical: var(--sev-critical);
+  --color-sev-high: var(--sev-high);
+  --color-sev-medium: var(--sev-medium);
+  --color-sev-low: var(--sev-low);
+  --color-sev-benign: var(--sev-benign);
+
+  --color-track-critical: var(--track-critical);
+  --color-track-high: var(--track-high);
+  --color-track-medium: var(--track-medium);
+  --color-track-low: var(--track-low);
+  --color-track-neutral: var(--track-neutral);
+
+  --color-background: var(--ground);
   --color-foreground: var(--text);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
@@ -62,31 +100,40 @@
 body {
   background: var(--ground);
   color: var(--text);
-  font-family: var(--font-display);
+  font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-.mono,
-.tabular {
-  font-family: var(--font-mono-stack);
+.mono {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
-/* Digits that sit in columns must not jitter as values change. */
+/* Digits that must line up vertically — table columns, axis ticks. NOT for large
+   standalone values: tabular figures give every digit the width of a zero, which
+   makes a display-size number look loose. */
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Uppercase micro-labels need air to stay legible at small sizes. */
-.eyebrow {
-  font-family: var(--font-mono-stack);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+/* Large standalone values keep the font's proportional figures. */
+.figure {
+  font-variant-numeric: proportional-nums;
+  letter-spacing: -0.02em;
 }
 
-/* Wide content scrolls inside its own box; the page body never does. */
+/* Uppercase micro-label. Uses --muted, not --faint: at 10px this is small text
+   and has to clear 4.5:1. */
+.eyebrow {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Wide content scrolls inside its own box; the page body never scrolls sideways. */
 .scroll-x {
   overflow-x: auto;
   scrollbar-width: thin;
@@ -97,7 +144,7 @@ body {
   height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--surface-sunk);
+  background: var(--sunk);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--rule);
@@ -112,15 +159,13 @@ body {
   outline-offset: 2px;
 }
 
-/* The pulse used on live/critical indicators. Kept subtle — a console full of
-   animation is harder to read, not more alive. */
 @keyframes sentra-pulse {
   0%,
   100% {
     opacity: 1;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
 }
 .pulse-dot {

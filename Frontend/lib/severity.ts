@@ -1,9 +1,16 @@
 /**
- * Severity and stage presentation.
+ * Severity presentation — one definition, used everywhere.
  *
- * Single source of truth so the ramp means the same thing on every screen — a
- * dashboard where "high" is orange in one card and red in another trains the
- * analyst to stop trusting colour.
+ * Severity is a STATUS scale: a small fixed set with reserved meaning, not a
+ * categorical palette. Two consequences the whole app follows:
+ *
+ *  1. Red / orange / yellow sit close in hue by construction, so they cannot be
+ *     separated by colour alone under colour-vision deficiency. Every severity
+ *     indicator therefore carries a TEXT LABEL. Colour is a second channel, never
+ *     the only one. `SeverityChip` enforces this so a caller cannot forget.
+ *  2. These hexes are fixed and measured (contrast noted in globals.css). They are
+ *     Tailwind theme colours (`sev-critical` …), not `red-400` — Tailwind's ramp
+ *     is a different, unmeasured set.
  */
 
 export type Severity = "critical" | "high" | "medium" | "low" | "benign";
@@ -15,53 +22,60 @@ export function normalizeSeverity(value: unknown): Severity {
 }
 
 type Tone = {
-  /** filled chip, for the primary severity badge */
+  /** Filled chip for the severity badge. */
   chip: string;
-  /** the dot / rail colour */
-  dot: string;
-  /** text-only, for inline emphasis */
+  /** The dot / rail / mark colour. */
+  mark: string;
+  /** Text-only emphasis. Use sparingly — values normally wear text tokens. */
   text: string;
-  /** left accent rail on a card */
-  rail: string;
-  /** subtle card border tint */
+  /** Meter track: a darker step of the mark's own hue, never grey. */
+  track: string;
+  /** Card border tint. */
   border: string;
+  /** Rank, for sorting a queue worst-first. */
+  rank: number;
 };
 
 export const SEVERITY_TONE: Record<Severity, Tone> = {
   critical: {
-    chip: "border-red-500/40 bg-red-500/12 text-red-300",
-    dot: "bg-red-400",
-    text: "text-red-300",
-    rail: "bg-red-500",
-    border: "border-red-900/40",
+    chip: "border-sev-critical/40 bg-sev-critical/15 text-sev-critical",
+    mark: "bg-sev-critical",
+    text: "text-sev-critical",
+    track: "bg-track-critical",
+    border: "border-sev-critical/30",
+    rank: 4,
   },
   high: {
-    chip: "border-orange-500/40 bg-orange-500/12 text-orange-300",
-    dot: "bg-orange-400",
-    text: "text-orange-300",
-    rail: "bg-orange-500",
-    border: "border-orange-900/35",
+    chip: "border-sev-high/40 bg-sev-high/15 text-sev-high",
+    mark: "bg-sev-high",
+    text: "text-sev-high",
+    track: "bg-track-high",
+    border: "border-sev-high/25",
+    rank: 3,
   },
   medium: {
-    chip: "border-yellow-500/35 bg-yellow-500/10 text-yellow-300",
-    dot: "bg-yellow-400",
-    text: "text-yellow-300",
-    rail: "bg-yellow-500",
-    border: "border-slate-700/60",
+    chip: "border-sev-medium/35 bg-sev-medium/12 text-sev-medium",
+    mark: "bg-sev-medium",
+    text: "text-sev-medium",
+    track: "bg-track-medium",
+    border: "border-rule",
+    rank: 2,
   },
   low: {
-    chip: "border-sky-500/35 bg-sky-500/10 text-sky-300",
-    dot: "bg-sky-400",
-    text: "text-sky-300",
-    rail: "bg-sky-500",
-    border: "border-slate-700/60",
+    chip: "border-sev-low/35 bg-sev-low/12 text-sev-low",
+    mark: "bg-sev-low",
+    text: "text-sev-low",
+    track: "bg-track-low",
+    border: "border-rule",
+    rank: 1,
   },
   benign: {
-    chip: "border-emerald-600/35 bg-emerald-600/10 text-emerald-300",
-    dot: "bg-emerald-400",
-    text: "text-emerald-300",
-    rail: "bg-emerald-600",
-    border: "border-slate-800/60",
+    chip: "border-sev-benign/35 bg-sev-benign/12 text-sev-benign",
+    mark: "bg-sev-benign",
+    text: "text-sev-benign",
+    track: "bg-track-neutral",
+    border: "border-rule-soft",
+    rank: 0,
   },
 };
 
@@ -71,20 +85,18 @@ export function severityTone(value: unknown): Tone {
 
 export const SEVERITY_ORDER: Severity[] = ["critical", "high", "medium", "low", "benign"];
 
-/** Verdict labels the detection layer emits. */
+/** Detection verdicts. Also a status scale — always labelled. */
 export function verdictTone(label: unknown): string {
   const v = String(label ?? "").toLowerCase();
-  if (v === "malicious") return "border-red-500/40 bg-red-500/12 text-red-300";
-  if (v === "suspicious") return "border-orange-500/35 bg-orange-500/10 text-orange-300";
-  if (v === "suppressed") return "border-slate-600/50 bg-slate-700/20 text-slate-400";
-  return "border-emerald-600/35 bg-emerald-600/10 text-emerald-300";
+  if (v === "malicious") return "border-sev-critical/40 bg-sev-critical/15 text-sev-critical";
+  if (v === "suspicious") return "border-sev-high/35 bg-sev-high/12 text-sev-high";
+  if (v === "suppressed") return "border-rule bg-raised text-faint";
+  return "border-sev-benign/35 bg-sev-benign/12 text-sev-benign";
 }
 
 /**
  * The 15 ATT&CK Enterprise tactics in lifecycle order, mirroring
- * layer_2_detection/mitre_mapper.py. Used to render the kill-chain rail so a
- * campaign's progress is visible against the whole lifecycle, not just its own
- * stages.
+ * layer_2_detection/mitre_mapper.py.
  */
 export const ATTACK_TACTICS: { id: string; name: string; short: string }[] = [
   { id: "TA0043", name: "Reconnaissance", short: "Recon" },
@@ -104,12 +116,37 @@ export const ATTACK_TACTICS: { id: string; name: string; short: string }[] = [
   { id: "TA0040", name: "Impact", short: "Impact" },
 ];
 
-/** Colour a stage by how deep into the lifecycle it is. */
-export function stageTone(order: number): string {
-  if (order >= 14) return "text-red-300";
-  if (order >= 11) return "text-orange-300";
-  if (order >= 6) return "text-yellow-300";
-  return "text-sky-300";
+/**
+ * How deep into the lifecycle a stage sits, expressed on the severity scale so
+ * the whole app reads one ramp. Reaching Exfiltration is critical; a scan is not.
+ */
+export function stageSeverity(order: number): Severity {
+  if (order >= 14) return "critical";
+  if (order >= 11) return "high";
+  if (order >= 6) return "medium";
+  if (order >= 1) return "low";
+  return "benign";
+}
+
+/** Notification clock states — status, always labelled. */
+export function clockTone(state: string): { chip: string; mark: string; label: string } {
+  if (state === "overdue")
+    return {
+      chip: "border-sev-critical/40 bg-sev-critical/15 text-sev-critical",
+      mark: "bg-sev-critical",
+      label: "Overdue",
+    };
+  if (state === "due_soon")
+    return {
+      chip: "border-sev-high/40 bg-sev-high/15 text-sev-high",
+      mark: "bg-sev-high",
+      label: "Due soon",
+    };
+  return {
+    chip: "border-sev-benign/35 bg-sev-benign/12 text-sev-benign",
+    mark: "bg-sev-benign",
+    label: "On track",
+  };
 }
 
 export function formatTimestamp(value: unknown): string {
@@ -122,8 +159,16 @@ export function formatTimestamp(value: unknown): string {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   });
+}
+
+/** Compact a count for a stat tile: 1,284 / 12.9K / 4.2M. */
+export function compact(value: unknown): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 10_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
 }
 
 export function formatBytes(value: unknown): string {
@@ -137,4 +182,17 @@ export function formatBytes(value: unknown): string {
     i += 1;
   }
   return `${v.toFixed(v < 10 && i > 0 ? 1 : 0)} ${units[i]}`;
+}
+
+/** 'in 3h 12m' / 'overdue by 2h 4m' — from a signed seconds value. */
+export function formatRemaining(seconds: number): string {
+  const overdue = seconds < 0;
+  const s = Math.abs(Math.round(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  let text: string;
+  if (h >= 24) text = `${Math.floor(h / 24)}d ${h % 24}h`;
+  else if (h) text = `${h}h ${m}m`;
+  else text = `${m}m`;
+  return overdue ? `overdue by ${text}` : text;
 }

@@ -20,6 +20,7 @@ from layer_1_feature_engineering.ingestion_orchestrator import (
     process_jsonl_text,
 )
 from pipeline import run_full_pipeline
+from regulatory_clock import REGIMES, for_campaign, for_incident, format_remaining
 from soc_metrics import compute_metrics
 
 from db_manager import (
@@ -101,6 +102,7 @@ async def root():
             ],
             "campaigns": ["GET /api/campaigns", "GET /api/campaigns/{campaign_id}"],
             "metrics": ["GET /api/metrics"],
+            "compliance": ["GET /api/notifications", "GET /api/regimes"],
             "feedback": [
                 "POST /api/incidents/{event_id}/feedback",
                 "GET /api/incidents/{event_id}/feedback",
@@ -278,6 +280,93 @@ async def metrics():
 
     return compute_metrics(incidents, campaigns, feedback, _LAST_RUN_SECONDS)
 
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Regulatory notification clocks
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.get("/api/regimes")
+async def list_regimes():
+    """The notification regimes and their deadlines, with the instrument for each."""
+    return {"count": len(REGIMES), "regimes": REGIMES}
+
+
+@app.get("/api/notifications")
+async def notifications():
+    """
+    Everything currently carrying a notification deadline, soonest first.
+
+    Recomputed on read rather than stored, because the whole value of this view is
+    that the countdown is live. A campaign is one incident to a regulator, so
+    campaigns are the primary unit and standalone incidents are only included when
+    they belong to no campaign.
+    """
+    campaigns = get_all_campaigns()
+    incidents = get_all_incidents()
+
+    in_campaign: set[str] = set()
+    for campaign in campaigns:
+        in_campaign.update(campaign.get("incident_ids", []))
+
+    items = []
+
+    for campaign in campaigns:
+        clock = for_campaign(campaign)
+        if not clock["reportable"]:
+            continue
+        items.append(
+            {
+                "kind": "campaign",
+                "id": campaign.get("campaign_id"),
+                "title": campaign.get("name"),
+                "severity": campaign.get("severity"),
+                "stage": campaign.get("furthest_stage"),
+                "alert_count": campaign.get("incident_count"),
+                "notification": clock,
+            }
+        )
+
+    for incident in incidents:
+        if incident.get("event_id") in in_campaign:
+            continue
+        clock = for_incident(incident)
+        if not clock["reportable"]:
+            continue
+        detection = incident.get("detection") or {}
+        dash = incident.get("dashboard") or {}
+        items.append(
+            {
+                "kind": "incident",
+                "id": incident.get("event_id"),
+                "title": dash.get("alert_title") or detection.get("threat_type"),
+                "severity": detection.get("severity"),
+                "stage": (incident.get("mitre_attack") or {}).get("kill_chain_stage"),
+                "alert_count": 1,
+                "notification": clock,
+            }
+        )
+
+    items.sort(key=lambda i: i["notification"]["tightest"]["deadline"])
+
+    for item in items:
+        for clock in item["notification"]["clocks"]:
+            clock["remaining_label"] = format_remaining(clock["seconds_remaining"])
+
+    overdue = sum(
+        1 for i in items if any(c["state"] == "overdue" for c in i["notification"]["clocks"])
+    )
+
+    return {
+        "count": len(items),
+        "overdue": overdue,
+        "tightest_deadline": items[0]["notification"]["tightest"]["deadline"] if items else None,
+        "items": items,
+        "disclaimer": (
+            "Decision support, not a compliance filing and not legal advice. The "
+            "institution's compliance function makes the determination and owns the filing."
+        ),
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Analyst feedback / suppression

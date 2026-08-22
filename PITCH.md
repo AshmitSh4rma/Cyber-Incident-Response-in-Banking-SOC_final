@@ -2,9 +2,13 @@
 
 **Automated incident response for banking Security Operations Centers.**
 
-Raw security telemetry in; a scored, control-mapped, playbook-ready incident out —
-with the CIS control it violated and a defensible CVSS 3.1 score attached.
-Six analysis layers, roughly one second, no analyst keystrokes.
+**In one sentence:** it reads a bank's security logs, works out which alerts are
+actually the same break-in, and tells you how long you have left to report it to
+the regulator.
+
+Raw telemetry in; a scored, control-mapped, playbook-ready incident out — with the
+CIS control it violated, the ATT&CK technique it maps to, a CVSS 3.1 score computed
+by formula, and a live regulatory notification clock.
 
 ---
 
@@ -97,43 +101,54 @@ material", "noticed". Determination is triage. Triage is what SENTRA compresses.
 | **L2** | MITRE ATT&CK mapping — technique + tactic + lifecycle position | `T1190` · Initial Access · stage 3/15 |
 | **L2.5** | **Campaign correlation** — groups alerts into intrusions, reports progression | campaigns · kill chains · linkage evidence |
 | **L3** | CIS benchmark mapping against real catalogs (Cisco ASA, IOS-XE 16/17, IOS-XR 7, NX-OS, Firepower, plus web) | control ID + rationale + audit procedure + remediation |
-| **L4** | Analysis agent (LangGraph) — narrative, intent, CVSS metric proposal; deterministic fallback with no model | intent · narrative · CVSS handoff |
+| **L4** | Incident analyst — narrative, intent, CVSS metric proposal. Deterministic by default; optional local-LLM enrichment, validated before use | intent · narrative · CVSS handoff |
 | **L5** | CVSS 3.1 scoring — metric mapping, impact mapping, scoring, validation | base score · severity band · vector string |
-| **L6** | Response playbook + **human-in-the-loop gate** | priority · auto actions · gated actions · escalation |
+| **L6** | Response playbook + **blast-radius approval gate** | priority · auto actions · gated actions · escalation |
+| **Clock** | **Regulatory notification deadlines** — reportability assessment plus a live countdown per regime | reportable? · deadline per regime · why |
 
 ---
 
 ## The differentiators
 
-1. **Correlation follows the compromise, not just the IP.** Chaining a host from
+1. **It counts down to the regulatory deadline.** Every SOC tool tells you how bad
+   something is. In a bank the more urgent question is how long you have left to
+   tell someone — a missed notification deadline is a violation on its own. Those
+   clocks start at a *determination*, which is the moment this pipeline reaches a
+   verdict, so it starts them automatically and explains why each one applies.
+   Nothing else in this category does it. *2 of 3 campaigns flagged reportable; the
+   reconnaissance cluster correctly excluded, with a stated reason.*
+
+2. **Correlation follows the compromise, not just the IP.** Chaining a host from
    victim to attacker is what turns a queue into an attack chain with a direction
    of travel — and what tells an analyst the intruder reached the database rather
    than bounced off the web tier. *9 alerts → 1 campaign at 93% progression.*
 
-2. **Compliance evidence per incident, not per audit.** Every incident carries the
+3. **Compliance evidence per incident, not per audit.** Every incident carries the
    CIS control it implicates with rationale and audit procedure, exportable as a
    Markdown record. The artifact an auditor asks for is generated at detection
    time, not reconstructed a quarter later. CIS Controls v8.1 crosswalk to NIST
    CSF 2.0, NIST 800-53, ISO 27001, SOC 2, HIPAA and PCI DSS — one mapping,
    several regimes. *100% of incidents carry a named control.*
 
-3. **Severity is computed, not guessed.** The CVSS 3.1 equations, implemented
+4. **Severity is computed, not guessed.** The CVSS 3.1 equations, implemented
    directly. An LLM asked to rate severity gives a plausible number that drifts
    between runs; a formula gives one a regulator can re-derive from the vector
    string. *7 of 7 published reference vectors — exact.*
 
-4. **The gate is on blast radius, not severity.** Isolating the host that clears
+5. **The gate is on blast radius, not severity.** Isolating the host that clears
    card transactions can cause a worse outage than the intrusion — and an outage
    on a regulated service is itself reportable. Blocking an attacker IP
    auto-executes; isolating a core banking host waits for a human who is shown
    exactly why they were asked. A critical verdict does not earn the right to
    break production. *65% of containment actions auto-execute.*
 
-5. **The LLM degrades, it does not fail.** With no model reachable, Layer 4
-   returns the same field contract from deterministic rules. A SOC tool that stops
-   working when an inference endpoint is down is not a SOC tool.
+6. **The LLM is optional, and we deleted the framework around it.** The
+   deterministic analyst is the baseline and always returns a complete result. The
+   model layer was wrapped in LangGraph; it was a single-node graph — entry, one
+   function, END — so we removed the framework and kept the capability. Saying that
+   out loud is worth more than the buzzword.
 
-6. **The feedback loop actually closes.** Marking an incident a false positive
+7. **The feedback loop actually closes.** Marking an incident a false positive
    writes a suppression rule that Layer 2 consults *before running any engine* on
    the next batch. Given 46% of alerts are false positives, this is the
    highest-leverage thing analyst judgement can do — and here it compounds instead
@@ -147,17 +162,32 @@ Measured on the shipped scenario, not projected:
 
 | | |
 | --- | --- |
-| Full seven-stage pipeline, 25 records | **0.148 s** |
-| Automated test suite | **49 / 49** |
+| Full pipeline, 25 records | **0.16 s** |
+| Automated test suite | **72 / 72** |
 | CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
 | Actionable alerts → investigations | **21 → 4 (5.2:1)** |
+| Campaigns correctly flagged reportable | **2 of 3** |
 | Benign business traffic correctly not flagged | **4 / 4** |
-| Authorised scan kept out of the breach campaign | **yes** |
-| Analyst time saved on this window (modelled) | **6.0 hours** |
+| Containment safe to automate | **65%** |
 | Malformed / empty / non-JSON uploads | **4xx, never 500** |
 | Re-processing the same logs | **no duplicates** |
+
+### What we deleted to get here
+
+Judges see feature lists. This is the other half of the work:
+
+- A 4.5 MB vendored directory that nothing imported.
+- A LangGraph "agent" that was one node wrapping one function call.
+- An elaborate response package requiring Elasticsearch, Redis and PostgreSQL that
+  was never on the live path — replaced with an approval gate that actually runs.
+- Fabricated incidents used as an offline fallback, so a backend outage filled the
+  dashboard with convincing fake alerts.
+- Five tabbed incident pages, collapsed into one workspace.
+
+Frontend went from 7,456 lines to 4,044 while gaining campaign correlation, the
+ATT&CK view, the compliance view and the approval gate.
 
 ---
 
@@ -200,9 +230,10 @@ emitted per incident, that survives being handed to an auditor.
 
 ## The four-minute demo script
 
-1. **Open the dashboard.** Read the header: 25 alerts ingested, 4 investigations,
-   5.2:1 consolidation, 6 hours saved. Four benign events filtered with no analyst
-   involvement.
+1. **Open the dashboard.** One number leads: **4 investigations** from 25 raw
+   alerts. Beside it, a live countdown — *3h 59m to notify the EU regulator*. Say
+   the line: every other tool tells you how bad it is; this one tells you how long
+   you have.
 2. **Click the red banner.** The moment. One campaign, nine alerts, six ATT&CK
    stages, 93% of the lifecycle, ending at Exfiltration with 486 MB out of the core
    banking database. Trace it: external IP → DMZ web → app tier → database → out.

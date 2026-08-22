@@ -4,23 +4,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from llm_analyst import analyse as llm_analyse
 from ollama_client import check_ollama_connection
-from agent.agent_graph import build_graph
-from agent.agent_state import AgentState
-
-
-# ─────────────────────────────────────────
-# GRAPH INSTANCE
-# ─────────────────────────────────────────
-
-_GRAPH = None
-
-
-def _get_graph():
-    global _GRAPH
-    if _GRAPH is None:
-        _GRAPH = build_graph()
-    return _GRAPH
 
 
 # ─────────────────────────────────────────
@@ -36,21 +21,6 @@ def _is_ollama_available() -> bool:
         result = check_ollama_connection(force_recheck=True)
         _OLLAMA_OK = result["connected"]
     return _OLLAMA_OK
-
-
-# ─────────────────────────────────────────
-# INITIAL STATE
-# ─────────────────────────────────────────
-
-def _build_initial_state(incident_data: dict) -> AgentState:
-    return {
-        "incident_data": incident_data,
-        "ai_analysis": None,
-        "ai_failed": False,
-        "ai_failure_reason": None,
-        "error": None,
-        "escalate": None
-    }
 
 
 # ─────────────────────────────────────────
@@ -375,18 +345,23 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
 # ─────────────────────────────────────────
 
 def run_ai_analysis(incident_data: dict) -> dict:
+    """
+    Produce the analysis block for one incident.
+
+    The deterministic analyst is the baseline, not the fallback of last resort —
+    it always produces a complete, valid result. An LLM is consulted only when
+    one is reachable, and its output is used only if it passes validation. Either
+    way the caller gets the same field contract, so Layer 5 never has to care
+    which path ran.
+    """
+    deterministic = _build_rule_based_fallback(incident_data)
+    deterministic["source"] = "deterministic"
+
     if not _is_ollama_available():
-        return _build_rule_based_fallback(incident_data)
+        return deterministic
 
-    initial_state = _build_initial_state(incident_data)
-    graph = _get_graph()
-
-    try:
-        final_state = graph.invoke(initial_state)
-    except Exception:
-        return _build_rule_based_fallback(incident_data)
-
-    return final_state.get("ai_analysis") or _build_rule_based_fallback(incident_data)
+    enriched = llm_analyse(incident_data)
+    return enriched or deterministic
 
 
 def run_layer4(layer3_output: list[dict]) -> list[dict]:
@@ -408,7 +383,9 @@ def run_layer4(layer3_output: list[dict]) -> list[dict]:
             try:
                 event_copy["ai_analysis"] = future.result()
             except Exception:
-                event_copy["ai_analysis"] = _build_rule_based_fallback(layer3_output[idx])
+                fallback = _build_rule_based_fallback(layer3_output[idx])
+                fallback["source"] = "deterministic"
+                event_copy["ai_analysis"] = fallback
             results[idx] = event_copy
 
     return results

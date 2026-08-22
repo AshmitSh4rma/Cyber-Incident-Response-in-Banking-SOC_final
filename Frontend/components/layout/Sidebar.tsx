@@ -7,6 +7,7 @@ import {
   UploadCloud,
   ChevronRight,
   GitBranch,
+  Landmark,
   Wifi,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,14 @@ const navItems = [
     icon: GitBranch,
     accent: "from-red-500 to-orange-500",
     activeGlow: "shadow-[0_0_16px_rgba(239,68,68,0.18)]",
+  },
+  {
+    href: "/compliance",
+    label: "Compliance",
+    sublabel: "Notification deadlines",
+    icon: Landmark,
+    accent: "from-amber-500 to-orange-500",
+    activeGlow: "shadow-[0_0_16px_rgba(240,166,60,0.18)]",
   },
   {
     href: "/upload",
