@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from db_manager import check_database_health, close_db, init_db
+from db_manager import check_database_health, close_db, database_backend, init_db
 from prototype_ai_chat.chat_service import ChatService
 from prototype_ai_chat.schemas import ChatRequest, ChatResponse, HealthResponse
 
@@ -33,8 +33,14 @@ def _database_connected() -> bool:
     # A transient health failure must never close/rebuild the process-wide pool;
     # lifespan exclusively owns pool open/close. Psycopg replaces stale checked
     # connections on the next bounded acquisition.
+    #
+    # The backend check is part of the answer, not a separate concern. Retrieval
+    # is PostgreSQL-only and raises on anything else, so on a SQLite development
+    # database every question fails while a plain connectivity check reports
+    # "connected" — a health endpoint that says the service can answer when it
+    # cannot is worse than one that is simply down.
     try:
-        _database_ready = check_database_health()
+        _database_ready = check_database_health() and database_backend() == "postgresql"
     except Exception:
         _database_ready = False
     return _database_ready
