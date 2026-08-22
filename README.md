@@ -53,7 +53,7 @@ Seven stages. Each is independently testable, and data flows strictly forward.
 | **L5** | Scores how bad it is, consistently | CVSS 3.1 base score computed from the published equations |
 | **L6** | Says what to do, and what needs a person | Threat-specific playbook + blast-radius approval gate |
 | **Clock** | **Says how long until you must tell the regulator** | Reportability assessment + per-regime countdown |
-| **Settings** | **Lets the bank change any of the above without a developer** | 23 declared settings read at the point of use; validated, previewable, reversible |
+| **Ask** | **Answers questions about what is stored, without inventing any of it** | Retrieval over the incident store, then every claim checked against it; unsupported ones dropped |
 
 ### Campaign correlation is the interesting bit
 
@@ -133,20 +133,23 @@ That disclaimer ships in every API response.
 
 ---
 
-## Nothing here needs a developer to change
+## Nothing here is a hardcoded literal
 
 Every number that decides how this system behaves was a Python literal, and a
-system whose risk appetite is a literal cannot be deployed twice. **Settings**
-(`/settings`) exposes 23 of them — thresholds, severity policy, jurisdiction,
-response autonomy, the savings model, and console defaults — with no code change
-and no restart.
+system whose risk appetite is a literal cannot be deployed twice. `soc_config.py`
+declares 23 of them — thresholds, severity policy, jurisdiction, response
+autonomy, the savings model, and console defaults — and they are edited in
+`soc_config.json` with no code change and no restart.
+
+There was a Settings screen for this and it has been removed; the declared
+schema, the validation and the audit trail are all still here, and
+`GET /api/config` still reports them.
 
 The mechanism is small on purpose:
 
 - **Declared, not hardcoded twice.** `soc_config.py` holds one list of settings,
   each carrying its plain-English question, its bounds, and a sentence on what
-  observably changes when you move it. The console renders from that list, so
-  adding a setting server-side makes it appear in the UI with no frontend change.
+  observably changes when you move it.
 - **Read at the point of use.** Nothing is captured at import, so a saved change
   applies to the next event without a restart. `get()` re-reads the file when it
   changes on disk, which is what lets the API server and the offline runner share
@@ -201,17 +204,42 @@ first one's traffic and the comparison measures the wrong thing.
 ## Quick start
 
 ```bash
-# Backend
 python -m venv .venv && source .venv/bin/activate    # Windows: .\.venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn api_server:app --reload --port 8000          # docs at /docs
-
-# Frontend (new terminal)
-cd Frontend && npm install && npm run dev            # http://localhost:3000
+cd Frontend && npm install && cd ..
 ```
 
-`/` redirects to the dashboard. The shipped `soc_incidents.db` already contains a
-processed scenario, so the dashboard has data on first load.
+Production requires PostgreSQL; development falls back to SQLite when
+`DATABASE_URL` is absent. Copy `.env.example` to `.env`, then:
+
+```bash
+python -m database.migrate     # PostgreSQL only; it refuses on SQLite, which
+                               # builds its schema on first connection instead
+python dev_run.py              # process a scenario so there is data to look at
+```
+
+Then bring the stack up — four processes, so there is a script for it:
+
+```bash
+scripts/dev_stack.sh up                     # console on http://localhost:3100
+scripts/dev_stack.sh status
+scripts/dev_stack.sh down                   # add --with-postgres to stop the database too
+```
+
+Or run them by hand:
+
+```bash
+uvicorn api_server:app --reload --port 8000            # the API; docs at /docs
+uvicorn prototype_ai_chat.api:app --port 8100          # Ask SENTRA, optional
+cd Frontend && npm run dev                             # the console
+```
+
+`/` redirects to the dashboard. Ask SENTRA needs PostgreSQL and answers without
+a model unless `GEMINI_API_KEY` is set — the retrieval and the claim checking are
+the same either way; only the prose is generated.
+
+`scripts/migrate_sqlite_to_postgres.py` moves an existing SQLite database across.
+It upserts and never deletes.
 
 ### Run the pipeline offline
 
@@ -245,8 +273,11 @@ python -m http.server 8080 --directory Frontend/public   # then /statistics.html
 ### Tests
 
 ```bash
-pytest -q        # 210 tests
+pytest -q        # 498 tests
 ```
+
+Four of them are guarded PostgreSQL integration tests and skip unless
+`TEST_DATABASE_URL` is set.
 
 ### Optional: local LLM for Layer 4
 
@@ -294,10 +325,15 @@ The dashboard reads the backend through Next.js route handlers, defaulting to
 | `POST` | `/api/approvals/{id}/decision` | Approve or reject |
 | `GET` | `/api/incidents/{id}/report` | Incident as a Markdown audit record |
 | `GET` | `/api/campaigns/{id}/report` | Campaign as a Markdown audit report |
+| `GET` | `/health` | Service and database connectivity, and which backend is in use |
 | `GET` | `/api/config` | Settings schema, current values, what differs from default, recent changes |
 | `PUT` | `/api/config` | Apply a change; `422` with per-field messages and nothing written if invalid |
 | `POST` | `/api/config/preview` | Run the pipeline twice and return the difference, saving nothing |
 | `POST` | `/api/config/reset` | Return every setting to its shipped default |
+
+Ask SENTRA is a separate application (`prototype_ai_chat.api`) with `POST /chat`,
+`GET /health` and `DELETE /sessions/{id}`, because it needs PostgreSQL and the
+Gemini SDK and the console has to keep working without either.
 
 ---
 
@@ -328,8 +364,11 @@ frontend_formatter.py    pipeline output -> dashboard contract
 regulatory_clock.py      reportability + per-regime notification deadlines
 soc_metrics.py           value metrics computed from stored state
 audit_report.py          Markdown audit records
-db_manager.py            SQLite: incidents, feedback, campaigns, approvals
-demo_attack_scenario.json  the 25-record banking intrusion
+db_manager.py            incidents, feedback, campaigns, approvals, determinations
+db_config.py             backend selection and pool sizing
+database/                pool + ordered SQL migrations
+scripts/                 SQLite->PostgreSQL migration, dev_stack.sh
+demo_attack_scenario.json  the 47-record banking intrusion
 
 layer_1_feature_engineering/   7 feature engines
 layer_2_detection/            4 detection engines + suppression
@@ -340,15 +379,18 @@ soc_config.py                 the 23 runtime settings: schema, validation, stora
 layer_4_ai_analysis/          deterministic analyst + optional LLM enrichment
 layer_5_cvss/                 4 CVSS engines
 layer_6_response/             playbooks + blast-radius approval gate
+prototype_ai_chat/            grounded Q&A: retrieval, intent routing, claim verification
 tests/                        cross-layer tests
-Frontend/                     Next.js 16 dashboard (30 source files)
+Frontend/                     Next.js 16 console
 ```
 
 ### On the frontend
 
-Four screens, deliberately: the **queue** (what to look at first), a **campaign**
-(how one intrusion unfolded), an **investigation** (everything about one alert in
-one place), and **compliance** (what is on a clock). Plus scenario replay.
+Seven screens: the **overview** (what needs attention), the **triage queue**
+(what to open next, worst first), a **campaign** (how one intrusion unfolded), an
+**investigation** (everything about one alert in one place), **reporting** (what
+is on a regulator's clock), **Ask SENTRA** (question the record), and **scenario
+replay**. Plus the standalone statistics page.
 
 The investigation used to be five tabbed pages. Once an alert becomes a case the
 job is comparing evidence, and evidence you have to navigate between is evidence
@@ -440,6 +482,7 @@ is four records of forty-seven, and the test caps the pre-labelled share at 15%.
 
 ## Stack
 
-Python · FastAPI · SQLite · Next.js 16 · React 19 · TypeScript · Tailwind 4
+Python · FastAPI · PostgreSQL (SQLite in development) · Next.js 16 · React 19 ·
+TypeScript · Tailwind 4 · Recharts
 
-Optional: Ollama for local LLM narrative enrichment.
+Optional: Ollama for local LLM narrative enrichment; Gemini for Ask SENTRA's prose.
