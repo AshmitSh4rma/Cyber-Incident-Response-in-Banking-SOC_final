@@ -4,6 +4,10 @@ __pycache__/
 *.pyc
 .env
 .env.*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
 node_modules/
 .next/
 dist/

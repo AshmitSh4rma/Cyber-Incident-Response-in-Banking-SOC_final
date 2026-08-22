@@ -6,6 +6,7 @@ pipeline itself lives in pipeline.py so the CLI and the API cannot drift apart.
 """
 
 import json
+import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -18,7 +19,10 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 import soc_config
 from audit_report import campaign_report, incident_report
 from db_manager import (
-    clear_all_incidents,
+    check_database_health,
+    clear_incidents_and_campaigns,
+    close_db,
+    database_backend,
     decide_approval,
     get_all_campaigns,
     get_all_incidents,
@@ -28,10 +32,9 @@ from db_manager import (
     get_incident,
     get_suppression_list,
     init_db,
-    replace_campaigns,
+    persist_pipeline_results,
     request_approval,
     save_feedback,
-    save_incident,
     update_incident_status,
 )
 from layer_1_feature_engineering.ingestion_orchestrator import (
@@ -78,9 +81,12 @@ def _last_run_seconds() -> float | None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    print("[api_server] Initializing SQLite database...")
+    print(f"[api_server] Connecting to {database_backend()} database...")
     init_db()
-    yield
+    try:
+        yield
+    finally:
+        close_db()
 
 
 app = FastAPI(
@@ -92,7 +98,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+        if origin.strip()
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -163,6 +173,26 @@ async def root():
                 "GET /api/campaigns/{campaign_id}/report",
             ],
         },
+    }
+
+
+@app.get("/health")
+async def health():
+    """Lightweight service and database connectivity check."""
+    connected = check_database_health()
+    if not connected:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "database": "unavailable",
+                "database_backend": database_backend(),
+            },
+        )
+    return {
+        "status": "ok",
+        "database": "connected",
+        "database_backend": database_backend(),
     }
 
 
@@ -242,9 +272,9 @@ async def run_pipeline(file: UploadFile = File(...)):
     events = output["events"]
     campaigns = output["campaigns"]
 
-    for event in events:
-        save_incident(event)
-    replace_campaigns(campaigns)
+    # Incidents and the whole-batch campaign conclusion are one logical write.
+    # A failure in either half rolls the complete database operation back.
+    persist_pipeline_results(events, campaigns)
 
     for output_path in OUTPUT_PATHS:
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -296,8 +326,7 @@ async def trigger_action(event_id: str, payload: dict = Body(...)):
 
 @app.delete("/api/incidents")
 async def delete_incidents():
-    clear_all_incidents()
-    replace_campaigns([])
+    clear_incidents_and_campaigns()
     return {"status": "success", "message": "All incidents and campaigns cleared"}
 
 
