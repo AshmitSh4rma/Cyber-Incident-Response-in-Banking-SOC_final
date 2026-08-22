@@ -227,12 +227,19 @@ incidents in place instead of duplicating them.
 
 ### The pitch page
 
-A single self-contained HTML file — the loss figures by industry, a with/without
-comparison, and screenshots of the console. No build step and nothing loaded from
-outside except the two webfonts.
+`Frontend/public/statistics.html` — one self-contained file holding the loss
+figures by industry, the with/without comparison, and screenshots of the console.
+Images are embedded, so nothing loads from outside but the two webfonts, and it
+opens straight from disk.
+
+The console serves it at **`/statistics`**, reached from the sidebar. It is an
+iframe there on purpose: the page is a terminal-styled document with its own
+palette, fonts and full-viewport overlays, and an iframe isolates it completely
+rather than having the two designs fight.
 
 ```bash
-python -m http.server 8080 --directory pitch   # then open localhost:8080
+open Frontend/public/statistics.html            # standalone, no server
+python -m http.server 8080 --directory Frontend/public   # then /statistics.html
 ```
 
 ### Tests
