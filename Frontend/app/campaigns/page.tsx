@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, GitBranch, KeyRound, Server, Users } from "lucide-react";
+import { ArrowRight, ChevronDown, GitBranch, KeyRound, Server, Users } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import {
   Block,
@@ -14,6 +15,7 @@ import {
   Skeleton,
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
+import { EASE_OUT, usePrefersReducedMotion } from "@/lib/motion";
 import { formatTimestamp, severityTone } from "@/lib/severity";
 
 type Campaign = {
@@ -102,9 +104,8 @@ export default function CampaignsPage() {
           const tone = severityTone(c.severity);
           return (
             <div key={c.campaign_id} className="rise stagger-row">
-            <Link
-              href={`/campaigns/${c.campaign_id}`}
-              className={`group relative block overflow-hidden rounded-lg border ${tone.border} bg-surface transition hover:-translate-y-0.5 hover:bg-raised/40 hover:shadow-lg`}
+            <div
+              className={`group relative overflow-hidden rounded-lg border ${tone.border} bg-surface transition hover:bg-raised/40`}
             >
               <span className={`absolute left-0 top-0 h-full w-0.5 ${tone.mark}`} aria-hidden />
 
@@ -128,7 +129,12 @@ export default function CampaignsPage() {
                         </span>
                       ) : null}
                     </div>
-                    <h2 className="text-base font-semibold text-ink">{c.name}</h2>
+                    <Link
+                      href={`/campaigns/${c.campaign_id}`}
+                      className="block text-base font-semibold text-ink transition hover:text-accent"
+                    >
+                      {c.name}
+                    </Link>
                     <p className="text-[11px] text-faint">
                       {formatTimestamp(c.first_seen)} → {formatTimestamp(c.last_seen)}
                     </p>
@@ -147,7 +153,13 @@ export default function CampaignsPage() {
                         {c.progression_pct}%
                       </p>
                     </div>
-                    <ArrowRight className="mt-2 h-4 w-4 text-faint transition group-hover:translate-x-0.5 group-hover:text-muted" />
+                    <Link
+                      href={`/campaigns/${c.campaign_id}`}
+                      aria-label={`Open ${c.name}`}
+                      className="mt-1.5 inline-flex h-7 w-7 items-center justify-center rounded border border-rule text-faint transition hover:border-accent-deep hover:text-accent"
+                    >
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
                   </div>
                 </div>
 
@@ -193,12 +205,114 @@ export default function CampaignsPage() {
                     </span>
                   ) : null}
                 </div>
+
+                <CampaignMembers campaignId={c.campaign_id} count={c.incident_count} />
               </div>
-            </Link>
+            </div>
             </div>
           );
         })}
       </div>
     </Screen>
+  );
+}
+
+/**
+ * The alerts that make up one chain, fetched when asked for.
+ *
+ * The list endpoint returns a count but not the members, and loading every
+ * member of every chain to render a collapsed card would be a round trip per
+ * campaign for information nobody has asked to see yet. So it is fetched on
+ * first expand and kept.
+ */
+function CampaignMembers({ campaignId, count }: { campaignId: string; count: number }) {
+  type Member = {
+    event_id: string;
+    dashboard?: Record<string, string>;
+    detection?: Record<string, string>;
+    raw_event?: Record<string, string>;
+  };
+
+  const reduced = usePrefersReducedMotion();
+  const [open, setOpen] = useState(false);
+  const [members, setMembers] = useState<Member[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || members || error) return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/campaigns/${campaignId}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+        const data = await res.json();
+        if (alive) setMembers(data.incidents ?? []);
+      } catch (e) {
+        if (alive) setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [open, campaignId, members, error]);
+
+  return (
+    <div className="border-t border-rule-soft pt-3">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex items-center gap-1.5 rounded text-[11px] font-medium text-muted transition hover:text-ink"
+      >
+        <ChevronDown
+          className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden
+        />
+        {open ? "Hide the alerts" : `Show the ${count} alert${count === 1 ? "" : "s"}`}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            initial={reduced ? false : { height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={reduced ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: EASE_OUT }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3">
+              {error ? (
+                <p className="text-[11px] text-sev-critical">Could not load the alerts: {error}</p>
+              ) : !members ? (
+                <p className="text-[11px] text-faint">Loading the alerts…</p>
+              ) : members.length === 0 ? (
+                <p className="text-[11px] text-faint">
+                  The chain records {count} alert{count === 1 ? "" : "s"}, but none of them are in
+                  the incident store any more.
+                </p>
+              ) : (
+                <ul className="divide-y divide-rule-soft rounded border border-rule-soft bg-sunk">
+                  {members.map((m) => (
+                    <li key={m.event_id}>
+                      <Link
+                        href={`/incident/${m.event_id}`}
+                        className="group/row flex items-center gap-3 px-3 py-2 transition hover:bg-raised/60"
+                      >
+                        <SeverityChip value={m.detection?.severity} size="xs" />
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-ink transition group-hover/row:text-accent">
+                          {m.dashboard?.alert_title ?? m.detection?.threat_type ?? "Unclassified"}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-faint">
+                          {formatTimestamp(m.raw_event?.timestamp)}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }

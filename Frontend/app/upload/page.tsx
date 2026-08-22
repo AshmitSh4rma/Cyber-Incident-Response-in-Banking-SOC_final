@@ -483,6 +483,10 @@ export default function ScenarioReplayPage() {
 
       {/* ── Run view ──────────────────────────────────────────────────────── */}
       {phase !== "idle" ? (
+        <PipelineTrace layerIndex={layerIndex} reduced={reduced} />
+      ) : null}
+
+      {phase !== "idle" ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
           {/* Pipeline progress — the centrepiece, always visible */}
           <Section
@@ -681,6 +685,108 @@ function ResultFigure({
       <p className="figure mt-1 text-lg font-semibold text-ink">
         {value == null ? "—" : animated.toFixed(decimals)}
       </p>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Seven traces converging on the record stream.
+
+   Decoration, and marked as such: the ordered list below is what actually
+   reports progress, because it carries the stage names and reads correctly to a
+   screen reader. This is the same information as a picture, for the wall
+   display.
+
+   The control points give every branch a real horizontal sweep. A near-vertical
+   cubic collapses to a zero-width bounding box, and both stroke animation and
+   the glow filter stop rendering when that happens — which is why the two outer
+   branches bow one way and the rest the other rather than fanning symmetrically.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+const NODE_X = [100, 300, 500, 700, 900, 1100, 1300];
+const ENTRY_X = [500, 566, 633, 700, 766, 833, 900];
+const TRACE_PATHS = NODE_X.map((nx, i) => {
+  const ex = ENTRY_X[i];
+  const bow = i <= 3 ? 46 : -46;
+  return `M ${nx} 0 C ${nx + bow} 70, ${ex - bow} 120, ${ex} 190`;
+});
+
+function PipelineTrace({ layerIndex, reduced }: { layerIndex: number; reduced: boolean }) {
+  return (
+    <div className="pointer-events-none relative h-[120px] w-full overflow-hidden md:h-[150px]" aria-hidden>
+      <svg viewBox="0 0 1400 200" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+        <defs>
+          <marker
+            id="trace-arrow"
+            viewBox="0 0 10 10"
+            refX="5"
+            refY="5"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)" />
+          </marker>
+        </defs>
+
+        {TRACE_PATHS.map((d, i) => {
+          const finished = layerIndex > i;
+          const active = layerIndex === i;
+          const lit = finished || active;
+
+          return (
+            <g key={NODE_X[i]}>
+              <path
+                id={`trace-path-${i}`}
+                d={d}
+                fill="none"
+                stroke="var(--rule)"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+              />
+
+              {lit ? (
+                <>
+                  {/* A CSS drop-shadow rather than an SVG filter: filters are the
+                      other thing that fails on a degenerate bounding box. */}
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    opacity={finished ? 0.14 : 0.22}
+                    style={{ filter: "drop-shadow(0 0 6px var(--accent))" }}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <motion.path
+                    d={d}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    markerEnd="url(#trace-arrow)"
+                    vectorEffect="non-scaling-stroke"
+                    initial={reduced ? false : { pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 0.55, ease: EASE_OUT }}
+                  />
+                </>
+              ) : null}
+
+              {/* The travelling dot is the only part that repeats, so it is the
+                  only part reduced motion has to drop. */}
+              {active && !reduced ? (
+                <circle r={4} fill="var(--accent)">
+                  <animateMotion dur="1.15s" repeatCount="indefinite">
+                    <mpath href={`#trace-path-${i}`} />
+                  </animateMotion>
+                </circle>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
