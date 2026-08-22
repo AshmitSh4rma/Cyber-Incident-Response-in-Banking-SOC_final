@@ -225,6 +225,16 @@ ratio, and per-layer timing. Completes in about 66 ms on the 47-record scenario
 and is idempotent — incident IDs derive from log content, so re-running updates
 incidents in place instead of duplicating them.
 
+### The pitch page
+
+A single self-contained HTML file — the loss figures by industry, a with/without
+comparison, and screenshots of the console. No build step and nothing loaded from
+outside except the two webfonts.
+
+```bash
+python -m http.server 8080 --directory pitch   # then open localhost:8080
+```
+
 ### Tests
 
 ```bash
