@@ -11,6 +11,7 @@ import {
   Terminal,
   Upload,
 } from "lucide-react";
+import { FileUpload } from "@/components/ui/file-upload";
 
 /**
  * Scenario replay.
@@ -337,7 +338,9 @@ export default function ScenarioReplayPage() {
   );
 
   const onUpload = useCallback(
-    async (file: File) => {
+    async (files: File[]) => {
+      const file = files[0];
+      if (!file) return;
       const text = await file.text();
       let logs: RawLog[];
       try {
@@ -384,10 +387,10 @@ export default function ScenarioReplayPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1.5">
           <p className="eyebrow">Scenario replay</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">
             Send telemetry through the pipeline
           </h1>
-          <p className="max-w-2xl text-xs leading-relaxed text-slate-400">
+          <p className="max-w-2xl text-xs leading-relaxed text-muted">
             Each scenario emits raw log records and nothing else. Every verdict,
             score, control mapping and campaign grouping you see afterwards was
             decided by the backend, not by this page.
@@ -395,35 +398,18 @@ export default function ScenarioReplayPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".json,.jsonl,.txt,application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onUpload(f);
-              e.target.value = "";
-            }}
-          />
-          <button
-            onClick={() => fileInput.current?.click()}
-            disabled={phase === "running"}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 disabled:opacity-50"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload your own logs
-          </button>
           {phase !== "idle" && (
             <button
               onClick={reset}
-              className="rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
+              className="rounded-md border border-rule px-3 py-2 text-xs font-medium text-ink transition hover:bg-raised"
             >
               Reset
             </button>
           )}
         </div>
       </div>
+
+
 
       {/* Scenario picker */}
       {phase === "idle" && (
@@ -432,17 +418,17 @@ export default function ScenarioReplayPage() {
             <button
               key={s.id}
               onClick={() => submit(s.generate(), `${s.id}.json`, s.label, s.id)}
-              className="group flex flex-col gap-2 rounded-md border border-slate-800 bg-slate-900/60 p-4 text-left transition hover:border-slate-700 hover:bg-slate-900"
+              className="group flex flex-col gap-2 rounded-md border border-rule bg-surface p-4 text-left transition hover:border-accent-deep hover:bg-raised"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="mono rounded border border-cyan-900/50 bg-cyan-950/25 px-1.5 py-0.5 text-[10px] text-cyan-300">
+                <span className="mono rounded border border-rule bg-raised px-1.5 py-0.5 text-[10px] text-accent">
                   {s.technique}
                 </span>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+                <ChevronRight className="h-3.5 w-3.5 text-faint transition group-hover:translate-x-0.5 group-hover:text-muted" />
               </div>
-              <span className="text-sm font-medium text-slate-100">{s.label}</span>
-              <span className="text-[11px] leading-relaxed text-slate-400">{s.summary}</span>
-              <span className="mono mt-auto pt-1 text-[10px] text-slate-600">
+              <span className="text-sm font-medium text-ink">{s.label}</span>
+              <span className="text-[11px] leading-relaxed text-muted">{s.summary}</span>
+              <span className="mono mt-auto pt-1 text-[10px] text-faint">
                 expect → {s.expect}
               </span>
             </button>
@@ -454,34 +440,34 @@ export default function ScenarioReplayPage() {
       {phase !== "idle" && (
         <div className="grid gap-5 lg:grid-cols-5">
           {/* Raw log stream */}
-          <div className="flex flex-col overflow-hidden rounded-md border border-slate-800 bg-slate-950 lg:col-span-3">
-            <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2.5">
-              <Terminal className="h-3.5 w-3.5 text-slate-500" />
+          <div className="flex flex-col overflow-hidden rounded-md border border-rule bg-sunk lg:col-span-3">
+            <div className="flex items-center gap-2 border-b border-rule px-4 py-2.5">
+              <Terminal className="h-3.5 w-3.5 text-faint" />
               <span className="eyebrow">Raw records submitted</span>
-              <span className="mono ml-auto text-[10px] text-slate-500">
+              <span className="mono ml-auto text-[10px] text-faint">
                 {logLines.length} record{logLines.length === 1 ? "" : "s"}
               </span>
             </div>
             <div className="mono max-h-[420px] min-h-[240px] space-y-1 overflow-y-auto p-4 text-[10.5px] leading-relaxed">
               {logLines.map((line, i) => (
-                <div key={i} className="flex gap-2 text-slate-400">
-                  <span className="shrink-0 text-slate-600">
+                <div key={i} className="flex gap-2 text-muted">
+                  <span className="shrink-0 text-faint">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="min-w-0 break-all">
-                    <span className="text-slate-500">{String(line.timestamp ?? "").slice(11, 19)}</span>{" "}
-                    <span className="text-cyan-500/80">{String(line.log_type ?? "")}</span>{" "}
-                    <span className="text-slate-300">{String(line.source_ip ?? "")}</span>
+                    <span className="text-faint">{String(line.timestamp ?? "").slice(11, 19)}</span>{" "}
+                    <span className="text-accent">{String(line.log_type ?? "")}</span>{" "}
+                    <span className="text-ink">{String(line.source_ip ?? "")}</span>
                     {line.destination_ip ? (
                       <>
-                        <span className="text-slate-600"> → </span>
-                        <span className="text-slate-300">{String(line.destination_ip)}</span>
+                        <span className="text-faint"> → </span>
+                        <span className="text-ink">{String(line.destination_ip)}</span>
                       </>
                     ) : null}
-                    {line.action ? <span className="text-amber-500/80"> {String(line.action)}</span> : null}
-                    {line.url ? <span className="text-slate-500"> {String(line.url)}</span> : null}
+                    {line.action ? <span className="text-sev-medium"> {String(line.action)}</span> : null}
+                    {line.url ? <span className="text-faint"> {String(line.url)}</span> : null}
                     {line.affected_user ? (
-                      <span className="text-slate-500"> user={String(line.affected_user)}</span>
+                      <span className="text-faint"> user={String(line.affected_user)}</span>
                     ) : null}
                   </span>
                 </div>
@@ -492,7 +478,7 @@ export default function ScenarioReplayPage() {
 
           {/* Pipeline progress + outcome */}
           <div className="space-y-4 lg:col-span-2">
-            <div className="rounded-md border border-slate-800 bg-slate-900/60 p-4">
+            <div className="rounded-md border border-rule bg-surface p-4">
               <p className="eyebrow mb-3">Pipeline</p>
               <ol className="space-y-2">
                 {LAYERS.map((layer, i) => {
@@ -501,23 +487,23 @@ export default function ScenarioReplayPage() {
                     <li key={layer.label} className="flex items-start gap-2.5">
                       <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
                         {state === "done" ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-sev-benign" />
                         ) : state === "active" ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
                         ) : (
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-rule-soft" />
                         )}
                       </span>
                       <span className="min-w-0">
                         <span
                           className={[
                             "block text-xs",
-                            state === "waiting" ? "text-slate-600" : "text-slate-200",
+                            state === "waiting" ? "text-faint" : "text-ink",
                           ].join(" ")}
                         >
                           {layer.label}
                         </span>
-                        <span className="block text-[10px] text-slate-600">{layer.detail}</span>
+                        <span className="block text-[10px] text-faint">{layer.detail}</span>
                       </span>
                     </li>
                   );
@@ -526,8 +512,8 @@ export default function ScenarioReplayPage() {
             </div>
 
             {phase === "done" && result && (
-              <div className="space-y-3 rounded-md border border-emerald-900/40 bg-emerald-950/15 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
+              <div className="space-y-3 rounded-md border border-sev-benign/30 bg-sev-benign/10 p-4">
+                <p className="flex items-center gap-2 text-xs font-semibold text-sev-benign">
                   <CheckCircle2 className="h-4 w-4" />
                   Pipeline complete
                 </p>
@@ -540,22 +526,22 @@ export default function ScenarioReplayPage() {
                     .filter(([, v]) => v !== undefined)
                     .map(([k, v]) => (
                       <div key={String(k)} className="flex justify-between gap-3">
-                        <dt className="text-slate-400">{k}</dt>
-                        <dd className="mono font-semibold text-slate-100">{String(v)}</dd>
+                        <dt className="text-muted">{k}</dt>
+                        <dd className="mono font-semibold text-ink">{String(v)}</dd>
                       </div>
                     ))}
                 </dl>
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => router.push("/dashboard")}
-                    className="flex-1 rounded-md bg-cyan-500 px-3 py-2 text-[11px] font-semibold text-slate-950 transition hover:bg-cyan-400"
+                    className="flex-1 rounded-md bg-accent px-3 py-2 text-[11px] font-semibold text-sunk transition hover:opacity-90"
                   >
                     Open dashboard
                   </button>
                   {(result.campaigns ?? 0) > 0 && (
                     <button
                       onClick={() => router.push("/campaigns")}
-                      className="flex-1 rounded-md border border-slate-700 px-3 py-2 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-800"
+                      className="flex-1 rounded-md border border-rule px-3 py-2 text-[11px] font-semibold text-ink transition hover:bg-raised"
                     >
                       View campaigns
                     </button>
@@ -565,13 +551,13 @@ export default function ScenarioReplayPage() {
             )}
 
             {phase === "error" && (
-              <div className="space-y-2 rounded-md border border-red-900/50 bg-red-950/20 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-red-300">
+              <div className="space-y-2 rounded-md border border-sev-critical/40 bg-sev-critical/15 p-4">
+                <p className="flex items-center gap-2 text-xs font-semibold text-sev-critical">
                   <AlertTriangle className="h-4 w-4" />
                   Pipeline did not run
                 </p>
-                <p className="text-[11px] leading-relaxed text-slate-400">{error}</p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[11px] leading-relaxed text-muted">{error}</p>
+                <p className="text-[10px] text-faint">
                   No incidents were created. Nothing on this page fabricates results
                   when the backend is unreachable.
                 </p>
@@ -579,12 +565,19 @@ export default function ScenarioReplayPage() {
             )}
 
             {phase === "running" && (
-              <div className="flex items-center gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-4 py-3 text-[11px] text-slate-400">
-                <Play className="h-3.5 w-3.5 text-cyan-400" />
+              <div className="flex items-center gap-2 rounded-md border border-rule bg-surface px-4 py-3 text-[11px] text-muted">
+                <Play className="h-3.5 w-3.5 text-accent" />
                 Replaying {SCENARIOS.find((s) => s.id === activeId)?.label ?? "uploaded logs"}…
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* File Upload Zone - Centered at bottom */}
+      {phase === "idle" && (
+        <div className="w-full max-w-xl mx-auto mt-12 border border-dashed border-rule-soft bg-surface rounded-xl overflow-hidden shadow-lg">
+          <FileUpload onChange={onUpload} />
         </div>
       )}
     </div>

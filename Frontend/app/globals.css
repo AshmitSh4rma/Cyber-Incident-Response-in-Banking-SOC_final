@@ -1,49 +1,37 @@
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   SENTRA design tokens
+   SENTRA design tokens — v2 (muted green)
 
-   One dark operations theme, committed to deliberately: this is a console read on
-   a wall display at 3am, so it paints its own ground rather than adapting to the
-   host.
+   One dark operations theme with a green-accent palette. This is a console read
+   on a wall display at 3am, so it paints its own ground rather than adapting to
+   the host.
 
    Colour does exactly two jobs and they never mix:
-     · cyan   — interactive. Links, focus, the current selection. Never data.
+     · green  — interactive. Links, focus, the current selection. Never data.
      · status — severity only, on a fixed reserved scale. Never decoration.
 
-   Every value below was measured, not chosen by eye. Contrast against the card
-   surface #0f1620:
-     text     #dfe7f2  14.58:1
-     muted    #8697ad   6.09:1
-     faint    #7a8ca3   5.28:1   (was #5b6b80 at 3.34:1 — failed small text)
-     critical #d03b3b   3.78:1
-     high     #ec835a   6.89:1
-     medium   #fab219   9.90:1
-     low      #3b9eff   6.51:1
-     benign   #0ca30c   5.42:1
-   All marks clear the 3:1 floor; all text tokens clear 4.5:1.
-
-   Severity is a STATUS scale, so red/orange/yellow sit close in hue by design and
-   cannot be separated by colour alone under colour-vision deficiency. Every
+   Severity is a STATUS scale, so red/orange/yellow sit close in hue by design
+   and cannot be separated by colour alone under colour-vision deficiency. Every
    severity indicator in this app therefore ships with a text label — colour is
    never the only channel.
    ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --ground: #080c12;
-  --surface: #0f1620;
-  --raised: #16202c;
-  --sunk: #060a0f;
+  --ground: #060806;
+  --surface: #0a0e0a;
+  --raised: #111611;
+  --sunk: #040604;
 
-  --rule: #223040;
-  --rule-soft: #18222e;
+  --rule: #1a261a;
+  --rule-soft: #121a12;
 
-  --text: #dfe7f2;
-  --muted: #8697ad;
-  --faint: #7a8ca3;
+  --text: #e0e8e0;
+  --muted: #7f937f;
+  --faint: #5e7260;
 
-  --accent: #22d3ee;
-  --accent-deep: #0e7490;
+  --accent: #3dd68c;
+  --accent-deep: #1a7a4a;
 
   --sev-critical: #d03b3b;
   --sev-high: #ec835a;
@@ -57,7 +45,7 @@
   --track-high: #3d2418;
   --track-medium: #3a2f10;
   --track-low: #12283d;
-  --track-neutral: #16202c;
+  --track-neutral: #111611;
 }
 
 @theme inline {
@@ -122,8 +110,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* Uppercase micro-label. Uses --muted, not --faint: at 10px this is small text
-   and has to clear 4.5:1. */
+/* Uppercase micro-label. */
 .eyebrow {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 10px;
@@ -140,8 +127,8 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: var(--sunk);
@@ -151,7 +138,7 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e4055;
+  background: #243024;
 }
 
 :focus-visible {

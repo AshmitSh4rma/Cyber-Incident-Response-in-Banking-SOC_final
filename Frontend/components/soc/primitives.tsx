@@ -110,7 +110,7 @@ export function HeroFigure({
   label,
   detail,
 }: {
-  value: string | number;
+  value: ReactNode;
   unit?: string;
   label: string;
   detail?: ReactNode;
@@ -263,34 +263,87 @@ export type Clock = {
 
 export function ClockRow({ clock, compactRow = false }: { clock: Clock; compactRow?: boolean }) {
   const tone = clockTone(clock.state);
-  const elapsed = Math.min(
-    100,
-    Math.max(0, 100 - (clock.seconds_remaining / (clock.window_hours * 3600)) * 100),
+  const elapsedRatio = Math.min(
+    1,
+    Math.max(0, 1 - clock.seconds_remaining / (clock.window_hours * 3600))
   );
+  const elapsedPercent = Math.round(elapsedRatio * 100);
+
+  // SVG circular dial parameters (slightly larger, cleaner clock circle on right)
+  const radius = 9;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - elapsedRatio * circumference;
+
+  const strokeColor =
+    clock.state === "overdue"
+      ? "#ef4444"
+      : clock.state === "tight"
+        ? "#f97316"
+        : "#22c55e";
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="min-w-0 truncate text-[11px] font-medium text-ink">{clock.authority}</span>
-        <span className="flex items-center gap-2">
-          <span className="tabular text-[11px] font-semibold text-ink">
-            {formatRemaining(clock.seconds_remaining)}
+    <div className="flex items-center justify-between gap-3 rounded-md border border-rule-soft/60 bg-raised/40 p-3 transition hover:border-rule">
+      {/* Left: Regime details */}
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-xs font-semibold text-ink">
+            {clock.authority}
           </span>
           <span
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tone.chip}`}
+            className={`rounded border px-1.5 py-0.5 text-[8.5px] font-semibold uppercase tracking-wider ${tone.chip}`}
           >
             {tone.label}
           </span>
-        </span>
-      </div>
-      <div className="h-1 w-full overflow-hidden rounded-sm bg-track-neutral">
-        <div className={`h-full ${tone.mark}`} style={{ width: `${elapsed}%` }} />
-      </div>
-      {!compactRow ? (
-        <p className="text-[10px] text-faint">
-          {clock.clock_label} from {clock.starts_from}
+        </div>
+        <p className="flex items-center gap-1.5 text-[10px] text-faint">
+          <span className="truncate">{clock.clock_label} ·</span>
+          <span
+            className={`font-semibold tabular ${
+              clock.seconds_remaining < 0
+                ? "text-sev-critical font-bold"
+                : clock.state === "due_soon"
+                  ? "text-sev-high font-bold"
+                  : "text-ink"
+            }`}
+          >
+            {formatRemaining(clock.seconds_remaining)}
+          </span>
         </p>
-      ) : null}
+      </div>
+
+      {/* Right: Circular progress dial with percentage / clock on the right side */}
+      <div className="flex shrink-0 items-center gap-2.5">
+        <div
+          className="relative flex h-6 w-6 shrink-0 items-center justify-center"
+          title={`${elapsedPercent}% elapsed (${formatRemaining(clock.seconds_remaining)} left)`}
+        >
+          <svg className="h-6 w-6 -rotate-90" viewBox="0 0 24 24">
+            {/* Background circle track */}
+            <circle
+              cx="12"
+              cy="12"
+              r={radius}
+              className="stroke-track-neutral/50"
+              strokeWidth="2.5"
+              fill="transparent"
+            />
+            {/* Foreground progress arc */}
+            <circle
+              cx="12"
+              cy="12"
+              r={radius}
+              stroke={strokeColor}
+              strokeWidth="2.5"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+              strokeLinecap="round"
+              fill="transparent"
+            />
+          </svg>
+          {/* Clock center hub */}
+          <span className="absolute h-1.5 w-1.5 rounded-full bg-ink/80" />
+        </div>
+      </div>
     </div>
   );
 }

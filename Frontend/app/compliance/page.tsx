@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
 
 import {
   ClockRow,
@@ -13,6 +13,8 @@ import {
   SeverityChip,
   type Clock,
 } from "@/components/soc/primitives";
+import CountUp from "@/components/ui/count-up";
+import { AnimatedList } from "@/components/ui/animated-list";
 import { formatRemaining, severityTone } from "@/lib/severity";
 
 type Item = {
@@ -102,35 +104,69 @@ export default function CompliancePage() {
         <>
           {/* Lead */}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-            <div className="rounded-md border border-rule bg-surface p-5">
-              <HeroFigure
-                value={payload.count}
-                unit={payload.count === 1 ? "incident" : "incidents"}
-                label="On a reporting clock"
-                detail={
-                  payload.count === 0 ? (
-                    "Nothing in the current queue has progressed far enough to trigger a notification obligation."
+            <div className="flex flex-col justify-between rounded-md border border-rule bg-surface p-5 space-y-4">
+              <div>
+                <p className="eyebrow">On a reporting clock</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="figure text-[56px] font-semibold leading-[0.9] text-ink">
+                    <CountUp to={payload.count} duration={1.2} />
+                  </span>
+                  <span className="text-sm font-medium text-muted">
+                    {payload.count === 1 ? "incident" : "incidents"}
+                  </span>
+                </div>
+
+                <div className="mt-3 text-xs leading-relaxed">
+                  {payload.count === 0 ? (
+                    <span className="text-muted">
+                      Nothing in the current queue has progressed far enough to trigger a notification obligation.
+                    </span>
                   ) : (
-                    <>
-                      {payload.overdue > 0 ? (
-                        <span className="font-semibold text-sev-critical">
-                          {payload.overdue} past a deadline.{" "}
-                        </span>
-                      ) : null}
+                    <div className="text-muted">
                       {tightest ? (
-                        <>
-                          Soonest: <span className="font-medium text-ink">{tightest.authority}</span>{" "}
-                          in{" "}
-                          <span className="tabular font-semibold text-ink">
+                        <span>
+                          Soonest: <span className="font-medium text-ink">{tightest.authority}</span> in{" "}
+                          <span
+                            className={`tabular font-semibold px-1.5 py-0.5 rounded ${
+                              tightest.seconds_remaining < 0
+                                ? "bg-sev-critical/15 text-sev-critical border border-sev-critical/30"
+                                : tightest.seconds_remaining < 3600 * 4
+                                  ? "bg-sev-high/15 text-sev-high border border-sev-high/30"
+                                  : "bg-sev-benign/15 text-sev-benign border border-sev-benign/30"
+                            }`}
+                          >
                             {formatRemaining(tightest.seconds_remaining)}
                           </span>
-                          .
-                        </>
+                        </span>
                       ) : null}
-                    </>
-                  )
-                }
-              />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Warning/Caution Box */}
+              {payload.overdue > 0 ? (
+                <div className="flex items-center gap-3.5 rounded border border-sev-critical/40 bg-sev-critical/10 px-3.5 py-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-sev-critical/20 text-sev-critical">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-sev-critical">
+                      <span className="tabular">{payload.overdue}</span> Past a deadline
+                    </p>
+                    {tightest && tightest.seconds_remaining < 0 ? (
+                      <p className="mt-0.5 text-[11px] text-sev-critical/80">
+                        {tightest.authority} is {formatRemaining(tightest.seconds_remaining)}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 rounded border border-rule-soft bg-raised/40 px-3.5 py-2">
+                  <span className="h-2 w-2 rounded-full bg-sev-benign" />
+                  <span className="text-xs text-muted">All deadlines currently on track</span>
+                </div>
+              )}
             </div>
 
             <Section title="The clocks that apply" hint="Deadlines are from the regulation, not our interpretation">
@@ -180,8 +216,9 @@ export default function CompliancePage() {
               detail="Reconnaissance and blocked attempts are security events, not reportable incidents. Nothing has crossed a threshold."
             />
           ) : (
-            <div className="space-y-4">
-              {payload.items.map((item) => {
+            <AnimatedList
+              items={payload.items}
+              renderItem={(item) => {
                 const tone = severityTone(item.severity);
                 const href =
                   item.kind === "campaign" ? `/campaigns/${item.id}` : `/incident/${item.id}`;
@@ -212,7 +249,7 @@ export default function CompliancePage() {
                             {item.title}
                           </p>
                           <p className="text-[10px] text-muted">
-                            {item.alert_count} alert{item.alert_count === 1 ? "" : "s"} · reached{" "}
+                            <CountUp to={item.alert_count} duration={0.8} /> alert{item.alert_count === 1 ? "" : "s"} · reached{" "}
                             {item.stage}
                             <ArrowRight className="ml-1 inline h-2.5 w-2.5 transition group-hover:translate-x-0.5" />
                           </p>
@@ -230,7 +267,7 @@ export default function CompliancePage() {
                         </div>
                       </div>
 
-                      <div className="space-y-3.5">
+                      <div className="flex flex-col justify-center space-y-2.5">
                         {item.notification.clocks.map((clock) => (
                           <ClockRow key={clock.regime_id} clock={clock} />
                         ))}
@@ -238,8 +275,11 @@ export default function CompliancePage() {
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              }}
+              displayScrollbar={false}
+              className="w-full"
+              itemClassName="mb-3"
+            />
           )}
 
           <p className="rounded-md border border-rule bg-surface px-4 py-3 text-[10px] leading-relaxed text-faint">
