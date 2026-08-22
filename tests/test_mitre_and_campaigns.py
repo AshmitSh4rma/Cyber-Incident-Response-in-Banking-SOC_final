@@ -215,3 +215,79 @@ def test_correlation_is_deterministic():
     first = correlate_campaigns(events)
     second = correlate_campaigns(events)
     assert first == second
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Discrimination at volume
+#
+# Both of these were found by pushing 20,000 synthetic records through the
+# pipeline rather than by reading the code. The demo's 25 records exercise
+# neither.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_shared_service_account_does_not_bridge_separate_intrusions():
+    """
+    A service account is not a person. svc_payments, jenkins and backup appear
+    across unrelated activity all day in a real bank, so linking on them merges
+    genuinely separate break-ins — twelve of them came back as one campaign of
+    fifty. This is the same failure the same-asset edge was removed for.
+    """
+    events = []
+    for actor in range(1, 6):
+        events.append(_incident(
+            f"web-{actor}", f"2026-01-0{actor}T01:00:00Z", f"198.51.100.{actor}",
+            f"dmz-web-{actor}", "web_attack", 3, "Initial Access", user="svc_payments",
+        ))
+        events.append(_incident(
+            f"lat-{actor}", f"2026-01-0{actor}T02:00:00Z", f"dmz-web-{actor}",
+            f"core-app-{actor}", "lateral_movement", 11, "Lateral Movement", user="svc_payments",
+        ))
+
+    result = correlate_campaigns(events)
+    assert len(result["campaigns"]) == 5, (
+        "each actor's own chain is one campaign; the shared account must not join them"
+    )
+    assert all(c["incident_count"] == 2 for c in result["campaigns"])
+
+
+def test_a_narrowly_used_account_still_links():
+    """The account edge has to keep working for an account that is one person."""
+    events = [
+        _incident("a", "2026-01-01T01:00:00Z", "45.1.2.3", "h1", "credential_abuse",
+                  9, "Credential Access", user="r.mehta"),
+        _incident("b", "2026-01-01T01:30:00Z", "45.1.2.4", "h2", "credential_abuse",
+                  9, "Credential Access", user="r.mehta"),
+    ]
+    result = correlate_campaigns(events)
+    assert len(result["campaigns"]) == 1
+    assert any("r.mehta" in reason for reason in result["campaigns"][0]["linked_by"])
+
+
+def test_correlation_is_not_quadratic():
+    """
+    The pairwise scan was O(n^2): 5,000 alerts took 42 seconds and 20,000 took
+    ten minutes. Every link reason is an equality join, so candidates come from
+    an index instead. This asserts the shape of the curve, not a wall-clock
+    number, so it does not fail on a slow machine.
+    """
+    import time
+
+    def run(n):
+        events = [
+            _incident(f"e{i}", f"2026-01-01T{i // 3600:02d}:{(i // 60) % 60:02d}:{i % 60:02d}Z",
+                      f"203.0.113.{i % 200}", f"host-{i % 300}", "web_attack", 3, "Initial Access",
+                      user=f"user-{i % 500}")
+            for i in range(n)
+        ]
+        start = time.perf_counter()
+        correlate_campaigns(events)
+        return time.perf_counter() - start
+
+    run(200)                      # warm the interpreter
+    small, large = run(500), run(4000)
+
+    # 8x the input. Quadratic would be ~64x; linear ~8x. Allow generous slack for
+    # a noisy machine and still catch a return to quadratic.
+    assert large < small * 25, (
+        f"correlation scaled {large / small:.1f}x for 8x the input — this looks quadratic again"
+    )

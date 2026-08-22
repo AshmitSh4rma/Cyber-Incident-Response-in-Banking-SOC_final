@@ -205,6 +205,23 @@ SETTINGS: list[dict[str, Any]] = [
         "demo": 0.99,
     },
     {
+        "key": "detection.shared_account_sources",
+        "group": "detection",
+        "label": "Accounts used from more than this many places are treated as shared",
+        "help": "A service account is not one person. Above this many distinct source "
+                "addresses, an account stops being evidence that two alerts are the same attacker.",
+        "type": "int",
+        "default": 3,
+        "min": 1,
+        "max": 100,
+        "step": 1,
+        "unit": "sources",
+        "affects": "Raising this merges unrelated intrusions that happen to touch the same "
+                   "service account — at 20 or more, twelve separate break-ins through one "
+                   "svc_ account come back as a single campaign.",
+        "demo": 40,
+    },
+    {
         "key": "detection.campaign_min_stage",
         "group": "detection",
         "label": "How far an attacker must get before we assume they own the host",

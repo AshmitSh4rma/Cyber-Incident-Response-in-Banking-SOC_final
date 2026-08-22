@@ -92,12 +92,15 @@ class _UnionFind:
 _ACCESS_ACHIEVED = 3
 
 
-def _link_reason(a: dict, b: dict) -> str | None:
+def _link_reason(a: dict, b: dict, access_gate: int, shared_accounts: frozenset[str]) -> str | None:
     """
     Why these two incidents belong to the same campaign, or None.
 
     Ordered strongest-signal-first so the explanation an analyst reads is the
     most compelling true one.
+
+    `access_gate` is passed in rather than read here: this is the innermost call
+    of the correlator, and a configuration read stats a file.
     """
     # Order by time so "victim became attacker" is evaluated in the only
     # direction that makes sense.
@@ -109,7 +112,7 @@ def _link_reason(a: dict, b: dict) -> str | None:
     # beyond. Without that gate, a scheduled vulnerability scan that merely sent
     # packets to a server gets chained to everything that server later did —
     # which is how an authorised scan ends up inside a breach campaign.
-    if earlier["stage_order"] >= soc_config.get_int("detection.campaign_min_stage"):
+    if earlier["stage_order"] >= access_gate:
         if earlier["host"] and earlier["host"] == later["source_ip"]:
             return (
                 f"{earlier['host']} was compromised at {earlier['stage']}, "
@@ -125,14 +128,26 @@ def _link_reason(a: dict, b: dict) -> str | None:
     if a["source_ip"] and a["source_ip"] == b["source_ip"]:
         return f"same source address {a['source_ip']}"
 
-    # Same identity under attack.
-    if a["user"] and a["user"] == b["user"] and a["user"] != "unattributed":
+    # Same identity under attack — unless that identity is shared.
+    #
+    # A service account is not a person. `svc_payments`, `jenkins` and `backup`
+    # appear across unrelated activity all day in any real bank, so linking on
+    # them bridges genuinely separate intrusions: twelve independent break-ins
+    # that each touched one svc_ account came back as a single campaign of fifty.
+    # That is the same failure the same-asset edge was removed for, and it earns
+    # the same answer. An account seen from many sources is infrastructure.
+    if (
+        a["user"]
+        and a["user"] == b["user"]
+        and a["user"] != "unattributed"
+        and a["user"] not in shared_accounts
+    ):
         return f"same account '{a['user']}' involved"
 
     # Deliberately NOT linking on "same asset targeted". Every alert in a real
     # network touches some shared server, so that edge bridges unrelated clusters
     # into one useless mega-campaign. Shared infrastructure is not shared intent;
-    # only actor, identity, or a genuine compromise chain is.
+    # only actor, a non-shared identity, or a genuine compromise chain is.
     return None
 
 
@@ -209,18 +224,87 @@ def correlate_campaigns(events: list[dict], min_size: int = 2) -> dict[str, Any]
 
     uf = _UnionFind(len(active))
     reasons: dict[tuple[int, int], str] = {}
+    access_gate = soc_config.get_int("detection.campaign_min_stage")
 
-    for i in range(len(active)):
-        for j in range(i + 1, len(active)):
-            reason = _link_reason(active[i], active[j])
-            if reason:
-                uf.union(i, j)
-                reasons[(i, j)] = reason
+    # ── Candidate generation ────────────────────────────────────────────────
+    #
+    # Every reason two incidents can be linked is an equality join — same source
+    # address, same account, or one incident's victim matching another's source.
+    # Comparing all pairs to discover them is quadratic, and it showed: 5,000
+    # alerts took 42 seconds and 20,000 took ten minutes, ~n^1.96.
+    #
+    # Indexing the join keys instead produces a linear number of candidate pairs
+    # with the same connected components, because union is transitive: to put k
+    # incidents sharing an address into one component, k-1 consecutive links are
+    # enough. `_link_reason` still decides every candidate, so the semantics —
+    # including the compromise-chain gate and the deliberate refusal to link on
+    # shared infrastructure — live in exactly one place.
+
+    order = sorted(range(len(active)), key=lambda i: active[i]["timestamp"] or "")
+
+    by_source: dict[str, list[int]] = {}
+    for i in order:
+        key = active[i]["source_ip"]
+        if key:
+            by_source.setdefault(key, []).append(i)
+
+    by_user: dict[str, list[int]] = {}
+    sources_per_user: dict[str, set[str]] = {}
+    for i in order:
+        key = active[i]["user"]
+        if key and key != "unattributed":
+            by_user.setdefault(key, []).append(i)
+            if active[i]["source_ip"]:
+                sources_per_user.setdefault(key, set()).add(active[i]["source_ip"])
+
+    # An account reached from many different addresses is a shared credential, not
+    # one actor's session, so it is not evidence two alerts are the same attacker.
+    breadth = soc_config.get_int("detection.shared_account_sources")
+    shared_accounts = frozenset(
+        user for user, sources in sources_per_user.items() if len(sources) > breadth
+    )
+
+    def consider(i: int, j: int) -> None:
+        if i == j or uf.find(i) == uf.find(j):
+            return
+        reason = _link_reason(active[i], active[j], access_gate, shared_accounts)
+        if reason:
+            uf.union(i, j)
+            reasons[(min(i, j), max(i, j))] = reason
+
+    # Chain each bucket together. Consecutive pairs suffice for one component.
+    user_buckets = [b for u, b in by_user.items() if u not in shared_accounts]
+    for bucket in (*by_source.values(), *user_buckets):
+        for a, b in zip(bucket, bucket[1:], strict=False):
+            consider(a, b)
+
+    # The compromise chain: this incident's victim is another's source. Because
+    # every incident sharing a source address is already one component, joining
+    # to a single later member of that bucket joins the whole of it.
+    for i in order:
+        if active[i]["stage_order"] < access_gate:
+            continue
+        stamp = active[i]["timestamp"] or ""
+        for key in (active[i]["host"], active[i]["dest_ip"]):
+            if not key:
+                continue
+            for j in by_source.get(key, ()):
+                if (active[j]["timestamp"] or "") >= stamp:
+                    consider(i, j)
+                    break
 
     # Gather connected components.
     groups: dict[int, list[int]] = {}
     for idx in range(len(active)):
         groups.setdefault(uf.find(idx), []).append(idx)
+
+    # Bucket the reasons by component once, rather than rescanning every reason
+    # for every group — that scan was itself quadratic in the number of groups.
+    reasons_by_root: dict[int, list[str]] = {}
+    for (i, _j), reason in reasons.items():
+        bucket = reasons_by_root.setdefault(uf.find(i), [])
+        if reason not in bucket:
+            bucket.append(reason)
 
     campaigns: list[dict[str, Any]] = []
     standalone: list[str] = []
@@ -255,11 +339,7 @@ def correlate_campaigns(events: list[dict], min_size: int = 2) -> dict[str, Any]
         worst_rank = max(_SEVERITY_RANK.get(m["severity"], 1) for m in members)
 
         # Distinct link reasons within this group, for the "why" line.
-        group_set = set(member_indices)
-        why = []
-        for (i, j), reason in reasons.items():
-            if i in group_set and j in group_set and reason not in why:
-                why.append(reason)
+        why = reasons_by_root.get(uf.find(member_indices[0]), [])
 
         timestamps = [m["timestamp"] for m in members if m["timestamp"]]
         actors = sorted({m["source_ip"] for m in members if m["source_ip"]})
