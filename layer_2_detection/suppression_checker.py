@@ -10,8 +10,8 @@ all engines.
 This is how FP feedback actually affects future pipeline runs.
 """
 
-import sys
 import os
+import sys
 
 # Ensure the project root is on the path so we can import db_manager
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -83,20 +83,24 @@ def is_suppressed(event: dict, suppression_rules: list[dict] | None = None) -> t
             return True, f"Source IP {event_source_ip} is on the False Positive suppression list."
 
         # Rule 2: Threat type + user combo match
-        if rule_tt and rule_user and event_threat_type and event_user:
-            if rule_tt == event_threat_type and rule_user == event_user:
-                return True, (
-                    f"Threat pattern '{event_threat_type}' for user '{event_user}' "
-                    "matches a known False Positive suppression rule."
-                )
+        if (
+            rule_tt and rule_user and event_threat_type and event_user
+            and rule_tt == event_threat_type and rule_user == event_user
+        ):
+            return True, (
+                f"Threat pattern '{event_threat_type}' for user '{event_user}' "
+                "matches a known False Positive suppression rule."
+            )
 
         # Rule 3: Threat type only (if IP doesn't match — avoid broad suppression)
-        if rule_tt and event_threat_type and not rule_ip and not rule_user:
-            if rule_tt == event_threat_type:
-                return True, (
-                    f"Threat type '{event_threat_type}' is globally suppressed "
-                    "based on analyst feedback."
-                )
+        if (
+            rule_tt and event_threat_type and not rule_ip and not rule_user
+            and rule_tt == event_threat_type
+        ):
+            return True, (
+                f"Threat type '{event_threat_type}' is globally suppressed "
+                "based on analyst feedback."
+            )
 
     return False, ""
 

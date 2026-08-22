@@ -1,5 +1,4 @@
-from .threat_utils import normalize_text, safe_float, as_bool, append_reason
-
+from .threat_utils import append_reason, as_bool, normalize_text, safe_float
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ACTION VOCABULARY
@@ -90,25 +89,27 @@ def map_threat_patterns(event: dict) -> dict:
             break
 
     # ── Auth / sign-in patterns ──────────────────────────────────────────────
-    if log_type == "auth" or is_signin:
-        if any(x in normalized_action for x in ["login", "signin"]) or is_signin:
-            if failed_logins >= 3 or is_failed:
-                patterns.append("brute_force_attempt")
-                append_reason(reasons, "Multiple authentication attempts observed")
+    # An identity provider's risky-signin verdict stands on its own; otherwise the
+    # log has to be an auth log *and* describe a login before these rules apply.
+    is_login_action = any(x in normalized_action for x in ("login", "signin"))
+    if is_signin or (log_type == "auth" and is_login_action):
+        if failed_logins >= 3 or is_failed:
+            patterns.append("brute_force_attempt")
+            append_reason(reasons, "Multiple authentication attempts observed")
 
-            if is_new_ip_for_user or rare_source:
-                patterns.append("suspicious_login_behavior")
-                append_reason(reasons, "Login from unusual or new IP for user")
+        if is_new_ip_for_user or rare_source:
+            patterns.append("suspicious_login_behavior")
+            append_reason(reasons, "Login from unusual or new IP for user")
 
-            if is_new_user or rare_user:
-                append_reason(reasons, "Unusual user activity detected")
+        if is_new_user or rare_user:
+            append_reason(reasons, "Unusual user activity detected")
 
-            if is_risky_signin:
-                patterns.append("risky_signin_detected")
-                append_reason(reasons, "Identity signals indicate risky sign-in")
+        if is_risky_signin:
+            patterns.append("risky_signin_detected")
+            append_reason(reasons, "Identity signals indicate risky sign-in")
 
-            if off_hours:
-                append_reason(reasons, "Authentication during off-hours")
+        if off_hours:
+            append_reason(reasons, "Authentication during off-hours")
 
     # ── Web request payload analysis ─────────────────────────────────────────
     if url:

@@ -1,16 +1,14 @@
-import json
-import sys
-import argparse
 import logging
-import os
-from typing import Dict, Any
 
-from layer_5_cvss.engine_1_metric_mapping.metric_mapping_orchestrator import map_exploitability
+from layer_5_cvss.cvss_fusion import fuse_final_response
+from layer_5_cvss.engine_1_metric_mapping.metric_mapping_orchestrator import (
+    map_exploitability,
+)
 from layer_5_cvss.engine_2_impact_mapping.impact_mapping_orchestrator import map_impact
 from layer_5_cvss.engine_3_scoring.scoring_orchestrator import generate_score_and_vector
-from layer_5_cvss.engine_4_validation.validation_orchestrator import validate_and_fallback
-from layer_5_cvss.cvss_fusion import fuse_final_response
-from layer_5_cvss.cvss_schema import AIAnalysisInput
+from layer_5_cvss.engine_4_validation.validation_orchestrator import (
+    validate_and_fallback,
+)
 
 # Configure lightweight logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def run_cvss(ai_analysis: dict) -> dict:
     """
-    Orchestrates the conversion of AI threat context into a 
+    Orchestrates the conversion of AI threat context into a
     standardized numerical risk score.
     """
     if not ai_analysis or not isinstance(ai_analysis, dict) or \

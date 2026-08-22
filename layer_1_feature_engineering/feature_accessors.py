@@ -1,5 +1,4 @@
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 SEARCH_CONTAINERS = [
     "normalized_core",
@@ -16,7 +15,7 @@ def _get_from_container(container: Any, key: str) -> Any:
     return None
 
 
-def get_field(event: Dict[str, Any], *keys: str, default=None):
+def get_field(event: dict[str, Any], *keys: str, default=None):
     """
     Search for a field in this order:
     1. top-level event
@@ -39,19 +38,19 @@ def get_field(event: Dict[str, Any], *keys: str, default=None):
     return default
 
 
-def has_field(event: Dict[str, Any], *keys: str) -> bool:
+def has_field(event: dict[str, Any], *keys: str) -> bool:
     value = get_field(event, *keys, default=None)
     return value is not None
 
 
-def get_str(event: Dict[str, Any], *keys: str, default=None) -> Optional[str]:
+def get_str(event: dict[str, Any], *keys: str, default=None) -> str | None:
     value = get_field(event, *keys, default=default)
     if value is None:
         return default
     return str(value)
 
 
-def get_int(event: Dict[str, Any], *keys: str, default=None):
+def get_int(event: dict[str, Any], *keys: str, default=None):
     value = get_field(event, *keys, default=default)
     if value is None or value == "":
         return default
@@ -61,7 +60,7 @@ def get_int(event: Dict[str, Any], *keys: str, default=None):
         return default
 
 
-def get_float(event: Dict[str, Any], *keys: str, default=None):
+def get_float(event: dict[str, Any], *keys: str, default=None):
     value = get_field(event, *keys, default=default)
     if value is None or value == "":
         return default
@@ -71,7 +70,7 @@ def get_float(event: Dict[str, Any], *keys: str, default=None):
         return default
 
 
-def get_list(event: Dict[str, Any], *keys: str, default=None) -> List[Any]:
+def get_list(event: dict[str, Any], *keys: str, default=None) -> list[Any]:
     value = get_field(event, *keys, default=default)
     if value is None:
         return [] if default is None else default
@@ -80,7 +79,7 @@ def get_list(event: Dict[str, Any], *keys: str, default=None) -> List[Any]:
     return [value]
 
 
-def get_dict(event: Dict[str, Any], *keys: str, default=None) -> Dict[str, Any]:
+def get_dict(event: dict[str, Any], *keys: str, default=None) -> dict[str, Any]:
     value = get_field(event, *keys, default=default)
     if isinstance(value, dict):
         return value

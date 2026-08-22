@@ -4979,28 +4979,22 @@
         "framework": "MITRE ATT&CK Enterprise"
       },
       "cis": {
-        "benchmark_id": "OWASP-A04",
-        "framework": "OWASP",
-        "title": "Insecure Design",
-        "description": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
-        "remediation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-        "rationale": "Weak design choices can leave critical application flows vulnerable even if code quality is good.",
-        "section": "Secure Design",
-        "profile_level": "Top 10",
-        "audit_procedure": "Review threat models, trust boundaries, abuse cases, and security requirements in design.",
-        "references": "OWASP Top 10",
+        "benchmark_id": "CIS-8.11",
+        "framework": "CIS Controls v8",
+        "title": "Conduct Audit Log Reviews",
+        "description": "Event requires analyst review; no specific control was matched automatically.",
+        "remediation": "Review the event against the surrounding log window and escalate if corroborating signals are found.",
+        "rationale": "",
+        "section": "",
+        "profile_level": "",
+        "audit_procedure": "",
+        "references": [],
         "source_benchmark": "",
         "catalog": "web_owasp_catalog",
-        "match_type": "catalog_retrieval",
+        "match_type": "threat_type_fallback",
         "retrieval_query": {
-          "query_tags": [
-            "web_application",
-            "application_security"
-          ],
-          "query_keywords": [
-            "web",
-            "application"
-          ],
+          "query_tags": [],
+          "query_keywords": [],
           "section_hint": []
         },
         "additional_matches": []
@@ -5085,8 +5079,8 @@
           "Source IP appears unusual for this activity",
           "User behavior appears unusual"
         ],
-        "cis_control": "OWASP-A04",
-        "cis_control_title": "Insecure Design",
+        "cis_control": "CIS-8.11",
+        "cis_control_title": "Conduct Audit Log Reviews",
         "suppressed": false
       },
       "dashboard": {
@@ -5100,7 +5094,7 @@
         "affected_host": "dmz-web-01",
         "log_family": "web",
         "timestamp": "2026-08-22T02:00:05Z",
-        "cis_benchmark_id": "OWASP-A04"
+        "cis_benchmark_id": "CIS-8.11"
       },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
@@ -5110,11 +5104,11 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "OWASP-A04",
-          "benchmark_title": "Insecure Design",
-          "matched_domain": "OWASP",
-          "recommendation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-          "rationale": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+          "benchmark_id": "CIS-8.11",
+          "benchmark_title": "Conduct Audit Log Reviews",
+          "matched_domain": "CIS Controls v8",
+          "recommendation": "Review the event against the surrounding log window and escalate if corroborating signals are found.",
+          "rationale": "Event requires analyst review; no specific control was matched automatically.",
           "confidence": 0.4
         },
         "cvss_handoff": {
@@ -5135,14 +5129,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5506,14 +5500,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -6637,29 +6631,34 @@
         "framework": "MITRE ATT&CK Enterprise"
       },
       "cis": {
-        "benchmark_id": "OWASP-A04",
+        "benchmark_id": "OWASP-A03",
         "framework": "OWASP",
-        "title": "Insecure Design",
-        "description": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
-        "remediation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-        "rationale": "Weak design choices can leave critical application flows vulnerable even if code quality is good.",
-        "section": "Secure Design",
+        "title": "Injection",
+        "description": "Injection flaws occur when untrusted data is sent to an interpreter as part of a command or query.",
+        "remediation": "Use parameterized queries, validate input, escape output where relevant, and avoid unsafe dynamic execution.",
+        "rationale": "Injection can allow attackers to read or modify data and execute unintended commands.",
+        "section": "Input Validation",
         "profile_level": "Top 10",
-        "audit_procedure": "Review threat models, trust boundaries, abuse cases, and security requirements in design.",
+        "audit_procedure": "Review database access patterns, input validation, and unsafe command construction.",
         "references": "OWASP Top 10",
         "source_benchmark": "",
         "catalog": "web_owasp_catalog",
         "match_type": "catalog_retrieval",
         "retrieval_query": {
           "query_tags": [
-            "web_application",
-            "application_security"
+            "injection",
+            "sql_injection",
+            "input_validation"
           ],
           "query_keywords": [
-            "web",
-            "application"
+            "sql",
+            "injection",
+            "query",
+            "input"
           ],
-          "section_hint": []
+          "section_hint": [
+            "injection"
+          ]
         },
         "additional_matches": []
       },
@@ -6766,8 +6765,8 @@
           "Threat analysis mapped event to web_attack",
           "IOC enrichment found matching indicators"
         ],
-        "cis_control": "OWASP-A04",
-        "cis_control_title": "Insecure Design",
+        "cis_control": "OWASP-A03",
+        "cis_control_title": "Injection",
         "suppressed": false
       },
       "dashboard": {
@@ -6781,7 +6780,7 @@
         "affected_host": "dmz-web-01",
         "log_family": "web",
         "timestamp": "2026-08-22T02:21:44Z",
-        "cis_benchmark_id": "OWASP-A04"
+        "cis_benchmark_id": "OWASP-A03"
       },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
@@ -6791,11 +6790,11 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "OWASP-A04",
-          "benchmark_title": "Insecure Design",
+          "benchmark_id": "OWASP-A03",
+          "benchmark_title": "Injection",
           "matched_domain": "OWASP",
-          "recommendation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-          "rationale": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+          "recommendation": "Use parameterized queries, validate input, escape output where relevant, and avoid unsafe dynamic execution.",
+          "rationale": "Injection flaws occur when untrusted data is sent to an interpreter as part of a command or query.",
           "confidence": 0.92
         },
         "cvss_handoff": {
@@ -7093,14 +7092,18 @@
         "match_type": "catalog_retrieval",
         "retrieval_query": {
           "query_tags": [
-            "web_application",
-            "application_security"
+            "secure_design",
+            "business_logic",
+            "architecture"
           ],
           "query_keywords": [
-            "web",
-            "application"
+            "design",
+            "logic",
+            "architecture"
           ],
-          "section_hint": []
+          "section_hint": [
+            "design"
+          ]
         },
         "additional_matches": []
       },
@@ -7450,28 +7453,22 @@
         "framework": "MITRE ATT&CK Enterprise"
       },
       "cis": {
-        "benchmark_id": "OWASP-A04",
-        "framework": "OWASP",
-        "title": "Insecure Design",
-        "description": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
-        "remediation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-        "rationale": "Weak design choices can leave critical application flows vulnerable even if code quality is good.",
-        "section": "Secure Design",
-        "profile_level": "Top 10",
-        "audit_procedure": "Review threat models, trust boundaries, abuse cases, and security requirements in design.",
-        "references": "OWASP Top 10",
+        "benchmark_id": "CIS-8.11",
+        "framework": "CIS Controls v8",
+        "title": "Conduct Audit Log Reviews",
+        "description": "Event requires analyst review; no specific control was matched automatically.",
+        "remediation": "Review the event against the surrounding log window and escalate if corroborating signals are found.",
+        "rationale": "",
+        "section": "",
+        "profile_level": "",
+        "audit_procedure": "",
+        "references": [],
         "source_benchmark": "",
         "catalog": "web_owasp_catalog",
-        "match_type": "catalog_retrieval",
+        "match_type": "threat_type_fallback",
         "retrieval_query": {
-          "query_tags": [
-            "web_application",
-            "application_security"
-          ],
-          "query_keywords": [
-            "web",
-            "application"
-          ],
+          "query_tags": [],
+          "query_keywords": [],
           "section_hint": []
         },
         "additional_matches": []
@@ -7556,8 +7553,8 @@
           "Source IP appears unusual for this activity",
           "User behavior appears unusual"
         ],
-        "cis_control": "OWASP-A04",
-        "cis_control_title": "Insecure Design",
+        "cis_control": "CIS-8.11",
+        "cis_control_title": "Conduct Audit Log Reviews",
         "suppressed": false
       },
       "dashboard": {
@@ -7571,7 +7568,7 @@
         "affected_host": "dmz-web-01",
         "log_family": "web",
         "timestamp": "2026-08-22T02:33:47Z",
-        "cis_benchmark_id": "OWASP-A04"
+        "cis_benchmark_id": "CIS-8.11"
       },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
@@ -7581,11 +7578,11 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "OWASP-A04",
-          "benchmark_title": "Insecure Design",
-          "matched_domain": "OWASP",
-          "recommendation": "Use secure design patterns, threat modeling, and defensive workflows for critical user journeys.",
-          "rationale": "Insecure design represents flaws in architecture and business logic that cannot be fixed by implementation alone.",
+          "benchmark_id": "CIS-8.11",
+          "benchmark_title": "Conduct Audit Log Reviews",
+          "matched_domain": "CIS Controls v8",
+          "recommendation": "Review the event against the surrounding log window and escalate if corroborating signals are found.",
+          "rationale": "Event requires analyst review; no specific control was matched automatically.",
           "confidence": 0.4
         },
         "cvss_handoff": {
@@ -7606,14 +7603,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -9280,14 +9277,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -10397,25 +10394,33 @@
         "framework": "MITRE ATT&CK Enterprise"
       },
       "cis": {
-        "benchmark_id": "CIS-5.2",
-        "framework": "CIS Controls v8",
-        "title": "Use Unique Passwords",
-        "description": "Credential use inconsistent with the established baseline for this account or device.",
-        "remediation": "Rotate the affected credentials, disable any shared or default accounts, and require MFA for the exposed service.",
-        "rationale": "",
-        "section": "",
-        "profile_level": "",
-        "audit_procedure": "",
+        "benchmark_id": "1.6.1",
+        "framework": "CIS",
+        "title": "Disable Telnet Access",
+        "description": "Telnet is a clear-text administrative protocol. As such, both the credentials used to\nestablish the session and all commands and data within the session are readable in\nclear-text, so can be intercepted or modified by an attacker",
+        "remediation": "It's recommended to restrict VTYs to SSH for management access and not allow this\ndevice to SSH to other devices:\n\nInternal Only - General\n\nvty-pool default 0 4 line-template default\nline default\ntransport input ssh\ntransport output none",
+        "rationale": "Telnet doesn't natively support encryption or message integrity checks. Hence, any\ntransmitted information (including credentials) is exposed to an attacker that gains\naccess to the communication. Furthermore communication could be intercepted and\nmodified by a man-in-the-middle attacker.",
+        "section": "Management Plane",
+        "profile_level": "Level 1",
+        "audit_procedure": "Check the vty pools in use:\nshow run formal | i vty-pool\nvty-pool default 0 4 line-template default\nline-template is \"default\", multiple vty-pools might exist, check each.\ncheck the corresponding line template:\nshow run formal | i \"line default\"\nline default exec-timeout ...\n...\nline default transport input ssh\nCheck if line default transport input ssh or line default transport input\nnone is present.",
         "references": [],
-        "source_benchmark": "",
-        "catalog": "iot_cis_catalog",
-        "match_type": "threat_type_fallback",
+        "source_benchmark": "iosxr7",
+        "catalog": "network_controls_catalog",
+        "match_type": "catalog_retrieval",
         "retrieval_query": {
-          "query_tags": [],
-          "query_keywords": [
-            "branch-camera-07"
+          "query_tags": [
+            "remote_access",
+            "authentication",
+            "management_plane"
           ],
-          "section_hint": []
+          "query_keywords": [
+            "telnet"
+          ],
+          "section_hint": [
+            "management",
+            "authentication",
+            "remote access"
+          ]
         },
         "additional_matches": []
       },
@@ -10525,8 +10530,8 @@
           "Threat analysis mapped event to credential_abuse",
           "IOC enrichment found matching indicators"
         ],
-        "cis_control": "CIS-5.2",
-        "cis_control_title": "Use Unique Passwords",
+        "cis_control": "1.6.1",
+        "cis_control_title": "Disable Telnet Access",
         "suppressed": false
       },
       "dashboard": {
@@ -10540,7 +10545,7 @@
         "affected_host": "branch-camera-07",
         "log_family": "iot",
         "timestamp": "2026-08-22T04:05:41Z",
-        "cis_benchmark_id": "CIS-5.2"
+        "cis_benchmark_id": "1.6.1"
       },
       "advisor_agent": {
         "agent_name": "SENTRA CIS-CVSS Advisor",
@@ -10550,11 +10555,11 @@
           "layer_3_cis_mapping"
         ],
         "cis_recommendation": {
-          "benchmark_id": "CIS-5.2",
-          "benchmark_title": "Use Unique Passwords",
-          "matched_domain": "CIS Controls v8",
-          "recommendation": "Rotate the affected credentials, disable any shared or default accounts, and require MFA for the exposed service.",
-          "rationale": "Credential use inconsistent with the established baseline for this account or device.",
+          "benchmark_id": "1.6.1",
+          "benchmark_title": "Disable Telnet Access",
+          "matched_domain": "CIS",
+          "recommendation": "It's recommended to restrict VTYs to SSH for management access and not allow this\ndevice to SSH to other devices:\n\nInternal Only - General\n\nvty-pool default 0 4 line-template default\nline default\ntransport input ssh\ntransport output none",
+          "rationale": "Telnet is a clear-text administrative protocol. As such, both the credentials used to\nestablish the session and all commands and data within the session are readable in\nclear-text, so can be intercepted or modified by an attacker",
           "confidence": 0.92
         },
         "cvss_handoff": {
@@ -10575,7 +10580,7 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10583,7 +10588,7 @@
           "Activity reached Initial Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10595,7 +10600,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T10:31:22.829419+00:00",
+            "deadline": "2026-08-22T12:17:05.190198+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10609,7 +10614,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T12:31:22.829419+00:00",
+            "deadline": "2026-08-22T14:17:05.190198+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10623,7 +10628,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T18:31:22.829419+00:00",
+            "deadline": "2026-08-23T20:17:05.190198+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10637,7 +10642,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T06:31:22.829419+00:00",
+            "deadline": "2026-08-26T08:17:05.190198+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10652,7 +10657,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T10:31:22.829419+00:00",
+          "deadline": "2026-08-22T12:17:05.190198+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10770,7 +10775,7 @@
         "activity reached 10.40.9.7 at Lateral Movement, which then originated further activity"
       ],
       "narrative": "9 alerts that were raised separately describe a single sequence of activity involving 3 assets (core-app-02, db-core-01, dmz-web-01), beginning at 203.0.113.55. Observed progression: Reconnaissance -> Initial Access -> Persistence -> Lateral Movement -> Command and Control -> Exfiltration. Correlated because same source address 203.0.113.55. The chain reaches Exfiltration, meaning data may already have left the environment — treat as an active breach and start the regulatory notification clock.",
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": true,
         "confidence": "high",
@@ -10778,7 +10783,7 @@
           "Activity reached Exfiltration, so customer or transaction data may already have been accessed or moved.",
           "Severity is critical."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10790,7 +10795,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T10:31:22.829419+00:00",
+            "deadline": "2026-08-22T12:17:05.190198+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10804,7 +10809,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T12:31:22.829419+00:00",
+            "deadline": "2026-08-22T14:17:05.190198+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10818,7 +10823,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T18:31:22.829419+00:00",
+            "deadline": "2026-08-23T20:17:05.190198+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10832,7 +10837,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T06:31:22.829419+00:00",
+            "deadline": "2026-08-26T08:17:05.190198+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10847,7 +10852,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T10:31:22.829419+00:00",
+          "deadline": "2026-08-22T12:17:05.190198+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10917,7 +10922,7 @@
         "same source address 45.128.62.19"
       ],
       "narrative": "7 alerts that were raised separately describe a single sequence of activity involving ssh-bastion-01, beginning at 45.128.62.19. Observed progression: Initial Access -> Credential Access. Correlated because same source address 45.128.62.19. Credentials are being targeted directly; assume account compromise until disproven.",
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10925,7 +10930,7 @@
           "Activity reached Credential Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10937,7 +10942,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T10:31:22.829419+00:00",
+            "deadline": "2026-08-22T12:17:05.190198+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10951,7 +10956,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T12:31:22.829419+00:00",
+            "deadline": "2026-08-22T14:17:05.190198+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10965,7 +10970,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T18:31:22.829419+00:00",
+            "deadline": "2026-08-23T20:17:05.190198+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10979,7 +10984,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T06:31:22.829419+00:00",
+            "deadline": "2026-08-26T08:17:05.190198+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10994,7 +10999,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T10:31:22.829419+00:00",
+          "deadline": "2026-08-22T12:17:05.190198+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -11045,14 +11050,14 @@
         "same source address 10.99.0.5"
       ],
       "narrative": "4 alerts that were raised separately describe a single sequence of activity involving core-app-02, beginning at 10.99.0.5. Observed progression: Reconnaissance. Correlated because same source address 10.99.0.5. Activity is still pre-compromise reconnaissance.",
-      "determined_at": "2026-08-22T06:31:22.829419+00:00",
+      "determined_at": "2026-08-22T08:17:05.190198+00:00",
       "notification": {
         "reportable": false,
         "confidence": "medium",
         "reasons": [
           "Activity has not progressed past reconnaissance and does not meet a materiality threshold on its own."
         ],
-        "determined_at": "2026-08-22T06:31:22.829419+00:00",
+        "determined_at": "2026-08-22T08:17:05.190198+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -11067,14 +11072,14 @@
     "worst_stage_order": 14
   },
   "timing": {
-    "layer1_features": 0.003,
-    "layer2_detection": 0.003,
-    "layer3_cis": 0.22,
-    "format": 0.005,
+    "layer1_features": 0.002,
+    "layer2_detection": 0.002,
+    "layer3_cis": 0.052,
+    "format": 0.003,
     "layer2_5_campaigns": 0.0,
-    "layer4_analysis": 0.01,
-    "layer5_cvss": 0.004,
-    "layer6_response": 0.0,
-    "total": 0.245
+    "layer4_analysis": 0.026,
+    "layer5_cvss": 0.017,
+    "layer6_response": 0.001,
+    "total": 0.103
   }
 }

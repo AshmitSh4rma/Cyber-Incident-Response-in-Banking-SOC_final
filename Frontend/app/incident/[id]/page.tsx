@@ -33,7 +33,7 @@ import {
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
 import { EASE_OUT, fadeIn } from "@/lib/motion";
-import { formatTimestamp, severityTone } from "@/lib/severity";
+import { formatBytes, formatTimestamp, severityTone } from "@/lib/severity";
 
 /**
  * The investigation.
@@ -140,9 +140,8 @@ export default function IncidentWorkspace() {
       <Block><BackLink /></Block>
 
       {/* ── What this is ─────────────────────────────────────────────────────── */}
-      <motion.div
-        variants={fadeIn}
-        className={`relative overflow-hidden rounded-lg border ${tone.border} bg-surface p-5`}
+      <div
+        className={`rise relative overflow-hidden rounded-lg border ${tone.border} bg-surface p-5`}
       >
         <motion.span
           className={`absolute left-0 top-0 w-1 ${tone.mark}`}
@@ -196,7 +195,7 @@ export default function IncidentWorkspace() {
             <ArrowRight className="h-3 w-3 shrink-0 text-faint transition group-hover:translate-x-0.5" />
           </Link>
         ) : null}
-      </motion.div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start">
         <div className="space-y-4">
@@ -207,6 +206,19 @@ export default function IncidentWorkspace() {
               <p className="max-w-3xl text-[13px] leading-relaxed text-muted">
                 {String(ai.narrative ?? ai.summary ?? "No analysis available.")}
               </p>
+
+              {/* The engine detects exfiltration from the outbound/inbound byte
+                  ratio, but the volume itself was never shown. "463.7 MB left the
+                  network" needs no security background to understand, and it is
+                  the single most concrete fact in an exfiltration incident. */}
+              {Number(raw.bytes_out) > 1_000_000 ? (
+                <p className="flex flex-wrap items-baseline gap-x-2 rounded-md border border-sev-critical/30 bg-sev-critical/8 px-3 py-2 text-[12px] text-muted">
+                  <span className="figure text-base font-semibold text-sev-critical">
+                    {formatBytes(raw.bytes_out)}
+                  </span>
+                  <span>left the network in this transfer.</span>
+                </p>
+              ) : null}
 
               <div className="space-y-2 pt-1">
                 <Reveal label="Why we flagged it" count={((det.reasoning ?? []) as string[]).length}>

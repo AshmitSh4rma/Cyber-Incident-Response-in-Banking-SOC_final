@@ -1,12 +1,11 @@
-import sys
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from llm_analyst import analyse as llm_analyse
 from ollama_client import check_ollama_connection
-
 
 # ─────────────────────────────────────────
 # OLLAMA CONNECTION CACHING
@@ -35,15 +34,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
     feature_engineering = incident_data.get("feature_engineering", {}) or {}
 
     # Support both CIS shapes
-    cis_direct = incident_data.get("cis", {}) or {}
-    cis_benchmark = incident_data.get("cis_benchmark", {}) or {}
-    matched_benchmarks = cis_benchmark.get("matched_benchmarks", []) or []
 
-    cis_title = (
-        cis_direct.get("title")
-        or (matched_benchmarks[0].get("title") if matched_benchmarks else None)
-        or "Security Monitoring"
-    )
 
     log_type = str(
         raw_event.get("log_type")
@@ -79,7 +70,6 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
 
     threat_type = str(detection.get("threat_type") or "suspicious_activity").lower()
     severity = str(detection.get("severity") or "low").lower()
-    label = str(detection.get("label") or "suspicious").lower()
 
     anomaly_flags = anomaly.get("anomaly_flags", []) or []
     if not isinstance(anomaly_flags, list):
@@ -287,9 +277,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
     # impact deliberately. Escalating a port scan to "high confidentiality
     # impact" just because detection was confident produces indefensible CVSS
     # scores, which is exactly the inconsistency this layer exists to remove.
-    if impact_is_authoritative:
-        pass
-    elif severity == "low":
+    if impact_is_authoritative or severity == "low":
         pass
     elif severity == "medium":
         confidentiality = "low" if confidentiality == "none" else confidentiality

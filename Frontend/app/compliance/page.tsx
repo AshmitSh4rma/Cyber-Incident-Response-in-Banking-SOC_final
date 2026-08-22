@@ -18,9 +18,9 @@ import {
   type Clock,
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
-import { riseIn } from "@/lib/motion";
+import { useLiveCountdown } from "@/lib/motion";
 import { motion } from "framer-motion";
-import { formatRemaining, severityTone } from "@/lib/severity";
+import { severityTone } from "@/lib/severity";
 
 type Item = {
   kind: "campaign" | "incident";
@@ -129,9 +129,7 @@ export default function CompliancePage() {
                         <>
                           Soonest: <span className="font-medium text-ink">{tightest.authority}</span>{" "}
                           in{" "}
-                          <span className="tabular font-semibold text-ink">
-                            {formatRemaining(tightest.seconds_remaining)}
-                          </span>
+                          <LiveRemaining clock={tightest} />
                           .
                         </>
                       ) : null}
@@ -198,7 +196,6 @@ export default function CompliancePage() {
                 return (
                   <motion.div
                     key={item.id}
-                    variants={riseIn}
                     className={`relative overflow-hidden rounded-lg border ${tone.border} bg-surface`}
                   >
                     <span className={`absolute left-0 top-0 h-full w-0.5 ${tone.mark}`} aria-hidden />
@@ -259,5 +256,25 @@ export default function CompliancePage() {
         </>
       ) : null}
     </Screen>
+  );
+}
+
+/**
+ * The headline "soonest deadline" figure.
+ *
+ * Its own component only so the countdown hook can run unconditionally — the
+ * tightest clock may be absent. The alternative was rendering the seconds the
+ * server happened to report at fetch time, which froze the number while the
+ * clocks below it ticked. A stopped countdown that looks live is worse than
+ * no countdown.
+ */
+function LiveRemaining({ clock }: { clock: Clock }) {
+  const live = useLiveCountdown(clock.deadline, clock.window_hours);
+  return (
+    <span
+      className={`tabular font-semibold ${live.state === "overdue" ? "text-sev-critical" : "text-ink"}`}
+    >
+      {live.label}
+    </span>
   );
 }

@@ -1,5 +1,4 @@
 # device_profiler.py
-# Location: layer_1_feature_engineering/engine_6_iot/device_profiler.py
 #
 # PURPOSE:
 # Builds a behavioral profile for IoT devices.
@@ -23,7 +22,6 @@
 
 
 from collections import defaultdict
-
 
 # ─────────────────────────────────────────
 # IN-MEMORY DEVICE STORE
@@ -94,7 +92,7 @@ def _update_device_store(device_id: str, log: dict) -> None:
     store["event_count"] += 1
 
 
-def _detect_ip_change(device_id: str, current_ip: str) -> bool:
+def _detect_ip_change(device_id: str, _current_ip: str) -> bool:
     """
     Returns True if this device has been seen with a different IP before.
     IoT devices typically have static IPs — any change is suspicious.
@@ -111,7 +109,7 @@ def _detect_firmware_change(device_id: str) -> bool:
     return len(_device_store[device_id]["seen_firmwares"]) > 1
 
 
-def _detect_new_destination(device_id: str, current_dest: str) -> bool:
+def _detect_new_destination(device_id: str, _current_dest: str) -> bool:
     """
     Returns True if device is communicating with a new destination IP.
     Possible C2 or data exfiltration indicator.

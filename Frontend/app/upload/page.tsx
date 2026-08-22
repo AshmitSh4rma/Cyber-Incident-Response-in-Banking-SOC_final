@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, CheckCircle2, ChevronRight, Loader2, Terminal, Upload } from "lucide-react";
+
 import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronRight,
-  Loader2,
-  Play,
-  Terminal,
-  Upload,
-} from "lucide-react";
+  Block,
+  PlainEnglish,
+  Reveal,
+  Screen,
+  Section,
+} from "@/components/soc/primitives";
+import { useDetail } from "@/lib/detail";
+import { EASE_OUT, useCountUp, usePrefersReducedMotion } from "@/lib/motion";
+import { formatBytes } from "@/lib/severity";
 
 /**
  * Scenario replay.
@@ -124,7 +128,7 @@ const SCENARIOS: Scenario[] = [
     id: "web_shell",
     label: "Web shell upload",
     technique: "T1505.003",
-    summary: "Executable dropped into an writable web directory for persistence.",
+    summary: "Executable dropped into a writable web directory for persistence.",
     expect: "Persistence · high",
     generate: () => {
       const src = externalIp("185.199");
@@ -246,14 +250,23 @@ const SCENARIOS: Scenario[] = [
   },
 ];
 
+
+/**
+ * The seven pipeline layers.
+ *
+ * Two labels each: what it does in plain words, and what it is actually called.
+ * The plain label is always on screen; the technical one appears in analyst mode.
+ * A risk officer watching a demo should be able to follow the pipeline without
+ * knowing what "feature engineering" means.
+ */
 const LAYERS = [
-  { label: "Feature engineering", detail: "normalise, classify, extract" },
-  { label: "Detection", detail: "anomaly · patterns · intel · correlation" },
-  { label: "Campaign correlation", detail: "group alerts into intrusions" },
-  { label: "Control mapping", detail: "CIS / OWASP benchmark retrieval" },
-  { label: "Incident analysis", detail: "narrative and CVSS metrics" },
-  { label: "CVSS scoring", detail: "3.1 base score and vector" },
-  { label: "Response planning", detail: "playbook and approval gate" },
+  { plain: "Read the logs", technical: "Feature engineering", detail: "normalise, classify, extract" },
+  { plain: "Spot what looks wrong", technical: "Detection", detail: "anomaly · patterns · intel · correlation" },
+  { plain: "Join up related alerts", technical: "Campaign correlation", detail: "group alerts into one intrusion" },
+  { plain: "Check the rulebook", technical: "Control mapping", detail: "CIS / OWASP benchmark retrieval" },
+  { plain: "Write up what happened", technical: "Incident analysis", detail: "narrative and impact" },
+  { plain: "Score the damage", technical: "CVSS scoring", detail: "3.1 base score and vector" },
+  { plain: "Decide what to do", technical: "Response planning", detail: "playbook and approval gate" },
 ];
 
 type Phase = "idle" | "running" | "done" | "error";
@@ -267,6 +280,9 @@ type RunResult = {
 
 export default function ScenarioReplayPage() {
   const router = useRouter();
+  const { isAnalyst } = useDetail();
+  const reduced = usePrefersReducedMotion();
+
   const [phase, setPhase] = useState<Phase>("idle");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<RawLog[]>([]);
@@ -277,8 +293,8 @@ export default function ScenarioReplayPage() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    logEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [logLines]);
+    logEnd.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "end" });
+  }, [logLines, reduced]);
 
   const submit = useCallback(
     async (logs: RawLog[], filename: string, label: string, id: string | null) => {
@@ -378,215 +394,293 @@ export default function ScenarioReplayPage() {
     setError(null);
   };
 
+  const activeLabel = SCENARIOS.find((s) => s.id === activeId)?.label ?? "your logs";
+
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1.5">
-          <p className="eyebrow">Scenario replay</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-            Send telemetry through the pipeline
-          </h1>
-          <p className="max-w-2xl text-xs leading-relaxed text-slate-400">
-            Each scenario emits raw log records and nothing else. Every verdict,
-            score, control mapping and campaign grouping you see afterwards was
-            decided by the backend, not by this page.
-          </p>
-        </div>
+    <Screen>
+      {/* ── Lead ──────────────────────────────────────────────────────────── */}
+      <Block>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1.5">
+            <p className="eyebrow">Replay an attack</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-ink">
+              Send activity through the pipeline
+            </h1>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".json,.jsonl,.txt,application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onUpload(f);
-              e.target.value = "";
-            }}
-          />
-          <button
-            onClick={() => fileInput.current?.click()}
-            disabled={phase === "running"}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 disabled:opacity-50"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload your own logs
-          </button>
-          {phase !== "idle" && (
+          <div className="flex shrink-0 items-center gap-2">
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".json,.jsonl,.txt,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onUpload(f);
+                e.target.value = "";
+              }}
+            />
             <button
-              onClick={reset}
-              className="rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
+              onClick={() => fileInput.current?.click()}
+              disabled={phase === "running"}
+              className="inline-flex items-center gap-1.5 rounded-md border border-rule bg-surface px-3 py-2 text-xs font-medium text-ink transition hover:border-rule hover:bg-raised disabled:opacity-50"
             >
-              Reset
+              <Upload className="h-3.5 w-3.5" />
+              Use your own logs
             </button>
-          )}
+            {phase !== "idle" ? (
+              <button
+                onClick={reset}
+                className="rounded-md border border-rule px-3 py-2 text-xs font-medium text-muted transition hover:bg-raised hover:text-ink"
+              >
+                Start over
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {/* Scenario picker */}
-      {phase === "idle" && (
+        <PlainEnglish>
+          Pick an attack below and it replays as real activity — the same kind of
+          records a bank&apos;s systems produce every second. Nothing on this page
+          decides anything: every verdict, score and recommendation you see
+          afterwards is worked out by the engine while you watch.
+        </PlainEnglish>
+      </Block>
+
+      {/* ── Scenario picker ───────────────────────────────────────────────── */}
+      {phase === "idle" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {SCENARIOS.map((s) => (
-            <button
+            <motion.button
               key={s.id}
+              whileHover={reduced ? undefined : { y: -2 }}
+              transition={{ duration: 0.18, ease: EASE_OUT }}
               onClick={() => submit(s.generate(), `${s.id}.json`, s.label, s.id)}
-              className="group flex flex-col gap-2 rounded-md border border-slate-800 bg-slate-900/60 p-4 text-left transition hover:border-slate-700 hover:bg-slate-900"
+              className="rise stagger-row group relative flex flex-col gap-2 overflow-hidden rounded-md border border-rule bg-surface p-4 text-left transition hover:border-accent-deep"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="mono rounded border border-cyan-900/50 bg-cyan-950/25 px-1.5 py-0.5 text-[10px] text-cyan-300">
-                  {s.technique}
-                </span>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
+              {/* The accent edge slides in on hover — the only affordance needed
+                  to say "this is the thing you click". */}
+              <span className="absolute left-0 top-0 h-full w-0.5 origin-top scale-y-0 bg-accent transition-transform duration-300 group-hover:scale-y-100" />
+
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-sm font-medium text-ink">{s.label}</span>
+                <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-accent" />
               </div>
-              <span className="text-sm font-medium text-slate-100">{s.label}</span>
-              <span className="text-[11px] leading-relaxed text-slate-400">{s.summary}</span>
-              <span className="mono mt-auto pt-1 text-[10px] text-slate-600">
-                expect → {s.expect}
-              </span>
-            </button>
+              <span className="text-[11px] leading-relaxed text-muted">{s.summary}</span>
+
+              {isAnalyst ? (
+                <span className="mono mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-[10px] text-faint">
+                  <span className="rounded border border-accent-deep px-1.5 py-0.5 text-accent">
+                    {s.technique}
+                  </span>
+                  <span>expect → {s.expect}</span>
+                </span>
+              ) : null}
+            </motion.button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Run view */}
-      {phase !== "idle" && (
-        <div className="grid gap-5 lg:grid-cols-5">
-          {/* Raw log stream */}
-          <div className="flex flex-col overflow-hidden rounded-md border border-slate-800 bg-slate-950 lg:col-span-3">
-            <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2.5">
-              <Terminal className="h-3.5 w-3.5 text-slate-500" />
-              <span className="eyebrow">Raw records submitted</span>
-              <span className="mono ml-auto text-[10px] text-slate-500">
-                {logLines.length} record{logLines.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            <div className="mono max-h-[420px] min-h-[240px] space-y-1 overflow-y-auto p-4 text-[10.5px] leading-relaxed">
-              {logLines.map((line, i) => (
-                <div key={i} className="flex gap-2 text-slate-400">
-                  <span className="shrink-0 text-slate-600">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0 break-all">
-                    <span className="text-slate-500">{String(line.timestamp ?? "").slice(11, 19)}</span>{" "}
-                    <span className="text-cyan-500/80">{String(line.log_type ?? "")}</span>{" "}
-                    <span className="text-slate-300">{String(line.source_ip ?? "")}</span>
-                    {line.destination_ip ? (
-                      <>
-                        <span className="text-slate-600"> → </span>
-                        <span className="text-slate-300">{String(line.destination_ip)}</span>
-                      </>
+      {/* ── Run view ──────────────────────────────────────────────────────── */}
+      {phase !== "idle" ? (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+          {/* Pipeline progress — the centrepiece, always visible */}
+          <Section
+            title="What the engine is doing"
+            hint={phase === "running" ? `Replaying ${activeLabel}` : undefined}
+          >
+            <ol className="space-y-0">
+              {LAYERS.map((layer, i) => {
+                const state = layerIndex > i ? "done" : layerIndex === i ? "active" : "waiting";
+                const isLast = i === LAYERS.length - 1;
+                return (
+                  <li key={layer.plain} className="relative flex gap-3 pb-3.5 last:pb-0">
+                    {!isLast ? (
+                      <span
+                        className={`absolute left-[7px] top-4 h-full w-px transition-colors duration-500 ${
+                          state === "done" ? "bg-accent-deep" : "bg-rule"
+                        }`}
+                        aria-hidden
+                      />
                     ) : null}
-                    {line.action ? <span className="text-amber-500/80"> {String(line.action)}</span> : null}
-                    {line.url ? <span className="text-slate-500"> {String(line.url)}</span> : null}
-                    {line.affected_user ? (
-                      <span className="text-slate-500"> user={String(line.affected_user)}</span>
-                    ) : null}
-                  </span>
-                </div>
-              ))}
-              <div ref={logEnd} />
-            </div>
-          </div>
 
-          {/* Pipeline progress + outcome */}
-          <div className="space-y-4 lg:col-span-2">
-            <div className="rounded-md border border-slate-800 bg-slate-900/60 p-4">
-              <p className="eyebrow mb-3">Pipeline</p>
-              <ol className="space-y-2">
-                {LAYERS.map((layer, i) => {
-                  const state = layerIndex > i ? "done" : layerIndex === i ? "active" : "waiting";
-                  return (
-                    <li key={layer.label} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                        {state === "done" ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                        ) : state === "active" ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
-                        ) : (
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                        )}
-                      </span>
-                      <span className="min-w-0">
-                        <span
-                          className={[
-                            "block text-xs",
-                            state === "waiting" ? "text-slate-600" : "text-slate-200",
-                          ].join(" ")}
+                    <span className="relative z-10 mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                      {state === "done" ? (
+                        <motion.span
+                          initial={reduced ? false : { scale: 0.4, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.22, ease: EASE_OUT }}
                         >
-                          {layer.label}
-                        </span>
-                        <span className="block text-[10px] text-slate-600">{layer.detail}</span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
+                        </motion.span>
+                      ) : state === "active" ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-rule" />
+                      )}
+                    </span>
 
-            {phase === "done" && result && (
-              <div className="space-y-3 rounded-md border border-emerald-900/40 bg-emerald-950/15 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Pipeline complete
-                </p>
-                <dl className="space-y-1.5 text-[11px]">
-                  {[
-                    ["Records scored", result.events],
-                    ["Campaigns correlated", result.campaigns],
-                    ["Wall clock", result.seconds != null ? `${result.seconds}s` : undefined],
-                  ]
-                    .filter(([, v]) => v !== undefined)
-                    .map(([k, v]) => (
-                      <div key={String(k)} className="flex justify-between gap-3">
-                        <dt className="text-slate-400">{k}</dt>
-                        <dd className="mono font-semibold text-slate-100">{String(v)}</dd>
-                      </div>
-                    ))}
-                </dl>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => router.push("/dashboard")}
-                    className="flex-1 rounded-md bg-cyan-500 px-3 py-2 text-[11px] font-semibold text-slate-950 transition hover:bg-cyan-400"
-                  >
-                    Open dashboard
-                  </button>
-                  {(result.campaigns ?? 0) > 0 && (
+                    <span className="min-w-0">
+                      <span
+                        className={`block text-xs transition-colors duration-300 ${
+                          state === "waiting" ? "text-faint" : "font-medium text-ink"
+                        }`}
+                      >
+                        {layer.plain}
+                      </span>
+                      {isAnalyst ? (
+                        <span className="mono block text-[10px] text-faint">
+                          {layer.technical} — {layer.detail}
+                        </span>
+                      ) : null}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </Section>
+
+          {/* Outcome */}
+          <div className="space-y-4">
+            <AnimatePresence mode="wait">
+              {phase === "done" && result ? (
+                <motion.div
+                  key="done"
+                  initial={reduced ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.34, ease: EASE_OUT }}
+                  className="space-y-3.5 rounded-md border border-accent-deep bg-accent/8 p-4"
+                >
+                  <p className="flex items-center gap-2 text-xs font-semibold text-accent">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Done — the engine reached its verdict
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-px overflow-hidden rounded border border-rule bg-rule">
+                    <ResultFigure label="Records read" value={result.events} />
+                    <ResultFigure label="Attacks found" value={result.campaigns} />
+                    <ResultFigure
+                      label="Seconds taken"
+                      value={result.seconds}
+                      decimals={2}
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => router.push("/campaigns")}
-                      className="flex-1 rounded-md border border-slate-700 px-3 py-2 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-800"
+                      onClick={() => router.push("/dashboard")}
+                      className="flex-1 rounded-md bg-accent px-3 py-2 text-[11px] font-semibold text-ground transition hover:opacity-90"
                     >
-                      View campaigns
+                      See what it found
                     </button>
-                  )}
+                    {(result.campaigns ?? 0) > 0 ? (
+                      <button
+                        onClick={() => router.push("/campaigns")}
+                        className="flex-1 rounded-md border border-rule px-3 py-2 text-[11px] font-semibold text-ink transition hover:bg-raised"
+                      >
+                        See the full attack
+                      </button>
+                    ) : null}
+                  </div>
+                </motion.div>
+              ) : null}
+
+              {phase === "error" ? (
+                <motion.div
+                  key="error"
+                  initial={reduced ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: EASE_OUT }}
+                  className="space-y-2 rounded-md border border-sev-critical/40 bg-sev-critical/10 p-4"
+                >
+                  <p className="flex items-center gap-2 text-xs font-semibold text-sev-critical">
+                    <AlertTriangle className="h-4 w-4" />
+                    The engine did not run
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted">{error}</p>
+                  <p className="text-[10px] leading-relaxed text-faint">
+                    Nothing was recorded. This page never invents results when the
+                    engine is unreachable — an empty dashboard is the honest answer.
+                  </p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            {/* The raw records: available, not imposed. */}
+            <Reveal
+              label="Show the raw activity that was sent"
+              count={logLines.length}
+              defaultOpen={isAnalyst}
+            >
+              <div className="overflow-hidden rounded border border-rule bg-sunk">
+                <div className="flex items-center gap-2 border-b border-rule px-3 py-2">
+                  <Terminal className="h-3.5 w-3.5 text-faint" />
+                  <span className="eyebrow">Exactly what was submitted</span>
+                </div>
+                <div className="mono max-h-[360px] min-h-[120px] space-y-1 overflow-y-auto p-3 text-[10.5px] leading-relaxed">
+                  {logLines.map((line, i) => (
+                    <div key={i} className="flex gap-2 text-muted">
+                      <span className="shrink-0 text-faint">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="min-w-0 break-all">
+                        <span className="text-faint">
+                          {String(line.timestamp ?? "").slice(11, 19)}
+                        </span>{" "}
+                        <span className="text-accent">{String(line.log_type ?? "")}</span>{" "}
+                        <span className="text-ink">{String(line.source_ip ?? "")}</span>
+                        {line.destination_ip ? (
+                          <>
+                            <span className="text-faint"> → </span>
+                            <span className="text-ink">{String(line.destination_ip)}</span>
+                          </>
+                        ) : null}
+                        {line.action ? (
+                          <span className="text-sev-medium"> {String(line.action)}</span>
+                        ) : null}
+                        {/* A bare 486203914 is unreadable; 463.7 MB is the point
+                            of the exfiltration scenario. */}
+                        {Number(line.bytes_out) > 1_000_000 ? (
+                          <span className="font-semibold text-sev-critical">
+                            {" "}
+                            {formatBytes(line.bytes_out)} out
+                          </span>
+                        ) : null}
+                        {line.url ? <span className="text-faint"> {String(line.url)}</span> : null}
+                        {line.affected_user ? (
+                          <span className="text-faint"> user={String(line.affected_user)}</span>
+                        ) : null}
+                      </span>
+                    </div>
+                  ))}
+                  <div ref={logEnd} />
                 </div>
               </div>
-            )}
-
-            {phase === "error" && (
-              <div className="space-y-2 rounded-md border border-red-900/50 bg-red-950/20 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-red-300">
-                  <AlertTriangle className="h-4 w-4" />
-                  Pipeline did not run
-                </p>
-                <p className="text-[11px] leading-relaxed text-slate-400">{error}</p>
-                <p className="text-[10px] text-slate-500">
-                  No incidents were created. Nothing on this page fabricates results
-                  when the backend is unreachable.
-                </p>
-              </div>
-            )}
-
-            {phase === "running" && (
-              <div className="flex items-center gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-4 py-3 text-[11px] text-slate-400">
-                <Play className="h-3.5 w-3.5 text-cyan-400" />
-                Replaying {SCENARIOS.find((s) => s.id === activeId)?.label ?? "uploaded logs"}…
-              </div>
-            )}
+            </Reveal>
           </div>
         </div>
-      )}
+      ) : null}
+    </Screen>
+  );
+}
+
+/** One cell of the outcome grid. Counts up so the number registers. */
+function ResultFigure({
+  label,
+  value,
+  decimals = 0,
+}: {
+  label: string;
+  value: number | undefined;
+  decimals?: number;
+}) {
+  const animated = useCountUp(Number(value ?? 0), 700);
+  return (
+    <div className="bg-surface px-3 py-2.5">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-faint">{label}</p>
+      <p className="figure mt-1 text-lg font-semibold text-ink">
+        {value == null ? "—" : animated.toFixed(decimals)}
+      </p>
     </div>
   );
 }

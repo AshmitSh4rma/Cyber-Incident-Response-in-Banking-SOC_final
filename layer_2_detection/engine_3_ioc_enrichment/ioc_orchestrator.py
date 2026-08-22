@@ -1,5 +1,5 @@
-from .observable_extractor import extract_observables
 from .ioc_lookup import lookup_iocs
+from .observable_extractor import extract_observables
 from .reputation_mapper import map_reputation
 
 

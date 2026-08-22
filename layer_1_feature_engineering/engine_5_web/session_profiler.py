@@ -1,5 +1,4 @@
 # session_profiler.py
-# Location: layer_1_feature_engineering/engine_5_web/session_profiler.py
 #
 # PURPOSE:
 # Profiles the web session for consistency and anomalies.
@@ -18,8 +17,7 @@
 
 
 from collections import defaultdict
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 # ─────────────────────────────────────────
 # IN-MEMORY SESSION STORE
@@ -56,7 +54,7 @@ def _parse_ts(ts_str: str) -> datetime:
     try:
         return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
     except Exception:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def _get_session_duration_seconds(first: str, last: str) -> float:

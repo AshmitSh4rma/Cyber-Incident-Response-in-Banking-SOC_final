@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
 
 /**
  * Detail level.
@@ -15,12 +15,73 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
  * it is one click away, and the click is labelled in words rather than hidden
  * behind an icon.
  *
- * The choice persists, because an analyst should set it once and never again.
+ * Implemented over useSyncExternalStore rather than useState-plus-effect. The
+ * preference lives in localStorage, which is an external system: reading it inside
+ * an effect and calling setState costs an extra render pass, risks a hydration
+ * mismatch, and — the reason that actually matters — would not notice the same
+ * user changing the level in another tab. Subscribing gets all three right.
  */
 
 export type DetailLevel = "overview" | "analyst";
 
 const STORAGE_KEY = "sentra.detail";
+const DEFAULT: DetailLevel = "overview";
+
+function isLevel(value: unknown): value is DetailLevel {
+  return value === "overview" || value === "analyst";
+}
+
+/* ─── The store ───────────────────────────────────────────────────────────── */
+
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  // `storage` fires in *other* tabs, so this is what keeps two open windows in
+  // step. Same-tab writes call notify() directly.
+  window.addEventListener("storage", listener);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function read(): DetailLevel {
+  // A URL override wins over the stored preference, so a link can open the
+  // console at a known detail level — useful for a demo, a bug report, or a
+  // reproducible screenshot.  ?detail=analyst  ·  ?detail=overview
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("detail");
+    if (isLevel(fromUrl)) return fromUrl;
+  } catch {
+    /* fall through to the stored preference */
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (isLevel(stored)) return stored;
+  } catch {
+    // Private browsing, or storage disabled. The default is fine.
+  }
+
+  return DEFAULT;
+}
+
+function write(next: DetailLevel): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // Not worth surfacing: the choice still applies for this session, it just
+    // will not survive a reload.
+  }
+  notify();
+}
+
+/* ─── The hook ────────────────────────────────────────────────────────────── */
 
 type Ctx = {
   level: DetailLevel;
@@ -29,53 +90,17 @@ type Ctx = {
   toggle: () => void;
 };
 
-const DetailContext = createContext<Ctx>({
-  level: "overview",
-  isAnalyst: false,
-  setLevel: () => {},
-  toggle: () => {},
-});
+const DetailContext = createContext<Ctx | null>(null);
 
 export function DetailProvider({ children }: { children: React.ReactNode }) {
-  // Start at overview on the server and the first client paint so the two agree;
-  // the stored preference is applied immediately after mount.
-  const [level, setLevelState] = useState<DetailLevel>("overview");
+  // The server has no localStorage and no URL search params it should trust for
+  // this, so it always renders the default and the client corrects on hydration.
+  const level = useSyncExternalStore(subscribe, read, () => DEFAULT);
 
-  useEffect(() => {
-    // A URL override wins over the stored preference, so a link can open the
-    // console at a known detail level — useful for a demo, a bug report, or a
-    // screenshot that has to be reproducible.
-    //   ?detail=analyst  ·  ?detail=overview
-    try {
-      const fromUrl = new URLSearchParams(window.location.search).get("detail");
-      if (fromUrl === "analyst" || fromUrl === "overview") {
-        setLevelState(fromUrl);
-        return;
-      }
-    } catch {
-      /* fall through to the stored preference */
-    }
-
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "analyst" || stored === "overview") setLevelState(stored);
-    } catch {
-      // Private browsing or storage disabled — the default is fine.
-    }
-  }, []);
-
-  const setLevel = useCallback((next: DetailLevel) => {
-    setLevelState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      /* not worth surfacing */
-    }
-  }, []);
-
+  const setLevel = useCallback((next: DetailLevel) => write(next), []);
   const toggle = useCallback(
-    () => setLevel(level === "analyst" ? "overview" : "analyst"),
-    [level, setLevel],
+    () => write(level === "analyst" ? "overview" : "analyst"),
+    [level],
   );
 
   return (
@@ -86,11 +111,12 @@ export function DetailProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useDetail(): Ctx {
-  return useContext(DetailContext);
-}
-
-/** Render children only for analysts. */
-export function AnalystOnly({ children }: { children: React.ReactNode }) {
-  const { isAnalyst } = useDetail();
-  return isAnalyst ? <>{children}</> : null;
+  const ctx = useContext(DetailContext);
+  if (!ctx) {
+    // Failing loudly beats silently rendering the overview: a panel that quietly
+    // hides its technical detail because it was mounted outside the provider is
+    // very hard to notice.
+    throw new Error("useDetail must be used inside <DetailProvider>");
+  }
+  return ctx;
 }

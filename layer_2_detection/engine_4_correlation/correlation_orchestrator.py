@@ -1,6 +1,6 @@
-from .signal_collector import collect_signals
-from .cross_layer_matcher import match_cross_layer_signals
 from .confidence_adjuster import adjust_confidence
+from .cross_layer_matcher import match_cross_layer_signals
+from .signal_collector import collect_signals
 
 
 def run_correlation(event: dict) -> dict:

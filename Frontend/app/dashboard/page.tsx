@@ -22,7 +22,7 @@ import {
   type Clock,
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
-import { EASE_OUT, fadeIn, riseIn } from "@/lib/motion";
+import { EASE_OUT, fadeIn } from "@/lib/motion";
 import { type Severity, formatTimestamp, normalizeSeverity, severityTone } from "@/lib/severity";
 
 type Incident = {
@@ -185,7 +185,13 @@ export default function DashboardPage() {
         {/* The clock. Most legible thing on the screen for a non-technical reader. */}
         <Section
           title="Time left to report"
-          hint={urgent ? "Regulators must be told within hours" : "Nothing needs reporting"}
+          hint={
+            urgent
+              ? "Regulators must be told within hours"
+              : notifications
+                ? "Nothing needs reporting"
+                : "Checking"
+          }
           actions={
             notifications?.count ? (
               <Link
@@ -237,6 +243,8 @@ export default function DashboardPage() {
                 </PlainEnglish>
               ) : null}
             </div>
+          ) : !notifications ? (
+            <Skeleton className="h-24" />
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs text-muted">
@@ -267,10 +275,10 @@ export default function DashboardPage() {
           }
         >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {campaigns.map((c, i) => {
+            {campaigns.map((c) => {
               const tone = severityTone(c.severity);
               return (
-                <motion.div key={c.campaign_id} variants={riseIn} custom={i}>
+                <div key={c.campaign_id} className="rise stagger-row">
                   <Link
                     href={`/campaigns/${c.campaign_id}`}
                     className={`group flex h-full flex-col gap-3 rounded-md border ${tone.border} bg-raised/40 p-3.5 transition hover:-translate-y-0.5 hover:bg-raised hover:shadow-lg`}
@@ -291,7 +299,7 @@ export default function DashboardPage() {
                       <span className="font-medium text-ink">reached {c.furthest_stage}</span>
                     </p>
                   </Link>
-                </motion.div>
+                </div>
               );
             })}
           </div>

@@ -1,5 +1,4 @@
 # behavioral_orchestrator.py
-# Location: layer_1_feature_engineering/engine_2_behavioral/behavioral_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 2 — Behavioral.
@@ -14,8 +13,12 @@
 # feature_orchestrator.py → _safe_run(run_behavioral, log)
 
 
-from layer_1_feature_engineering.engine_2_behavioral.user_profiler import build_user_profile
-from layer_1_feature_engineering.engine_2_behavioral.baseline_comparator import compare_to_baseline
+from layer_1_feature_engineering.engine_2_behavioral.baseline_comparator import (
+    compare_to_baseline,
+)
+from layer_1_feature_engineering.engine_2_behavioral.user_profiler import (
+    build_user_profile,
+)
 
 
 def _safe_run(fn, log: dict, step_name: str) -> dict:

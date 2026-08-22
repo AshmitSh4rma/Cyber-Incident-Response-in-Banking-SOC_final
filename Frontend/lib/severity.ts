@@ -36,7 +36,7 @@ type Tone = {
   rank: number;
 };
 
-export const SEVERITY_TONE: Record<Severity, Tone> = {
+const SEVERITY_TONE: Record<Severity, Tone> = {
   critical: {
     chip: "border-sev-critical/40 bg-sev-critical/15 text-sev-critical",
     mark: "bg-sev-critical",
@@ -83,7 +83,6 @@ export function severityTone(value: unknown): Tone {
   return SEVERITY_TONE[normalizeSeverity(value)];
 }
 
-export const SEVERITY_ORDER: Severity[] = ["critical", "high", "medium", "low", "benign"];
 
 /** Detection verdicts. Also a status scale — always labelled. */
 export function verdictTone(label: unknown): string {
@@ -185,14 +184,3 @@ export function formatBytes(value: unknown): string {
 }
 
 /** 'in 3h 12m' / 'overdue by 2h 4m' — from a signed seconds value. */
-export function formatRemaining(seconds: number): string {
-  const overdue = seconds < 0;
-  const s = Math.abs(Math.round(seconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  let text: string;
-  if (h >= 24) text = `${Math.floor(h / 24)}d ${h % 24}h`;
-  else if (h) text = `${h}h ${m}m`;
-  else text = `${m}m`;
-  return overdue ? `overdue by ${text}` : text;
-}

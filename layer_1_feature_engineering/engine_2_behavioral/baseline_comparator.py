@@ -1,5 +1,4 @@
 # baseline_comparator.py
-# Location: layer_1_feature_engineering/engine_2_behavioral/baseline_comparator.py
 #
 # PURPOSE:
 # Compares the current user profile snapshot against
@@ -22,7 +21,6 @@
 
 
 from collections import defaultdict
-
 
 # ─────────────────────────────────────────
 # BASELINE STORE

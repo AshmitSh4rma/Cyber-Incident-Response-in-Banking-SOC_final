@@ -1,8 +1,8 @@
-import sqlite3
+import contextlib
 import json
-import os
+import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 DB_FILE = Path(__file__).resolve().parent / "soc_incidents.db"
 
@@ -88,13 +88,13 @@ def save_incident_with_cursor(cursor, event, overwrite=True):
     event_id = event.get("event_id")
     if not event_id:
         return
-        
+
     raw_event = event.get("raw_event", {}) or {}
     ingestion = event.get("ingestion", {}) or {}
     detection = event.get("detection", {}) or {}
     dashboard = event.get("dashboard", {}) or {}
     final_report = event.get("final_report", {}) or {}
-    
+
     timestamp = raw_event.get("timestamp") or ingestion.get("timestamp") or ""
     severity = detection.get("severity") or dashboard.get("severity") or "low"
     threat_type = detection.get("threat_type") or "unknown"
@@ -104,9 +104,9 @@ def save_incident_with_cursor(cursor, event, overwrite=True):
     # Normalise casing — seed data uses "Open" while pipeline output uses "open",
     # and the dashboard filters on the raw value in some views.
     status = str(final_report.get("status") or event.get("status") or "open").lower()
-    
+
     payload = json.dumps(event)
-    
+
     if overwrite:
         cursor.execute("""
             INSERT INTO incidents (event_id, timestamp, severity, threat_type, affected_user, affected_host, source_ip, status, payload)
@@ -141,13 +141,13 @@ def get_all_incidents():
     cursor.execute("SELECT payload FROM incidents ORDER BY timestamp DESC")
     rows = cursor.fetchall()
     conn.close()
-    
+
     incidents = []
     for row in rows:
-        try:
+        # A row whose JSON is corrupt is skipped rather than failing the whole
+        # listing — one bad write should not blank the console.
+        with contextlib.suppress(json.JSONDecodeError):
             incidents.append(json.loads(row["payload"]))
-        except Exception:
-            pass
     return incidents
 
 def get_incident(event_id):
@@ -156,7 +156,7 @@ def get_incident(event_id):
     cursor.execute("SELECT payload FROM incidents WHERE event_id = ?", (event_id,))
     row = cursor.fetchone()
     conn.close()
-    
+
     if row:
         try:
             return json.loads(row["payload"])
@@ -172,30 +172,30 @@ def update_incident_status(event_id, status):
     if not row:
         conn.close()
         return False
-        
+
     try:
         event = json.loads(row["payload"])
     except Exception:
         conn.close()
         return False
-        
+
     if "final_report" not in event or not isinstance(event["final_report"], dict):
         event["final_report"] = {}
     event["final_report"]["status"] = status
     event["status"] = status
-    
+
     # Also sync dashboard representation if present
     if "dashboard" in event and isinstance(event["dashboard"], dict):
       event["dashboard"]["status"] = status
-      
+
     payload = json.dumps(event)
-    
+
     cursor.execute("""
-        UPDATE incidents 
+        UPDATE incidents
         SET status = ?, payload = ?
         WHERE event_id = ?
     """, (status, payload, event_id))
-    
+
     conn.commit()
     conn.close()
     return True
@@ -221,7 +221,7 @@ def save_feedback(event_id: str, label: str, reason: str, analyst_notes: str,
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = datetime.now(UTC).isoformat()
 
     cursor.execute("""
         INSERT INTO analyst_feedback (event_id, label, reason, analyst_notes, source_ip, threat_type, affected_user, created_at)
@@ -298,7 +298,7 @@ def replace_campaigns(campaigns: list[dict]) -> int:
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM campaigns")
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     for c in campaigns:
         cursor.execute(
             """
@@ -333,10 +333,10 @@ def get_all_campaigns() -> list[dict]:
     conn.close()
     out = []
     for row in rows:
-        try:
+        # A row whose JSON is corrupt is skipped rather than failing the whole
+        # listing — one bad write should not blank the console.
+        with contextlib.suppress(json.JSONDecodeError):
             out.append(json.loads(row["payload"]))
-        except Exception:
-            pass
     return out
 
 
@@ -367,7 +367,7 @@ def request_approval(event_id: str, action: str) -> int:
         INSERT INTO response_approvals (event_id, action, state, requested_at)
         VALUES (?, ?, 'pending', ?)
         """,
-        (event_id, action, datetime.now(timezone.utc).isoformat()),
+        (event_id, action, datetime.now(UTC).isoformat()),
     )
     approval_id = cursor.lastrowid
     conn.commit()
@@ -386,7 +386,7 @@ def decide_approval(approval_id: int, approve: bool, decided_by: str, note: str 
         """,
         (
             "approved" if approve else "rejected",
-            datetime.now(timezone.utc).isoformat(),
+            datetime.now(UTC).isoformat(),
             decided_by or "analyst",
             note,
             approval_id,

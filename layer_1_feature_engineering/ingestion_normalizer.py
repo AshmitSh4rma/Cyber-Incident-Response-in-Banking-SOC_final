@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
-from typing import Any, Dict, List
+from datetime import UTC, datetime
+from typing import Any
 
 
 def _utc_now_iso() -> str:
     """Current UTC time as an ISO-8601 string with a trailing Z."""
-    return datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+    return datetime.now(UTC).replace(tzinfo=None).isoformat() + "Z"
 
 
 def _utc_from_epoch(value) -> str:
     """Epoch seconds as an ISO-8601 UTC string with a trailing Z."""
-    return datetime.fromtimestamp(value, tz=timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+    return datetime.fromtimestamp(value, tz=UTC).replace(tzinfo=None).isoformat() + "Z"
 
 
 FIELD_ALIASES = {
@@ -56,7 +56,7 @@ FIELD_ALIASES = {
 }
 
 
-def first_present(record: Dict[str, Any], aliases: List[str], default=None):
+def first_present(record: dict[str, Any], aliases: list[str], default=None):
     for key in aliases:
         if key in record and record[key] is not None:
             return record[key]
@@ -113,7 +113,7 @@ def normalize_timestamp(value: Any) -> str:
     return _utc_now_iso()
 
 
-def get_used_keys(normalized_aliases: Dict[str, List[str]], record: Dict[str, Any]) -> set:
+def get_used_keys(normalized_aliases: dict[str, list[str]], record: dict[str, Any]) -> set:
     used = set()
     for aliases in normalized_aliases.values():
         for alias in aliases:
@@ -140,7 +140,7 @@ def normalize_to_ecs(log, log_type):
         }
     }
 
-def normalize_record(record: Dict[str, Any]) -> Dict[str, Any]:
+def normalize_record(record: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(record, dict):
         raise ValueError("Incoming record must be a dictionary")
 

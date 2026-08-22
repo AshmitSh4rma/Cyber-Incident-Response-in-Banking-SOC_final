@@ -1,5 +1,4 @@
 # web_orchestrator.py
-# Location: layer_1_feature_engineering/engine_5_web/web_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 5 — Web.

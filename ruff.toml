@@ -1,0 +1,43 @@
+# Lint configuration.
+#
+# Kept deliberately small: the rules here catch things that are genuinely wrong or
+# genuinely dead, rather than enforcing a house style nobody agreed to.
+
+target-version = "py311"
+exclude = ["Frontend", "__pycache__"]
+
+[lint]
+select = [
+    "F",    # pyflakes — unused imports, unused variables, undefined names
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # import sorting
+    "UP",   # pyupgrade — keep type syntax current
+    "B",    # bugbear — likely bugs
+    "C4",   # comprehension simplifications
+    "ARG",  # unused arguments
+    "RET",  # return-statement smells
+    "SIM",  # simplifications
+]
+
+ignore = [
+    # FastAPI's dependency-injection idiom is `param = File(...)` / `Body(...)`.
+    # The call in the default is the framework's interface, not a mistake.
+    "B008",
+    # Assigning a result then returning it is often clearer than returning the
+    # expression, particularly where the name explains what the value is.
+    "RET504",
+    # Line length is left to the formatter.
+    "E501",
+]
+
+[lint.per-file-ignores]
+# Tests assert on literals and build fixtures inline; the usual guidance about
+# magic values and long expressions does not help there.
+"tests/*" = ["ARG", "SIM"]
+
+[lint.isort]
+known-first-party = [
+    "api_server", "pipeline", "db_manager", "frontend_formatter",
+    "soc_metrics", "audit_report", "regulatory_clock",
+]

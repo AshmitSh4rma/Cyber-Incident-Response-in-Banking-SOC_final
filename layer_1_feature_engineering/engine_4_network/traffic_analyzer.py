@@ -1,5 +1,4 @@
 # traffic_analyzer.py
-# Location: layer_1_feature_engineering/engine_4_network/traffic_analyzer.py
 #
 # PURPOSE:
 # Extracts network-specific traffic features from network logs.
@@ -19,7 +18,6 @@
 # network_orchestrator.py
 
 
-from collections import defaultdict
 
 
 # ─────────────────────────────────────────
@@ -85,10 +83,9 @@ def _get_traffic_direction(src_ip: str, dst_ip: str) -> str:
 
     if src_internal and dst_internal:
         return "east_west"
-    elif src_internal or dst_internal:
+    if src_internal or dst_internal:
         return "north_south"
-    else:
-        return "external"
+    return "external"
 
 
 def _classify_port(port: int) -> dict:

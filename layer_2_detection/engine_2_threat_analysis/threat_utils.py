@@ -10,7 +10,7 @@ def normalize_text(value: Any) -> str:
 def safe_float(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
-    except:
+    except (TypeError, ValueError):
         return default
 
 

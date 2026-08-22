@@ -1,4 +1,4 @@
-from .anomaly_utils import safe_float, as_bool, append_flag, append_reason
+from .anomaly_utils import append_flag, append_reason, as_bool, safe_float
 
 
 def evaluate_anomaly_rules(event: dict) -> dict:

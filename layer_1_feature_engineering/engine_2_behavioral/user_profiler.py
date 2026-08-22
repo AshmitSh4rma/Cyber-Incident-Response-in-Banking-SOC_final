@@ -1,5 +1,4 @@
 # user_profiler.py
-# Location: layer_1_feature_engineering/engine_2_behavioral/user_profiler.py
 #
 # PURPOSE:
 # Builds a behavioral snapshot of the current user/entity
@@ -19,8 +18,7 @@
 
 
 from collections import defaultdict
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 # ─────────────────────────────────────────
 # IN-MEMORY USER STORE
@@ -49,7 +47,7 @@ def _parse_ts(ts_str: str) -> datetime:
     try:
         return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
     except Exception:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def _get_user_key(log: dict) -> str:

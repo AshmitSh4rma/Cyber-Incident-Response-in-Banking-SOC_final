@@ -1,5 +1,4 @@
 # time_window_builder.py
-# Location: layer_1_feature_engineering/engine_1_temporal/time_window_builder.py
 #
 # PURPOSE:
 # Builds time windows from the log's timestamp.
@@ -24,8 +23,7 @@
 # temporal_orchestrator.py
 
 
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 # ─────────────────────────────────────────
 # CONSTANTS
@@ -63,7 +61,7 @@ def _parse_timestamp(timestamp_str: str) -> datetime:
     except Exception:
         # If timestamp is malformed, use current time
         # This ensures the pipeline continues
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def _get_window_label(dt: datetime, window_minutes: int) -> str:
@@ -75,7 +73,7 @@ def _get_window_label(dt: datetime, window_minutes: int) -> str:
     """
     # Floor the minutes to the nearest window boundary
     floored_minute = (dt.minute // window_minutes) * window_minutes
-    return dt.strftime(f"%Y-%m-%dT%H:") + f"{floored_minute:02d}"
+    return dt.strftime("%Y-%m-%dT%H:") + f"{floored_minute:02d}"
 
 
 def _get_time_of_day(hour: int) -> str:

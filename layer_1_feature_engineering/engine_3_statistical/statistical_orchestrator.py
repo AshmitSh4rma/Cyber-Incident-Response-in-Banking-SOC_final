@@ -1,5 +1,4 @@
 # statistical_orchestrator.py
-# Location: layer_1_feature_engineering/engine_3_statistical/statistical_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 3 — Statistical.
@@ -10,8 +9,12 @@
 # feature_orchestrator.py → _safe_run(run_statistical, log)
 
 
-from layer_1_feature_engineering.engine_3_statistical.frequency_analyzer import analyze_frequency
-from layer_1_feature_engineering.engine_3_statistical.pattern_detector import detect_patterns
+from layer_1_feature_engineering.engine_3_statistical.frequency_analyzer import (
+    analyze_frequency,
+)
+from layer_1_feature_engineering.engine_3_statistical.pattern_detector import (
+    detect_patterns,
+)
 
 
 def _safe_run(fn, log: dict, step_name: str) -> dict:

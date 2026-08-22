@@ -1,5 +1,4 @@
 # network_orchestrator.py
-# Location: layer_1_feature_engineering/engine_4_network/network_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 4 — Network.
@@ -10,8 +9,12 @@
 # feature_orchestrator.py → _safe_run(run_network, log)
 
 
-from layer_1_feature_engineering.engine_4_network.traffic_analyzer import analyze_traffic
-from layer_1_feature_engineering.engine_4_network.protocol_profiler import profile_protocol
+from layer_1_feature_engineering.engine_4_network.protocol_profiler import (
+    profile_protocol,
+)
+from layer_1_feature_engineering.engine_4_network.traffic_analyzer import (
+    analyze_traffic,
+)
 
 
 def _safe_run(fn, log: dict, step_name: str) -> dict:

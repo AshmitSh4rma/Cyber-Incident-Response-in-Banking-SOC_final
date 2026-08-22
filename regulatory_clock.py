@@ -24,7 +24,7 @@ Sources for the deadlines themselves are in REGIMES below; they are regulation,
 not opinion.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _parse(ts: Any) -> datetime | None:

@@ -172,6 +172,67 @@ body {
   animation: sentra-pulse 2.4s ease-in-out infinite;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Entrance animation.
+
+   Deliberately CSS rather than JavaScript. These animations run on every panel
+   on the console, and driving them from the animation library meant each panel's
+   resting state was `opacity: 0` with the library responsible for clearing it.
+   Anything that stopped it from running — a viewer who asked for reduced motion,
+   a tab the browser throttled, a hydration error on one component — left the
+   page blank rather than unanimated. Content should never be invisible because
+   a decoration failed.
+
+   Written as `animation` with `both` fill: the element's own styles say visible,
+   the keyframe borrows it for 380ms on arrival, and if the animation never runs
+   the element is simply there.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes sentra-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes sentra-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.rise {
+  animation: sentra-rise 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fade {
+  animation: sentra-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* A screen assembles top-down. Direct children stagger; past the eighth they
+   share a delay, because by then the reader has stopped watching the sequence
+   and is reading the top of the page. */
+.screen > * {
+  animation-delay: 0.36s;
+}
+.screen > *:nth-child(1) { animation-delay: 0.04s; }
+.screen > *:nth-child(2) { animation-delay: 0.085s; }
+.screen > *:nth-child(3) { animation-delay: 0.13s; }
+.screen > *:nth-child(4) { animation-delay: 0.175s; }
+.screen > *:nth-child(5) { animation-delay: 0.22s; }
+.screen > *:nth-child(6) { animation-delay: 0.265s; }
+.screen > *:nth-child(7) { animation-delay: 0.31s; }
+
+/* Rows inside a list stagger too, but faster — a long list should not take a
+   second to finish arriving. */
+.stagger-row:nth-child(1) { animation-delay: 0.02s; }
+.stagger-row:nth-child(2) { animation-delay: 0.055s; }
+.stagger-row:nth-child(3) { animation-delay: 0.09s; }
+.stagger-row:nth-child(4) { animation-delay: 0.125s; }
+.stagger-row:nth-child(5) { animation-delay: 0.16s; }
+.stagger-row:nth-child(6) { animation-delay: 0.195s; }
+.stagger-row:nth-child(n + 7) { animation-delay: 0.23s; }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -179,5 +240,14 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* The blanket rule above collapses the duration, which for an entrance would
+     still apply the `from` frame for an instant. Removing the animation
+     outright is what actually leaves the element at its own visible styles. */
+  .rise,
+  .fade,
+  .screen > * {
+    animation: none !important;
   }
 }

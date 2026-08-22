@@ -71,7 +71,7 @@ def compute_metrics(
     total = len(incidents)
 
     benign = sum(
-        1 for i in incidents if str(((i.get("detection") or {}).get("label") or "")).lower() == "benign"
+        1 for i in incidents if str((i.get("detection") or {}).get("label") or "").lower() == "benign"
     )
     suppressed = sum(
         1 for i in incidents if bool((i.get("detection") or {}).get("suppressed"))

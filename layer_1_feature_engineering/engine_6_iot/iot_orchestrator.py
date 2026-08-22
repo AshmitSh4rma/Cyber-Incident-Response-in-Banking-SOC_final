@@ -1,5 +1,4 @@
 # iot_orchestrator.py
-# Location: layer_1_feature_engineering/engine_6_iot/iot_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 6 — IoT.
@@ -11,7 +10,9 @@
 
 
 from layer_1_feature_engineering.engine_6_iot.device_profiler import profile_device
-from layer_1_feature_engineering.engine_6_iot.telemetry_analyzer import analyze_telemetry
+from layer_1_feature_engineering.engine_6_iot.telemetry_analyzer import (
+    analyze_telemetry,
+)
 
 
 def _safe_run(fn, log: dict, step_name: str) -> dict:

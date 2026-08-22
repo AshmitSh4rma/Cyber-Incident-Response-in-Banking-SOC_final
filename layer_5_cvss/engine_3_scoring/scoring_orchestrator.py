@@ -1,6 +1,11 @@
-from layer_5_cvss.cvss_schema import ExploitabilityMetrics, ImpactMetrics, ScoringResults
+from layer_5_cvss.cvss_schema import (
+    ExploitabilityMetrics,
+    ImpactMetrics,
+    ScoringResults,
+)
 from layer_5_cvss.engine_3_scoring.cvss_formula import calculate_base_score
 from layer_5_cvss.engine_3_scoring.severity_mapper import get_severity
+
 
 def generate_vector_string(exploitability: ExploitabilityMetrics, impact: ImpactMetrics) -> str:
     """
@@ -26,16 +31,16 @@ def generate_score_and_vector(exploitability: ExploitabilityMetrics, impact: Imp
     Assumes metrics are fully populated (no None values).
     """
     metrics_combined = {**exploitability, **impact}
-    
+
     # Calculate score using formula
     base_score = calculate_base_score(metrics_combined)
-    
+
     # Generate vector string
     vector_string = generate_vector_string(exploitability, impact)
-    
+
     # Get severity
     severity = get_severity(base_score)
-    
+
     return {
         "vector_string": vector_string,
         "base_score": base_score,

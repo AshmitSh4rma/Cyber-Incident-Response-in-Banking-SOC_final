@@ -6,7 +6,7 @@
  * so the dashboard can point at a backend on another machine during a demo
  * without editing source.
  */
-export const BACKEND_BASE_URL =
+const BACKEND_BASE_URL =
   process.env.NEXT_PUBLIC_SOC_API_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000";
 
 export const backendUrl = (path: string): string =>

@@ -1,6 +1,5 @@
 from .anomaly_utils import safe_float
 
-
 FLAG_WEIGHTS = {
     "off_hours_activity": 0.10,
     "login_failure_spike": 0.25,

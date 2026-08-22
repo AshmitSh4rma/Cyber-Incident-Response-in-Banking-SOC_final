@@ -1,4 +1,3 @@
-import uuid
 import copy
 import hashlib
 import json as _json
@@ -32,24 +31,25 @@ def _stable_event_id(event_dict: dict, raw_event: dict) -> str:
 
     return "evt-" + hashlib.sha1(seed.encode("utf-8")).hexdigest()[:12]
 
-def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, layer3_output):
+def format_pipeline_for_frontend(layer3_output):
     """
-    Format the pipeline outputs into a strict, predefined frontend contract.
-    We iterate over the final layer3_output because it is cumulative and already 
-    contains the embedded results from layers 1 and 2.
+    Format the pipeline output into the contract the dashboard reads.
+
+    Only Layer 3's output is needed: each entry is cumulative and already carries
+    the Layer 1 features and Layer 2 verdict embedded in it. The signature used to
+    take `parsed_logs`, `layer1_output` and `layer2_output` as well — all three
+    were passed by the caller and never read, which invited the reader to believe
+    this function merges four sources when it walks one.
     """
-    
+
     frontend_results = []
-    
-    for i, event in enumerate(layer3_output):
-        
+
+    for event in layer3_output:
+
         event_dict = copy.deepcopy(event)
-        
-        if parsed_logs and len(parsed_logs) > i:
-            raw_event = copy.deepcopy(parsed_logs[i])
-        else:
-            raw_event = event_dict.get("raw_event", {})
-        
+
+        raw_event = event_dict.get("raw_event", {})
+
         # Determine event_id.
         # Prefer an id the source system already assigned. Otherwise derive a
         # STABLE id from the log's own identifying fields — a random uuid here
@@ -61,14 +61,14 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
         )
         if not event_id:
             event_id = _stable_event_id(event_dict, raw_event)
-            
+
         action = raw_event.get("action", "") or ""
         source_ip = raw_event.get("source_ip", "") or "unknown_ip"
         url_path = raw_event.get("url", "") or event_dict.get("destination_ip", "") or "target"
-        
+
         detection_label = event_dict.get("detection", {}).get("label", "event")
         summary = f"{detection_label.capitalize()} {action} from {source_ip} targeting {url_path}"
-            
+
         # The schema
         formatted = {
             "summary": summary,
@@ -89,19 +89,19 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
             "final_report": {},
             "dashboard": {}
         }
-        
+
         # Populate from layer output
-        
+
         # Ingestion / Normalization fields
         ingestion_keys = [
-            "timestamp", "source_ip", "dest_ip", "src_port", "dest_port", 
+            "timestamp", "source_ip", "dest_ip", "src_port", "dest_port",
             "protocol", "action", "bytes_in", "bytes_out", "log_family",
             "url_path", "http_method", "http_status_code", "user_agent"
         ]
         for k in ingestion_keys:
             if k in event_dict:
                 formatted["ingestion"][k] = event_dict.get(k)
-                
+
         # Hard-extract web fields from raw inner block if present
         inner = raw_event.get("raw_event", {})
         if inner.get("method"):
@@ -112,42 +112,42 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
             formatted["ingestion"]["user_agent"] = inner.get("user_agent")
         if raw_event.get("url"):
             formatted["ingestion"]["url_path"] = raw_event.get("url")
-                
+
         # Feature Engineering fields
         feature_blocks = [
-            "temporal_features", "behavioral_features", "statistical_features", 
-            "frequency_features", "pattern_features", "network_traffic_features", 
+            "temporal_features", "behavioral_features", "statistical_features",
+            "frequency_features", "pattern_features", "network_traffic_features",
             "network_protocol_features", "user_profile", "identity_features",
             "classification_scores", "time_windows"
         ]
         for block in feature_blocks:
             if block in event_dict:
                 formatted["feature_engineering"][block] = event_dict.get(block)
-                
+
         # Always prefer raw log_type for display
         display_family = raw_event.get("log_type") or event_dict.get("log_family")
         formatted["feature_engineering"]["log_family"] = display_family
         formatted["ingestion"]["log_family"] = display_family
-                
+
         # Detection
         formatted["detection"] = event_dict.get("detection", {})
-        
+
         # Anomaly Detection
         formatted["anomaly_detection"] = event_dict.get("anomaly_detection", {})
-        
+
         # Threat Analysis
         formatted["threat_analysis"] = event_dict.get("threat_analysis", {})
-        
+
         # IOC Enrichment
         formatted["ioc_enrichment"] = event_dict.get("ioc_enrichment", {})
-        
+
         # Correlation Analysis
         formatted["correlation_analysis"] = event_dict.get("correlation_analysis", {})
 
         # MITRE ATT&CK — stamped by Layer 2, needed by the campaign correlator
         # and rendered on the incident view.
         formatted["mitre_attack"] = event_dict.get("mitre_attack", {}) or {}
-        
+
         # CIS Benchmark
         # Layer 3 hands us {framework, retrieval_query, matched_benchmarks: [...]}.
         # The frontend contract is flat, so lift the best match up to the top level
@@ -157,7 +157,7 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
             event_dict.get("detection", {}) or {},
             raw_event,
         )
-            
+
         # Refine threat_type if weak
         if formatted["detection"].get("threat_type", "unknown") == "unknown":
             raw_url = raw_event.get("url", "") or ""
@@ -168,7 +168,7 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
                 formatted["detection"]["threat_type"] = "reconnaissance"
             else:
                 formatted["detection"]["threat_type"] = "suspicious_activity"
-        
+
         # Dashboard + final_report blocks.
         # These were declared in the contract but never filled, so the UI relied on
         # a chain of fallbacks and the JSON looked half-built. Populate them from
@@ -214,9 +214,9 @@ def format_pipeline_for_frontend(parsed_logs, layer1_output, layer2_output, laye
 
         # Initialize Advisor Agent fields
         formatted = add_advisor_agent_to_event(formatted)
-        
+
         frontend_results.append(formatted)
-        
+
     return {
         "status": "success",
         "total_events": len(frontend_results),
@@ -394,12 +394,12 @@ def add_advisor_agent_to_event(event):
     cis = event.get("cis") or {}
     ai = event.get("ai_analysis") or {}
     resp = event.get("response") or {}
-    
+
     # Extract values
     benchmark_id = cis.get("benchmark_id") or "CIS-16"
     benchmark_title = cis.get("title") or "Application Monitoring"
     matched_domain = cis.get("framework") or "CIS Controls"
-    
+
     # Recommendation
     recommendation = ""
     if resp.get("recommended_actions"):
@@ -408,13 +408,13 @@ def add_advisor_agent_to_event(event):
         recommendation = cis.get("remediation")
     else:
         recommendation = "Establish appropriate security monitoring and isolation controls."
-        
+
     # Rationale
     rationale = ai.get("narrative") or cis.get("description") or "No detailed rationale available."
-    
+
     # Confidence
     confidence = float(detection.get("confidence") or threat_analysis.get("confidence") or 0.7)
-    
+
     # CVSS
     impact = ai.get("impact") or {}
     cvss_handoff = {
@@ -429,7 +429,7 @@ def add_advisor_agent_to_event(event):
         "suggested_severity": detection.get("severity") or "medium",
         "requires_cvss_layer_validation": True
     }
-    
+
     advisor_agent = {
         "agent_name": "SENTRA CIS-CVSS Advisor",
         "agent_type": "recommendation_agent",
@@ -448,7 +448,7 @@ def add_advisor_agent_to_event(event):
             "response_ready": True
         }
     }
-    
+
     event["advisor_agent"] = advisor_agent
     return event
 

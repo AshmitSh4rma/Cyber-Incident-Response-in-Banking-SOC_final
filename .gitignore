@@ -11,3 +11,9 @@ build/
 .cache/
 *.log
 .DS_Store
+
+# Pipeline artifacts. frontend_output.json and soc_incidents.db are committed on
+# purpose so a fresh clone has demo data; per-layer dumps are debug output.
+layer1_output.json
+layer2_output.json
+layer3_output.json

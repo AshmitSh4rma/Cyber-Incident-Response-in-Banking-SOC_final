@@ -6,7 +6,7 @@ regulator when it must not, or staying silent when it must. So most of these tes
 the reportability threshold rather than the arithmetic.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -18,7 +18,7 @@ from regulatory_clock import (
     format_remaining,
 )
 
-T0 = datetime(2026, 8, 22, 12, 0, 0, tzinfo=timezone.utc)
+T0 = datetime(2026, 8, 22, 12, 0, 0, tzinfo=UTC)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

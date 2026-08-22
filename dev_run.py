@@ -68,7 +68,7 @@ def main() -> int:
 
     # Persist. The database is the source of truth the API serves from; the JSON
     # copies are the static fallback the dashboard can read with no backend.
-    from db_manager import save_incident, replace_campaigns
+    from db_manager import replace_campaigns, save_incident
 
     for event in events:
         save_incident(event)

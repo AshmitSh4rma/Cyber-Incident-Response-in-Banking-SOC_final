@@ -34,7 +34,7 @@
     "cvss_scored_pct": 100
   },
   "time": {
-    "pipeline_seconds": 0.25,
+    "pipeline_seconds": 0.1,
     "manual_baseline_minutes": 375,
     "assisted_minutes": 16,
     "minutes_saved": 359,

@@ -11,7 +11,6 @@ import pytest
 from layer_2_detection.campaign_correlator import correlate_campaigns
 from layer_2_detection.mitre_mapper import TACTICS, map_attack
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # ATT&CK mapping
 # ─────────────────────────────────────────────────────────────────────────────

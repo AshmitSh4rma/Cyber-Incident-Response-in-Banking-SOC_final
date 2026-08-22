@@ -1,8 +1,7 @@
-from typing import Optional
-from layer_1_feature_engineering.feature_accessors import get_str, get_int, has_field
+from layer_1_feature_engineering.feature_accessors import get_int, get_str, has_field
 
 
-def _contains_token(value: Optional[str], token: str) -> bool:
+def _contains_token(value: str | None, token: str) -> bool:
     if not value:
         return False
     return token.lower() in value.lower()

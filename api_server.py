@@ -15,14 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from audit_report import campaign_report, incident_report
-from layer_1_feature_engineering.ingestion_orchestrator import (
-    process_json_text,
-    process_jsonl_text,
-)
-from pipeline import run_full_pipeline
-from regulatory_clock import REGIMES, for_campaign, for_incident, format_remaining
-from soc_metrics import compute_metrics
-
 from db_manager import (
     clear_all_incidents,
     decide_approval,
@@ -40,6 +32,13 @@ from db_manager import (
     save_incident,
     update_incident_status,
 )
+from layer_1_feature_engineering.ingestion_orchestrator import (
+    process_json_text,
+    process_jsonl_text,
+)
+from pipeline import run_full_pipeline
+from regulatory_clock import REGIMES, for_campaign, for_incident, format_remaining
+from soc_metrics import compute_metrics
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -69,7 +68,7 @@ def _last_run_seconds() -> float | None:
     if _LAST_RUN_SECONDS is not None:
         return _LAST_RUN_SECONDS
     try:
-        with open(OUTPUT_PATHS[1], "r", encoding="utf-8") as f:
+        with open(OUTPUT_PATHS[1], encoding="utf-8") as f:
             return (json.load(f).get("timing") or {}).get("total")
     except Exception:
         return None

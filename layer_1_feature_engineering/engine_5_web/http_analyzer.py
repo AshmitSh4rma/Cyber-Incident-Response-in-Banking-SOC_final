@@ -1,5 +1,4 @@
 # http_analyzer.py
-# Location: layer_1_feature_engineering/engine_5_web/http_analyzer.py
 #
 # PURPOSE:
 # Extracts web-specific features from HTTP/HTTPS logs.
@@ -24,7 +23,6 @@
 
 
 from collections import defaultdict
-
 
 # ─────────────────────────────────────────
 # CLASSIFICATIONS
@@ -171,7 +169,6 @@ def analyze_http(log: dict) -> dict:
     status_code  = log.get("http_status_code")
     url_path     = log.get("url_path", "")
     user_agent   = log.get("user_agent", "")
-    request_size = log.get("request_size") or 0
 
     # Update store before reading history
     _update_http_store(source_key, log)

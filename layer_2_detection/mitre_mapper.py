@@ -18,7 +18,6 @@ in the current matrix — the older name for TA0005 was "Defense Evasion").
 
 from typing import Any
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # TACTICS — ordered by position in the attack lifecycle.
 # `order` drives kill-chain progression scoring in the campaign correlator.

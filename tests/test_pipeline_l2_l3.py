@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
 from layer_1_feature_engineering.feature_orchestrator import run_feature_engineering
+from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
 from layer_2_detection.detection_orchestrator import run_detection_batch
 from layer_3_cis.orchestrator import run_layer3
 

@@ -17,11 +17,10 @@ import {
   Section,
   SeverityChip,
   Skeleton,
-  VerdictChip,
   type Clock,
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
-import { EASE_OUT, riseIn } from "@/lib/motion";
+import { EASE_OUT } from "@/lib/motion";
 import { formatTimestamp, severityTone, stageSeverity } from "@/lib/severity";
 
 type Incident = {
@@ -123,9 +122,8 @@ export default function CampaignDetailPage() {
       <Block><BackLink /></Block>
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <motion.div
-        variants={riseIn}
-        className={`relative overflow-hidden rounded-lg border ${tone.border} bg-surface p-5`}
+      <div
+        className={`rise relative overflow-hidden rounded-lg border ${tone.border} bg-surface p-5`}
       >
         <motion.span
           className={`absolute left-0 top-0 w-1 ${tone.mark}`}
@@ -175,7 +173,7 @@ export default function CampaignDetailPage() {
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         <div className="space-y-4">

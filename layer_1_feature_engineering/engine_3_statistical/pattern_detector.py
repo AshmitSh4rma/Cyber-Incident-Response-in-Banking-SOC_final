@@ -1,5 +1,4 @@
 # pattern_detector.py
-# Location: layer_1_feature_engineering/engine_3_statistical/pattern_detector.py
 #
 # PURPOSE:
 # Detects known statistical patterns across the event stream.
@@ -22,7 +21,6 @@
 
 
 from collections import defaultdict
-
 
 # ─────────────────────────────────────────
 # IN-MEMORY PATTERN STORE

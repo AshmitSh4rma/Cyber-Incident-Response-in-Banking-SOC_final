@@ -218,7 +218,7 @@ _DISRUPTIVE_RE = re.compile(r"\b(" + "|".join(_DISRUPTIVE_VERBS) + r")\b", re.IG
 _CRITICAL_ASSET_HINTS = ("db-core", "core-app", "payments", "ledger", "swift", "atm", "card", "prod")
 
 
-def _classify_containment(step: str, affected_host: str, affected_user: str) -> dict:
+def _classify_containment(step: str, affected_host: str, _affected_user: str) -> dict:
     """Decide whether a containment step can auto-execute or needs sign-off."""
     disruptive = bool(_DISRUPTIVE_RE.search(step))
 

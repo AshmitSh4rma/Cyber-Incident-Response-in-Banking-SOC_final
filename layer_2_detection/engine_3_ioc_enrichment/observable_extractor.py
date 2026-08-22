@@ -1,4 +1,4 @@
-from .ioc_utils import normalize_text, deduplicate
+from .ioc_utils import deduplicate, normalize_text
 
 
 def extract_observables(event: dict) -> dict:
@@ -10,7 +10,7 @@ def extract_observables(event: dict) -> dict:
         normalize_text(event.get("IpAddress")),
         normalize_text(event.get("ClientIP")),
     ]
-    
+
 
     domains = [
         normalize_text(event.get("domain")),

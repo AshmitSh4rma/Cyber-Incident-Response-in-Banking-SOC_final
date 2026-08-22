@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, Dict, Literal
+from typing import Literal, TypedDict
 
 # Type aliases for valid CVSS metric values
 AttackVector = Literal["network", "adjacent", "local", "physical", "N", "A", "L", "P"]
@@ -9,19 +9,19 @@ ImpactMetric = Literal["high", "low", "none", "H", "L", "N"]
 ScopeMetric = Literal["unchanged", "changed", "U", "C"]
 
 class AIImpact(TypedDict, total=False):
-    confidentiality: Optional[ImpactMetric]
-    integrity: Optional[ImpactMetric]
-    availability: Optional[ImpactMetric]
+    confidentiality: ImpactMetric | None
+    integrity: ImpactMetric | None
+    availability: ImpactMetric | None
 
 class AIAnalysisInput(TypedDict, total=False):
-    intent: Optional[str]
-    attack_vector: Optional[AttackVector]
-    attack_complexity: Optional[AttackComplexity]
-    privileges_required: Optional[PrivilegesRequired]
-    user_interaction: Optional[UserInteraction]
-    scope: Optional[ScopeMetric]
-    impact: Optional[AIImpact]
-    asset_criticality: Optional[Literal["low", "medium", "high", "critical"]]
+    intent: str | None
+    attack_vector: AttackVector | None
+    attack_complexity: AttackComplexity | None
+    privileges_required: PrivilegesRequired | None
+    user_interaction: UserInteraction | None
+    scope: ScopeMetric | None
+    impact: AIImpact | None
+    asset_criticality: Literal["low", "medium", "high", "critical"] | None
 
 class ExploitabilityMetrics(TypedDict):
     AV: str
@@ -31,7 +31,7 @@ class ExploitabilityMetrics(TypedDict):
 
 class ImpactMetrics(TypedDict):
     C: str
-    I: str
+    I: str  # noqa: E741 — CVSS metric key; renaming breaks the vector string
     A: str
     S: str
 
@@ -41,4 +41,4 @@ class ScoringResults(TypedDict):
     severity: str
 
 class FinalCVSSOutput(TypedDict):
-    cvss: Dict[str, any]
+    cvss: dict[str, any]

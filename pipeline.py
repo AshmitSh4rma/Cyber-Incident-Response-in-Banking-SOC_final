@@ -18,9 +18,10 @@ dashboard can open.
 """
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
+from frontend_formatter import format_pipeline_for_frontend
 from layer_1_feature_engineering.feature_orchestrator import run_feature_engineering
 from layer_2_detection.campaign_correlator import correlate_campaigns
 from layer_2_detection.detection_orchestrator import run_detection_batch
@@ -28,7 +29,6 @@ from layer_3_cis.orchestrator import run_layer3
 from layer_4_ai_analysis.incident_report_builder import run_layer4
 from layer_5_cvss.cvss_orchestrator import run_cvss
 from layer_6_response.response_orchestrator import run_response
-from frontend_formatter import format_pipeline_for_frontend
 from regulatory_clock import for_campaign, for_incident
 
 
@@ -64,12 +64,7 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
     layer3 = run_layer3(layer2)
     t = mark("layer3_cis", t)
 
-    frontend_output = format_pipeline_for_frontend(
-        parsed_logs=None,
-        layer1_output=layer1,
-        layer2_output=layer2,
-        layer3_output=layer3,
-    )
+    frontend_output = format_pipeline_for_frontend(layer3)
     t = mark("format", t)
 
     # Layer 2.5 — runs after formatting because correlation needs the stable
@@ -115,7 +110,7 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
     # The clock origin is NOW, not the log timestamp: these deadlines run from the
     # moment of determination, and determination is what just happened here. Using
     # the log timestamp would show every historical demo record as overdue.
-    determined_at = datetime.now(timezone.utc).isoformat()
+    determined_at = datetime.now(UTC).isoformat()
 
     for campaign in campaign_result["campaigns"]:
         campaign["determined_at"] = determined_at

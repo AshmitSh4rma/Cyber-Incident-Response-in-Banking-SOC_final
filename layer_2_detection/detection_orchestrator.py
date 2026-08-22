@@ -1,14 +1,20 @@
-from layer_2_detection.engine_1_anomaly.anomaly_orchestrator import run_anomaly
-from layer_2_detection.engine_2_threat_analysis.threat_analysis_orchestrator import run_threat_analysis
-from layer_2_detection.engine_3_ioc_enrichment.ioc_orchestrator import run_ioc_enrichment
-from layer_2_detection.engine_4_correlation.correlation_orchestrator import run_correlation
 from layer_2_detection.detection_fusion import fuse_detection
+from layer_2_detection.engine_1_anomaly.anomaly_orchestrator import run_anomaly
+from layer_2_detection.engine_2_threat_analysis.threat_analysis_orchestrator import (
+    run_threat_analysis,
+)
+from layer_2_detection.engine_3_ioc_enrichment.ioc_orchestrator import (
+    run_ioc_enrichment,
+)
+from layer_2_detection.engine_4_correlation.correlation_orchestrator import (
+    run_correlation,
+)
 from layer_2_detection.layer1_adapter import adapt_layer1_event
 from layer_2_detection.mitre_mapper import enrich_event as enrich_mitre
 from layer_2_detection.suppression_checker import (
-    load_suppression_rules,
-    is_suppressed,
     build_suppressed_detection,
+    is_suppressed,
+    load_suppression_rules,
 )
 
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { Transition, Variants } from "framer-motion";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { Variants } from "framer-motion";
 
 /**
  * Shared motion vocabulary.
@@ -21,40 +21,51 @@ import type { Transition, Variants } from "framer-motion";
  */
 
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-export const EASE_IN_OUT = [0.65, 0, 0.35, 1] as const;
 
-export const SPRING: Transition = { type: "spring", stiffness: 420, damping: 34, mass: 0.7 };
 
-/** Does the viewer want motion suppressed? */
-export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return reduced;
+function subscribeToReducedMotion(onChange: () => void): () => void {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
 }
 
-/* ─── Entrance variants ────────────────────────────────────────────────────── */
+/**
+ * Does the viewer want motion suppressed?
+ *
+ * Uses useSyncExternalStore rather than reading the media query into state inside
+ * an effect. A media query is an external system, which is exactly what this hook
+ * is for: it avoids the extra render an effect-then-setState causes, and it gives
+ * the server a defined snapshot so hydration cannot mismatch.
+ */
+export function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeToReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    // The server cannot know the preference. Assume motion is allowed and let
+    // the first client render correct it — the alternative, assuming reduced,
+    // would skip the entrance animation for everyone on first paint.
+    () => false,
+  );
+}
 
-/** Parent: staggers its children so a screen assembles top-down. */
-export const stagger = (delayChildren = 0.04, staggerChildren = 0.045): Variants => ({
-  hidden: {},
-  shown: { transition: { delayChildren, staggerChildren } },
-});
+/* ─── Variants ─────────────────────────────────────────────────────────────── */
 
-/** Child: rises a few pixels into place. */
-export const riseIn: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  shown: { opacity: 1, y: 0, transition: { duration: 0.38, ease: EASE_OUT } },
-};
+/**
+ * The entrance animations that used to live here — a stagger parent and a
+ * rise-in child — are now `.screen`, `.rise` and `.stagger-row` in globals.css.
+ * They applied to every panel on every screen, which made the whole console's
+ * visibility depend on this library running. CSS keyframes animate from a
+ * visible resting state instead, so a page that never animates is a page that
+ * simply appears.
+ *
+ * What is left is for elements that toggle after a user action, where an exit
+ * animation is the point and nothing is hidden on first paint (every consumer
+ * sits inside an `<AnimatePresence initial={false}>`).
+ */
 
-/** Child: fades only. For dense rows where vertical travel would look busy. */
+/** Fades only. For dense rows where vertical travel would look busy. */
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
   shown: { opacity: 1, transition: { duration: 0.3, ease: EASE_OUT } },
@@ -81,32 +92,34 @@ export const expand: Variants = {
  */
 export function useCountUp(target: number, durationMs = 900): number {
   const reduced = usePrefersReducedMotion();
-  const [value, setValue] = useState(reduced ? target : 0);
+  const [animated, setAnimated] = useState(0);
   const frame = useRef<number>(0);
 
+  // The short-circuit cases return `target` from the render body below rather
+  // than writing it into state here. Setting state synchronously inside an
+  // effect triggers a second render pass for a value that was already known.
+  const skip = reduced || !Number.isFinite(target);
+
   useEffect(() => {
-    if (reduced || !Number.isFinite(target)) {
-      setValue(target);
-      return;
-    }
+    if (skip) return;
 
     const start = performance.now();
-    const from = 0;
 
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / durationMs);
-      // easeOutCubic — fast start, clean stop, no overshoot.
+      // easeOutCubic — fast start, clean stop, no overshoot. A metric that
+      // overshoots and settles reads as unreliable.
       const eased = 1 - Math.pow(1 - t, 3);
-      setValue(from + (target - from) * eased);
+      setAnimated(target * eased);
       if (t < 1) frame.current = requestAnimationFrame(tick);
-      else setValue(target);
+      else setAnimated(target);
     };
 
     frame.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame.current);
-  }, [target, durationMs, reduced]);
+  }, [target, durationMs, skip]);
 
-  return value;
+  return skip ? target : animated;
 }
 
 /** Integer form, for counts. */
@@ -116,7 +129,7 @@ export function useCountUpInt(target: number, durationMs = 900): number {
 
 /* ─── Live countdown ──────────────────────────────────────────────────────── */
 
-export type Countdown = {
+type Countdown = {
   secondsRemaining: number;
   label: string;
   /** 0-1, how much of the window has elapsed. */

@@ -1,9 +1,11 @@
 import json
 import os
+
 from layer_5_cvss.cvss_schema import AIAnalysisInput, ImpactMetrics
 
+
 def load_json(filepath: str) -> dict:
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         return json.load(f)
 
 def get_mapping_data():
@@ -20,7 +22,7 @@ def apply_impact_constraints(ai_input: AIAnalysisInput, current_metrics: dict, r
         for key, val in intent_rules.items():
             if key in current_metrics:
                 current_metrics[key] = val
-                
+
     # 2. Check asset criticality based rules
     criticality = ai_input.get("asset_criticality")
     if criticality and criticality in rules.get("asset_criticality", {}):
@@ -28,12 +30,12 @@ def apply_impact_constraints(ai_input: AIAnalysisInput, current_metrics: dict, r
         for key, val in crit_rules.items():
             if key in current_metrics:
                 current_metrics[key] = val
-                
+
     return current_metrics
 
 def map_impact(ai_input: AIAnalysisInput) -> ImpactMetrics:
     impact_data = ai_input.get("impact", {})
-    
+
     input_metrics = {
         "confidentiality": impact_data.get("confidentiality"),
         "integrity": impact_data.get("integrity"),
@@ -42,9 +44,9 @@ def map_impact(ai_input: AIAnalysisInput) -> ImpactMetrics:
     }
 
     metrics_map, rules = get_mapping_data()
-    
+
     constrained_metrics = apply_impact_constraints(ai_input, input_metrics, rules)
-    
+
     c_map = metrics_map["engine_2_impact"]["confidentiality"]
     i_map = metrics_map["engine_2_impact"]["integrity"]
     a_map = metrics_map["engine_2_impact"]["availability"]

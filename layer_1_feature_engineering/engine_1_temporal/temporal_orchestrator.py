@@ -1,5 +1,4 @@
 # temporal_orchestrator.py
-# Location: layer_1_feature_engineering/engine_1_temporal/temporal_orchestrator.py
 #
 # PURPOSE:
 # Coordinates Engine 1 — Temporal.
@@ -20,9 +19,12 @@
 # feature_orchestrator.py → _safe_run(run_temporal, log)
 
 
-from layer_1_feature_engineering.engine_1_temporal.time_window_builder import build_time_windows
-from layer_1_feature_engineering.engine_1_temporal.tsfresh_extractor import extract_temporal_features
-
+from layer_1_feature_engineering.engine_1_temporal.time_window_builder import (
+    build_time_windows,
+)
+from layer_1_feature_engineering.engine_1_temporal.tsfresh_extractor import (
+    extract_temporal_features,
+)
 
 # ─────────────────────────────────────────
 # HELPER — safe runner

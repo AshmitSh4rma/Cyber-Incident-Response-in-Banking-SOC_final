@@ -8,9 +8,6 @@ import { useDetail } from "@/lib/detail";
 import {
   EASE_OUT,
   expand,
-  fadeIn,
-  riseIn,
-  stagger,
   useCountUpInt,
   useLiveCountdown,
   usePrefersReducedMotion,
@@ -23,6 +20,7 @@ import {
   normalizeSeverity,
   severityTone,
   stageSeverity,
+  verdictTone,
 } from "@/lib/severity";
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -30,27 +28,23 @@ import {
 
    One shape for every panel. `Screen` staggers its children so a page assembles
    rather than appearing all at once.
+
+   The entrance is a CSS class, not a JavaScript animation. Driving it from the
+   animation library meant every panel's resting state was `opacity: 0` with the
+   library responsible for clearing it, so anything that stopped it running left
+   the page blank rather than unanimated. `.rise` animates *from* hidden toward
+   the element's own visible styles, which means a page that never animates is a
+   page that simply appears. `.screen` staggers its direct children.
    ───────────────────────────────────────────────────────────────────────────── */
 
 export function Screen({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <motion.div
-      variants={stagger()}
-      initial="hidden"
-      animate="shown"
-      className={`mx-auto max-w-[1420px] space-y-4 ${className}`}
-    >
-      {children}
-    </motion.div>
+    <div className={`screen mx-auto max-w-[1420px] space-y-4 ${className}`}>{children}</div>
   );
 }
 
 export function Block({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <motion.div variants={riseIn} className={className}>
-      {children}
-    </motion.div>
-  );
+  return <div className={`rise ${className}`}>{children}</div>;
 }
 
 export function Section({
@@ -69,9 +63,8 @@ export function Section({
   flush?: boolean;
 }) {
   return (
-    <motion.section
-      variants={riseIn}
-      className={`overflow-hidden rounded-lg border border-rule bg-surface ${className}`}
+    <section
+      className={`rise overflow-hidden rounded-lg border border-rule bg-surface ${className}`}
     >
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-rule-soft px-4 py-3">
         <div className="min-w-0">
@@ -81,7 +74,7 @@ export function Section({
         {actions}
       </header>
       <div className={flush ? "" : "p-4"}>{children}</div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -163,14 +156,7 @@ export function SeverityChip({ value, size = "sm" }: { value: unknown; size?: "x
 
 export function VerdictChip({ value }: { value: unknown }) {
   const label = String(value ?? "unknown").toLowerCase();
-  const tone =
-    label === "malicious"
-      ? "border-sev-critical/40 bg-sev-critical/15 text-sev-critical"
-      : label === "suspicious"
-        ? "border-sev-high/35 bg-sev-high/12 text-sev-high"
-        : label === "suppressed"
-          ? "border-rule bg-raised text-faint"
-          : "border-sev-benign/35 bg-sev-benign/12 text-sev-benign";
+  const tone = verdictTone(label);
   return (
     <span
       className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tone}`}
@@ -446,14 +432,11 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <motion.div
-      variants={fadeIn}
-      className="flex flex-col items-center justify-center rounded-lg border border-dashed border-rule bg-sunk/40 px-6 py-14 text-center"
-    >
+    <div className="fade flex flex-col items-center justify-center rounded-lg border border-dashed border-rule bg-sunk/40 px-6 py-14 text-center">
       {icon ? <div className="mb-3 text-faint">{icon}</div> : null}
       <p className="text-sm font-medium text-ink">{title}</p>
       <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted">{detail}</p>
-    </motion.div>
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 import json
 import os
-from .ioc_utils import normalize_text
 
+from .ioc_utils import normalize_text
 
 IOC_FEED_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
@@ -15,7 +15,7 @@ def load_ioc_feed() -> list[dict]:
         return []
 
     try:
-        with open(IOC_FEED_PATH, "r", encoding="utf-8") as f:
+        with open(IOC_FEED_PATH, encoding="utf-8") as f:
             content = f.read().strip()
             if not content:
                 return []
@@ -40,13 +40,7 @@ def lookup_iocs(observables: dict) -> list[dict]:
 
         matched = False
 
-        if obs_type == "ip" and observable in ip_set:
-            matched = True
-        elif obs_type == "domain" and observable in domain_set:
-            matched = True
-        elif obs_type == "url" and observable in url_set:
-            matched = True
-        elif obs_type == "hash" and observable in hash_set:
+        if obs_type == "ip" and observable in ip_set or obs_type == "domain" and observable in domain_set or obs_type == "url" and observable in url_set or obs_type == "hash" and observable in hash_set:
             matched = True
 
         if matched:

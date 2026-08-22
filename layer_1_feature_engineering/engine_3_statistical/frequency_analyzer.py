@@ -1,5 +1,4 @@
 # frequency_analyzer.py
-# Location: layer_1_feature_engineering/engine_3_statistical/frequency_analyzer.py
 #
 # PURPOSE:
 # Performs statistical frequency analysis on the incoming log.
@@ -21,9 +20,8 @@
 # statistical_orchestrator.py
 
 
-from collections import deque
 import math
-
+from collections import deque
 
 # ─────────────────────────────────────────
 # IN-MEMORY RATE STORE

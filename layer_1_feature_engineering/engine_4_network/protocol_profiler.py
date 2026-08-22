@@ -1,5 +1,4 @@
 # protocol_profiler.py
-# Location: layer_1_feature_engineering/engine_4_network/protocol_profiler.py
 #
 # PURPOSE:
 # Profiles the protocol used in the network log.
@@ -17,7 +16,6 @@
 
 
 from collections import defaultdict
-
 
 # ─────────────────────────────────────────
 # PROTOCOL CLASSIFICATIONS

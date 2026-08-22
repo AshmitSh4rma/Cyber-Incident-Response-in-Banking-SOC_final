@@ -6,9 +6,7 @@ def fuse_detection(event: dict) -> dict:
 
     anomaly_score = float(anomaly.get("anomaly_score", 0.0))
     threat_type = str(threat.get("mapped_pattern", "unknown")).lower()
-    threat_severity = str(threat.get("severity", "low")).lower()
     ioc_matched = bool(ioc.get("matched", False))
-    ioc_risk = str(ioc.get("risk_level", "low")).lower()
     adjusted_confidence = float(correlation.get("adjusted_confidence", 0.0))
     correlation_strength = str(correlation.get("correlation_strength", "none")).lower()
 

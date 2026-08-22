@@ -1,5 +1,4 @@
 # feature_orchestrator.py
-# Location: layer_1_feature_engineering/feature_orchestrator.py
 #
 # PURPOSE:
 # The main coordinator of Layer 1.
@@ -22,15 +21,24 @@
 # main.py or the ingestion layer output handler
 
 
-from layer_1_feature_engineering.log_classifier import classify_log
-from layer_1_feature_engineering.engine_7_identity.identity_orchestrator import run_identity
-from layer_1_feature_engineering.engine_1_temporal.temporal_orchestrator import run_temporal
-from layer_1_feature_engineering.engine_2_behavioral.behavioral_orchestrator import run_behavioral
-from layer_1_feature_engineering.engine_3_statistical.statistical_orchestrator import run_statistical
-from layer_1_feature_engineering.engine_4_network.network_orchestrator import run_network
+from layer_1_feature_engineering.engine_1_temporal.temporal_orchestrator import (
+    run_temporal,
+)
+from layer_1_feature_engineering.engine_2_behavioral.behavioral_orchestrator import (
+    run_behavioral,
+)
+from layer_1_feature_engineering.engine_3_statistical.statistical_orchestrator import (
+    run_statistical,
+)
+from layer_1_feature_engineering.engine_4_network.network_orchestrator import (
+    run_network,
+)
 from layer_1_feature_engineering.engine_5_web.web_orchestrator import run_web
 from layer_1_feature_engineering.engine_6_iot.iot_orchestrator import run_iot
-
+from layer_1_feature_engineering.engine_7_identity.identity_orchestrator import (
+    run_identity,
+)
+from layer_1_feature_engineering.log_classifier import classify_log
 
 # ─────────────────────────────────────────
 # HELPER — safe engine runner
@@ -108,7 +116,7 @@ def run_feature_engineering(log: dict) -> dict:
     Always added:
         log_family
         classification_scores
-        classification_confidence   
+        classification_confidence
         temporal_features
         behavioral_features
         statistical_features

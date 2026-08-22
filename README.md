@@ -155,14 +155,14 @@ python dev_run.py path/to/your.json     # any JSON or JSONL log file
 ```
 
 Prints the verdict spread, the campaigns it reconstructed, the consolidation
-ratio, and per-layer timing. Completes in about 0.15 s on the 25-record scenario
+ratio, and per-layer timing. Completes in about 0.09 s on the 25-record scenario
 and is idempotent — incident IDs derive from log content, so re-running updates
 incidents in place instead of duplicating them.
 
 ### Tests
 
 ```bash
-pytest -q        # 49 tests
+pytest -q        # 94 tests
 ```
 
 ### Optional: local LLM for Layer 4
@@ -248,7 +248,7 @@ layer_1_feature_engineering/   7 feature engines
 layer_2_detection/            4 detection engines + suppression
   mitre_mapper.py             ATT&CK techniques and tactics
   campaign_correlator.py      Layer 2.5
-layer_3_cis/                  CIS/OWASP catalogs + matcher
+layer_3_cis/                  CIS/OWASP catalogues + IDF-weighted matcher
 layer_4_ai_analysis/          deterministic analyst + optional LLM enrichment
 layer_5_cvss/                 4 CVSS engines
 layer_6_response/             playbooks + blast-radius approval gate
@@ -284,8 +284,8 @@ Measured on the shipped scenario:
 
 | | |
 | --- | --- |
-| Full pipeline, 25 records ingest to stored incident | **0.16 s** |
-| Test suite | **72 / 72** |
+| Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
+| Test suite | **94 / 94** |
 | CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |

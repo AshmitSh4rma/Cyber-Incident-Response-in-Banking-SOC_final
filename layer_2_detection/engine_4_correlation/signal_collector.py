@@ -1,4 +1,4 @@
-from .correlation_utils import safe_float, append_unique
+from .correlation_utils import append_unique, safe_float
 
 
 def collect_signals(event: dict) -> dict:

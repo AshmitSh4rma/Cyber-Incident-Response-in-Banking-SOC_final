@@ -1,5 +1,4 @@
 # log_classifier.py
-# Location: layer_1_feature_engineering/log_classifier.py
 #
 # PURPOSE:
 # Reads the normalized log dict arriving from the ingestion layer
@@ -106,22 +105,15 @@ def _declared_family(log: dict) -> tuple[str | None, str | None]:
 
 def _has_signal(value) -> bool:
     """
-    Returns True only for meaningful values.
-    Rejects:
-    - None
-    - 0
-    - empty string
-    - empty list/dict/set/tuple
+    Does this field actually carry information?
+
+    Truthiness already rejects None, 0, "" and empty containers. The one case it
+    gets wrong for log data is a whitespace-only string, which several exporters
+    emit for "no value" and which would otherwise score as a present field.
     """
-    if value is None:
-        return False
-    if value == 0:
-        return False
-    if isinstance(value, str) and value.strip() == "":
-        return False
-    if isinstance(value, (list, dict, set, tuple)) and len(value) == 0:
-        return False
-    return True
+    if isinstance(value, str):
+        return bool(value.strip())
+    return bool(value)
 
 
 def _score_log(log: dict) -> dict[str, int]:

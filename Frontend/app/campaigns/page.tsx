@@ -14,8 +14,6 @@ import {
   Skeleton,
 } from "@/components/soc/primitives";
 import { useDetail } from "@/lib/detail";
-import { riseIn } from "@/lib/motion";
-import { motion } from "framer-motion";
 import { formatTimestamp, severityTone } from "@/lib/severity";
 
 type Campaign = {
@@ -103,7 +101,7 @@ export default function CampaignsPage() {
         {campaigns?.map((c) => {
           const tone = severityTone(c.severity);
           return (
-            <motion.div key={c.campaign_id} variants={riseIn}>
+            <div key={c.campaign_id} className="rise stagger-row">
             <Link
               href={`/campaigns/${c.campaign_id}`}
               className={`group relative block overflow-hidden rounded-lg border ${tone.border} bg-surface transition hover:-translate-y-0.5 hover:bg-raised/40 hover:shadow-lg`}
@@ -197,7 +195,7 @@ export default function CampaignsPage() {
                 </div>
               </div>
             </Link>
-            </motion.div>
+            </div>
           );
         })}
       </div>

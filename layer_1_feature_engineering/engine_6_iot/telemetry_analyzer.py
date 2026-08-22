@@ -1,5 +1,4 @@
 # telemetry_analyzer.py
-# Location: layer_1_feature_engineering/engine_6_iot/telemetry_analyzer.py
 #
 # PURPOSE:
 # Analyzes IoT telemetry data for anomalies.
@@ -18,10 +17,9 @@
 # iot_orchestrator.py
 
 
-from collections import defaultdict
-from datetime import datetime, timezone
 import math
-
+from collections import defaultdict
+from datetime import UTC, datetime
 
 # ─────────────────────────────────────────
 # IN-MEMORY TELEMETRY STORE
@@ -69,7 +67,7 @@ def _parse_ts(ts_str: str) -> datetime:
     try:
         return datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
     except Exception:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def _get_reporting_interval(device_id: str, current_ts: str) -> float:
