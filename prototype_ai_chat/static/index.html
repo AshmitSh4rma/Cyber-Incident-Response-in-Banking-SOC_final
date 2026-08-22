@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Standalone SENTRA security analyst chat prototype">
+  <title>SENTRA AI Analyst</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Security Operations</p>
+        <h1>SENTRA AI Analyst</h1>
+        <p class="subtitle">Ask questions about your security incidents, campaigns and logs.</p>
+      </div>
+      <div class="header-actions">
+        <div id="health" class="status pending" role="status"><span></span>Checking system…</div>
+        <button id="new-conversation" class="secondary" type="button">New conversation</button>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="SENTRA chat">
+      <div id="conversation" class="conversation" aria-live="polite">
+        <article class="welcome">
+          <div class="mark" aria-hidden="true">S</div>
+          <div>
+            <h2>How can I help your investigation?</h2>
+            <p>I use bounded, read-only SENTRA evidence. Try a quick prompt or ask your own SOC question.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="quick-prompts" aria-label="Suggested questions">
+        <button type="button" data-question="Give me a concise SOC briefing.">SOC briefing</button>
+        <button type="button" data-question="What are the most severe incidents?">Critical incidents</button>
+        <button type="button" data-question="What are the highest CVSS incidents?">Highest CVSS</button>
+        <button type="button" data-question="Which MITRE ATT&amp;CK techniques are appearing most often?">MITRE overview</button>
+        <button type="button" data-question="What active attack campaigns exist?">Current campaigns</button>
+        <button type="button" data-question="What CIS or OWASP controls are most relevant?">Relevant controls</button>
+        <button type="button" data-question="What should an analyst investigate first?">Investigate first</button>
+      </div>
+
+      <form id="chat-form" class="composer">
+        <label for="message" class="sr-only">Message SENTRA AI Analyst</label>
+        <textarea id="message" name="message" rows="2" maxlength="2000"
+          placeholder="Ask about incidents, campaigns, MITRE, CVSS or controls…" required></textarea>
+        <div class="composer-footer">
+          <span id="counter">0 / 2000</span>
+          <span id="loading" class="loading" hidden>Analyzing security context…</span>
+          <button id="send" type="submit">Send</button>
+        </div>
+      </form>
+    </section>
+    <p class="disclaimer">Local read-only prototype · Responses are grounded in available SENTRA records.</p>
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
