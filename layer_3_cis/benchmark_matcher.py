@@ -52,8 +52,34 @@ def _normalize_list(values: Any) -> list[str]:
     return [_normalize_text(values)]
 
 
+@lru_cache(maxsize=8)
+def _normalised_catalog(domain: str) -> tuple[tuple[dict, dict], ...]:
+    """
+    The catalogue with its searchable text lowercased once.
+
+    Scoring used to normalise every entry's tags, keywords, section, title and
+    description on every comparison — 4.4 million string operations to map 25
+    events, because the same 413 controls were re-lowercased for each one. The
+    catalogue is read-only reference data, so this is done once per process.
+
+    Returns (entry, normalised) pairs so the caller still has the original entry
+    to build its result from. Tags and keywords become sets: membership is all the
+    scorer asks of them, and it asks a lot.
+    """
+    prepared = []
+    for entry in load_catalog(domain):
+        prepared.append((entry, {
+            "tags": frozenset(_normalize_list(entry.get("tags", []))),
+            "keywords": frozenset(_normalize_list(entry.get("keywords", []))),
+            "section": _normalize_text(entry.get("section", "")),
+            "title": _normalize_text(entry.get("title", "")),
+            "description": _normalize_text(entry.get("description", "")),
+        }))
+    return tuple(prepared)
+
+
 def _score_entry(
-    entry: dict,
+    normalised: dict,
     query_tags: list[str],
     query_keywords: list[str],
     section_hint: list[str],
@@ -61,11 +87,11 @@ def _score_entry(
 ) -> float:
     score = 0.0
 
-    entry_tags = _normalize_list(entry.get("tags", []))
-    entry_keywords = _normalize_list(entry.get("keywords", []))
-    entry_section = _normalize_text(entry.get("section", ""))
-    entry_title = _normalize_text(entry.get("title", ""))
-    entry_description = _normalize_text(entry.get("description", ""))
+    entry_tags = normalised["tags"]
+    entry_keywords = normalised["keywords"]
+    entry_section = normalised["section"]
+    entry_title = normalised["title"]
+    entry_description = normalised["description"]
 
     # Tags are curated and low-cardinality, so they keep a flat weight.
     for tag in query_tags:
@@ -113,15 +139,15 @@ def retrieve_benchmarks(
     query_keywords = _normalize_list(query_keywords or [])
     section_hint = _normalize_list(section_hint or [])
 
-    catalog = load_catalog(domain)
+    catalog = _normalised_catalog(domain)
     if not catalog:
         return []
 
     weights = _keyword_weights(domain)
 
     scored = []
-    for entry in catalog:
-        score = _score_entry(entry, query_tags, query_keywords, section_hint, weights)
+    for entry, normalised in catalog:
+        score = _score_entry(normalised, query_tags, query_keywords, section_hint, weights)
         if score > 0:
             scored.append((score, entry))
 
