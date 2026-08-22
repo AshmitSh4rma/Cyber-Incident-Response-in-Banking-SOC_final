@@ -38,18 +38,28 @@ REGIMES: list[dict[str, Any]] = [
     {
         "id": "dora",
         "authority": "EU — DORA",
-        "instrument": "Regulation (EU) 2022/2554, RTS on incident reporting, Art. 5",
+        # The four hours is NOT in DORA. Regulation 2022/2554 Art. 19(4) delegates the
+        # timings; the figure lives in the Commission Delegated Regulation. Citing DORA
+        # itself for "4 hours" is the single easiest way to be corrected by someone who
+        # knows the file.
+        "instrument": "Commission Delegated Regulation (EU) 2025/301, Art. 5(1)(a) "
+                      "(under Regulation (EU) 2022/2554, Art. 19(4))",
         "hours": 4,
         "clock_label": "4 hours",
         "starts_from": "classification of the incident as major",
         "applies_when": "Financial entities operating in the EU, for major ICT incidents.",
         "note": (
-            "Initial notification within 4 hours of classifying the incident as major, "
-            "and no later than 24 hours from becoming aware. Intermediate report at 72 "
-            "hours, final within one month."
+            "A hybrid deadline, not a pure determination clock: initial notification "
+            "within 4 hours of classifying the incident as major AND no later than 24 "
+            "hours from becoming aware of it. Art. 5(2) means the 24 hours is not an "
+            "absolute cut-off — classify as major later and a fresh 4 hours runs from "
+            "that classification. Intermediate report at 72 hours, final within one "
+            "month. Art. 5(4) would let a deadline falling on a weekend or holiday slip "
+            "to noon of the next working day, but Art. 5(5) disapplies that for credit "
+            "institutions: a bank gets no weekend relief on the 4-hour or 72-hour clocks."
         ),
         "effective": "17 January 2025",
-        "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
+        "url": "https://eur-lex.europa.eu/eli/reg_del/2025/301/oj",
     },
     {
         "id": "cert_in",
@@ -57,11 +67,14 @@ REGIMES: list[dict[str, Any]] = [
         "instrument": "Directions under s.70B(6), IT Act 2000 — No. 20(3)/2022",
         "hours": 6,
         "clock_label": "6 hours",
-        "starts_from": "noticing the incident",
+        "starts_from": "noticing the incident, or being brought to notice of it",
         "applies_when": "Any body corporate operating in India, for a broad list of incident types.",
         "note": (
-            "Reporting within 6 hours of noticing. The reportable list is unusually wide "
-            "and explicitly includes probing and scanning of critical networks."
+            "Six hours from 'noticing such incidents or being brought to notice about "
+            "such incidents' — so a third-party report starts the clock too. The "
+            "mandatorily reportable list at Annexure I opens with targeted scanning or "
+            "probing of critical networks, which means no compromise is required: "
+            "describing this regime as being about 'breaches' understates it considerably."
         ),
         "effective": "28 April 2022",
         "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
@@ -69,7 +82,12 @@ REGIMES: list[dict[str, Any]] = [
     {
         "id": "us_banking",
         "authority": "US — OCC / Federal Reserve / FDIC",
-        "instrument": "Computer-Security Incident Notification Rule, 86 FR 66424",
+        # Cited by codified section rather than by Federal Register page. The joint rule
+        # is commonly given as 86 FR 66424, but 12 CFR Part 53's own source note reads
+        # 86 FR 66442, so anyone following the cite may not land where you expect. The
+        # three CFR sections are identical in wording and unambiguous.
+        "instrument": "12 CFR 53.3 (OCC), 12 CFR 225.302 (Federal Reserve), "
+                      "12 CFR 304.23 (FDIC)",
         "hours": 36,
         "clock_label": "36 hours",
         "starts_from": "determining a notification incident has occurred",
@@ -77,8 +95,12 @@ REGIMES: list[dict[str, Any]] = [
             "US banking organisations, where the incident materially disrupts operations, "
             "the ability to deliver banking services, or financial-sector stability."
         ),
-        "note": "Notify the primary federal regulator no later than 36 hours after determination.",
-        "effective": "1 May 2022 (compliance date)",
+        "note": (
+            "Notify the primary federal regulator no later than 36 hours after "
+            "determining that a notification incident has occurred. Effective 1 April "
+            "2022; compliance required from 1 May 2022."
+        ),
+        "effective": "1 April 2022 (effective); 1 May 2022 (compliance)",
         "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
     },
     {
@@ -93,7 +115,12 @@ REGIMES: list[dict[str, Any]] = [
             "Disclosure within four BUSINESS days of the materiality determination. The "
             "countdown shown here uses 96 calendar hours as a stand-in and will therefore "
             "read pessimistically across a weekend — treat it as an ordering hint, not the "
-            "filing deadline."
+            "filing deadline. Note also that the clock runs from the materiality "
+            "DETERMINATION, not from discovery; the link to discovery is indirect, via "
+            "Instruction 1's requirement that the determination be made without "
+            "unreasonable delay after discovery. Item 1.05 is the subject of a May 2025 "
+            "rescission petition from the ABA, BPI, SIFMA, ICBA and IIB, and remains in "
+            "force pending the Commission's decision."
         ),
         "effective": "26 July 2023",
         "url": "https://www.sec.gov/newsroom/press-releases/2023-139",

@@ -199,3 +199,76 @@ def test_for_campaign_reads_campaign_shape():
 )
 def test_format_remaining(seconds, expected):
     assert format_remaining(seconds) == expected
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Citation accuracy
+#
+# Every one of these was wrong or imprecise until a research pass checked the
+# instruments against their primary texts. A deadline asserted with the wrong
+# authority is worse than no deadline: it is checkable in thirty seconds and it
+# discredits the rest of the assessment.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dora_cites_the_delegated_regulation_not_dora_itself():
+    """
+    Regulation 2022/2554 Art. 19(4) delegates the timings and states no hour
+    figure. The 4 hours is in Commission Delegated Regulation (EU) 2025/301.
+    """
+    dora = next(r for r in REGIMES if r["id"] == "dora")
+    assert "2025/301" in dora["instrument"]
+    assert "19(4)" in dora["instrument"], "name the delegating article too"
+
+
+def test_dora_is_described_as_a_hybrid_clock():
+    """4 hours from classification AND 24 hours from awareness — not one or the other."""
+    note = next(r for r in REGIMES if r["id"] == "dora")["note"].lower()
+    assert "24 hours" in note and "aware" in note
+    assert "hybrid" in note
+
+
+def test_dora_records_that_banks_get_no_weekend_relief():
+    """
+    Art. 5(4) allows a weekend deadline to slip to the next working day; Art. 5(5)
+    disapplies that for credit institutions. Stating the general rule without the
+    carve-out would tell a bank it has time it does not have.
+    """
+    note = next(r for r in REGIMES if r["id"] == "dora")["note"].lower()
+    assert "credit institution" in note
+    assert "no weekend relief" in note
+
+
+def test_the_us_banking_rule_is_cited_by_codified_section():
+    """
+    The joint rule is usually given as 86 FR 66424, but 12 CFR Part 53's own
+    source note reads 86 FR 66442, so the Federal Register cite sends a reader to
+    a different page than intended. The CFR sections are unambiguous.
+    """
+    rule = next(r for r in REGIMES if r["id"] == "us_banking")
+    for section in ("12 CFR 53.3", "12 CFR 225.302", "12 CFR 304.23"):
+        assert section in rule["instrument"], section
+    assert "66424" not in rule["instrument"]
+
+
+def test_cert_in_records_the_wider_trigger():
+    """
+    'Within 6 hours of noticing such incidents or being brought to notice' — a
+    third-party report starts the clock — and Annexure I's first reportable item
+    is targeted scanning, so no compromise is required.
+    """
+    cert = next(r for r in REGIMES if r["id"] == "cert_in")
+    assert "brought to notice" in cert["starts_from"]
+    assert "scanning" in cert["note"].lower()
+
+
+def test_sec_records_determination_not_discovery_and_the_rescission_petition():
+    sec = next(r for r in REGIMES if r["id"] == "sec_8k")
+    note = sec["note"].lower()
+    assert "determination" in note and "not from discovery" in note
+    assert "rescission" in note, "Item 1.05 is under an active petition; say so"
+
+
+def test_every_regime_still_carries_a_resolvable_instrument_and_url():
+    for regime in REGIMES:
+        assert regime["instrument"] and regime["url"].startswith("https://")
+        assert regime["effective"], regime["id"]
