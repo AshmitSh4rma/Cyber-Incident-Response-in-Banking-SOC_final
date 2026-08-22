@@ -1,3 +1,11 @@
+def _count(value) -> float:
+    """A tolerant numeric read: these fields come from several engines."""
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def adapt_layer1_event(event: dict) -> dict:
     adapted = dict(event)
 
@@ -57,11 +65,17 @@ def adapt_layer1_event(event: dict) -> dict:
     adapted["temporal_features"] = temporal
 
     behavioral = dict(event.get("behavioral_features", {}) or {})
-    behavioral["failed_login_count"] = (
-        behavioral.get("failed_login_count")
-        or user_profile.get("failed_login_count")
-        or pattern.get("failed_login_count")
-        or 0
+    # The largest of the three, not the first non-zero one.
+    #
+    # Layer 1 counts failures two ways: per user, and per source address. Taking
+    # the per-user count first silently defeats password spraying, which is one
+    # attempt against each of many accounts — seven failures from one address
+    # look like seven separate single failures, and no count threshold can ever
+    # see them. Whichever view is higher is the one that describes the attack.
+    behavioral["failed_login_count"] = max(
+        _count(behavioral.get("failed_login_count")),
+        _count(user_profile.get("failed_login_count")),
+        _count(pattern.get("failed_login_count")),
     )
     behavioral["rare_source_ip"] = (
         behavioral.get("rare_source_ip")

@@ -10,7 +10,8 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Body, FastAPI, File, UploadFile
+from fastapi import Body, FastAPI, File, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
@@ -37,7 +38,7 @@ from layer_1_feature_engineering.ingestion_orchestrator import (
     process_json_text,
     process_jsonl_text,
 )
-from pipeline import reset_state, run_full_pipeline
+from pipeline import isolated_state, run_full_pipeline
 from regulatory_clock import REGIMES, for_campaign, for_incident, format_remaining
 from soc_metrics import compute_metrics
 
@@ -101,6 +102,32 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 # Service
 # ─────────────────────────────────────────────────────────────────────────────
+
+@app.exception_handler(RequestValidationError)
+async def _normalise_validation_errors(_request: Request, exc: RequestValidationError):
+    """
+    Give FastAPI's own 422 the same shape as ours.
+
+    Framework validation answers {"detail": [...]}, which carries neither
+    `message` nor `errors`. The settings console reads both, so a malformed body
+    produced a rejection banner reading "Fix the 0 marked below" with nothing
+    marked. One documented 422 shape, whoever generated it.
+    """
+    errors: dict[str, str] = {}
+    for item in exc.errors():
+        location = ".".join(str(part) for part in item.get("loc", ()) if part != "body") or "_"
+        errors[location] = str(item.get("msg", "Invalid value."))
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "invalid",
+            "message": f"{len(errors)} field{'s' if len(errors) != 1 else ''} "
+                       "could not be read. Nothing was saved.",
+            "errors": errors,
+        },
+    )
+
 
 @app.get("/")
 async def root():
@@ -573,10 +600,13 @@ def _outcome(output: dict) -> dict:
     ]
 
     severity: dict[str, int] = {}
+    verdicts: dict[str, int] = {}
     for event in actionable:
         detection = event.get("detection") or {}
         key = str(detection.get("severity", "unknown")).lower()
         severity[key] = severity.get(key, 0) + 1
+        verdict = str(detection.get("label", "unknown")).lower()
+        verdicts[verdict] = verdicts.get(verdict, 0) + 1
 
     auto = gated = 0
     for event in events:
@@ -601,6 +631,7 @@ def _outcome(output: dict) -> dict:
         "actionable": len(actionable),
         "filtered_out": len(events) - len(actionable),
         "severity": severity,
+        "verdicts": verdicts,
         "campaigns": len(campaigns),
         "investigations": (metrics.get("consolidation") or {}).get("investigations"),
         "reportable_campaigns": reportable,
@@ -613,11 +644,13 @@ def _outcome(output: dict) -> dict:
 
 def _run_demo_scenario() -> dict | None:
     """
-    Run the canonical demo records through every layer.
+    Run the canonical demo records through every layer, in isolation.
 
-    Layer 1 accumulates per-source history in module state, so the run is reset
-    first — otherwise the second of two comparison runs inherits the first one's
-    traffic and the comparison measures the wrong thing.
+    Layer 1 accumulates per-source history in module state, which matters twice
+    over. The two comparison runs must not see each other, or the second inherits
+    the first one's traffic and the comparison measures the wrong thing — and
+    neither of them may disturb what the live process had already learned, or a
+    read-only "what if" would silently change how the next real upload is scored.
     """
     if not _DEMO_SCENARIO.exists():
         return None
@@ -625,8 +658,8 @@ def _run_demo_scenario() -> dict | None:
         records = process_json_text(_DEMO_SCENARIO.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    reset_state()
-    return run_full_pipeline(records)
+    with isolated_state():
+        return run_full_pipeline(records)
 
 
 @app.get("/api/config")
@@ -728,6 +761,22 @@ async def preview_config(payload: dict = Body(...)):
             },
         )
 
+    # A console default has no pipeline effect by construction. Running the
+    # pipeline anyway and reporting "no measurable difference" reads as "this
+    # control does nothing", which is the opposite of true.
+    if all(soc_config.SETTINGS_BY_KEY[k]["group"] == "views" for k in cleaned):
+        return {
+            "status": "success",
+            "message": "This changes what the console shows, not how alerts are scored — "
+                       "so there is nothing to re-run. Save it and the change is visible "
+                       "on your next visit.",
+            "source": None,
+            "candidate": cleaned,
+            "before": None,
+            "after": None,
+            "differences": [],
+        }
+
     baseline = _run_demo_scenario()
     if baseline is None:
         return JSONResponse(
@@ -748,15 +797,19 @@ async def preview_config(payload: dict = Body(...)):
         candidate = _run_demo_scenario()
         after = _outcome(candidate) if candidate else before
 
+    # Both nested maps are compared whole rather than key-by-key, so a shift
+    # between two bands reads as one change rather than two.
+    nested = ("severity", "verdicts")
     differences = [
         {"metric": key, "before": before[key], "after": after[key]}
         for key in before
-        if key not in ("severity",) and before[key] != after.get(key)
+        if key not in nested and before[key] != after.get(key)
     ]
-    if before["severity"] != after["severity"]:
-        differences.append(
-            {"metric": "severity", "before": before["severity"], "after": after["severity"]}
-        )
+    differences += [
+        {"metric": key, "before": before[key], "after": after[key]}
+        for key in nested
+        if before[key] != after[key]
+    ]
 
     return {
         "status": "success",

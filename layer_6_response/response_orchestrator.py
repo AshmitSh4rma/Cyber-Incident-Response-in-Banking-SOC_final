@@ -220,6 +220,12 @@ _DISRUPTIVE_RE = re.compile(r"\b(" + "|".join(_DISRUPTIVE_VERBS) + r")\b", re.IG
 _CRITICAL_ASSET_HINTS = ("db-core", "core-app", "payments", "ledger", "swift", "atm", "card", "prod")
 
 
+# Actions that change the state of the estate rather than only observing it.
+# The blast-radius limit applies to these: an action is either looking something
+# up, or it is doing something to a number of hosts, and only the second kind has
+# a radius worth limiting.
+_CHANGES_STATE = frozenset({"block_ip", "disable_account", "isolate_host"})
+
 # Which category of action a step belongs to, for the purposes of the
 # "what may run unattended" setting. Read at call time, deliberately: the
 # disruptive-verb regex above is compiled at import, and anything that has to
@@ -263,8 +269,15 @@ def _classify_containment(
     # Blast radius as a count, not just as a name. An action against a host that
     # is one of several the same intruder owns is not a one-host decision, and an
     # institution can set the number above which it wants to be asked.
+    #
+    # Gated on "changes state", NOT on "disruptive". Requiring disruptive made
+    # this a no-op: every later branch already holds disruptive actions for
+    # approval, so the limit could only ever relabel one, and the narrow-but-real
+    # actions it most needs to cover — blocking an address across a whole
+    # campaign — are not disruptive by the verb test and so never reached it.
     limit = soc_config.get_int("response.gate_above_hosts")
-    if disruptive and hosts_in_scope > limit:
+    wide = category in _CHANGES_STATE or disruptive
+    if wide and hosts_in_scope > limit:
         return {
             "action": step,
             "execution": "requires_approval",

@@ -234,7 +234,9 @@
     "affected_host": "dmz-web-01",
     "affected_user": "s.iyer",
     "request_size": 188,
-    "response_size": 91204
+    "response_size": 91204,
+    "bytes_in": 188,
+    "bytes_out": 1504
   },
   {
     "timestamp": "2026-08-22T02:41:52Z",

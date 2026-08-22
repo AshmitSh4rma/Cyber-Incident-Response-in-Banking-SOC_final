@@ -58,6 +58,7 @@ type Setting = {
   default: unknown;
   min: number | null;
   max: number | null;
+  step: number | null;
   unit: string | null;
   options: [string, string][] | null;
   min_selected: number | null;
@@ -111,7 +112,14 @@ const METRIC_LABELS: Record<string, string> = {
 
 function sameValue(a: unknown, b: unknown): boolean {
   if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((v, i) => v === b[i]);
+    // Order-insensitive: a multi-select is a set. Comparing positionally meant
+    // unticking a regime and re-ticking it registered as a real change, wrote an
+    // override file and an audit entry, and lost the "shipped defaults" status
+    // for nothing.
+    if (a.length !== b.length) return false;
+    const left = [...a].map(String).sort();
+    const right = [...b].map(String).sort();
+    return left.every((v, i) => v === right[i]);
   }
   return a === b;
 }
@@ -202,8 +210,11 @@ export default function SettingsPage() {
   const save = async () => {
     setBusy("saving");
     setPreview(null);
+    // Snapshot what is being sent, so the response is reconciled against this
+    // patch rather than against whatever the draft looks like when it returns.
+    const sent = patch;
     try {
-      const { ok, status: code, data } = await send("/api/config", "PUT", { values: patch });
+      const { ok, status: code, data } = await send("/api/config", "PUT", { values: sent });
       if (code === 422) {
         setOutcome({
           kind: "rejected",
@@ -221,7 +232,14 @@ export default function SettingsPage() {
         message: String(data.message ?? "Saved."),
         changes: (data.changes ?? []) as Change[],
       });
-      setDraft({});
+      // Clear only what was actually sent. `setDraft({})` also discarded any edit
+      // made while the request was in flight, and then reported the save as a
+      // complete success — silently losing the operator's most recent change.
+      setDraft((prev) => {
+        const remaining = { ...prev };
+        for (const key of Object.keys(sent)) delete remaining[key];
+        return remaining;
+      });
       setStatus(data as unknown as Status);
     } catch (err) {
       setOutcome({
@@ -275,6 +293,14 @@ export default function SettingsPage() {
       });
       setDraft({});
       setStatus(data as unknown as Status);
+    } catch (err) {
+      // Without this the one destructive control on the page failed in total
+      // silence: no success, no error, and a status band still claiming the old
+      // state.
+      setOutcome({
+        kind: "unreachable",
+        message: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setBusy(null);
     }
@@ -294,8 +320,26 @@ export default function SettingsPage() {
         <EmptyState
           icon={<AlertTriangle className="h-9 w-9" />}
           title="Could not load the settings"
-          detail={`${loadError}. Start the backend with "uvicorn api_server:app --port 8000" and reload.`}
+          detail={
+            loadError.includes("502")
+              ? `${loadError}. The analysis service is not answering — start it with ` +
+                `"uvicorn api_server:app --port 8000", then retry.`
+              : `${loadError}. The service answered but could not describe its own ` +
+                `settings, which usually means the stored configuration file is unreadable.`
+          }
         />
+        <Block>
+          <button
+            onClick={() => {
+              setLoadError(null);
+              void load();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-accent-deep px-3 py-2 text-[11px] font-semibold text-accent transition hover:bg-accent/15"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Try again
+          </button>
+        </Block>
       </Screen>
     );
   }
@@ -622,12 +666,18 @@ function SettingRow({
 }) {
   const atDefault = sameValue(value, setting.default);
   const errorId = error ? `${setting.key}-error` : undefined;
+  const labelId = `${setting.key}-label`;
+  const helpId = setting.help ? `${setting.key}-help` : undefined;
+  // Grouped controls (radiogroup, checkbox group) are not labelable elements, so
+  // htmlFor names nothing on them. aria-labelledby does, and works for the
+  // single-input cases too.
+  const describedBy = [helpId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={`px-4 py-3.5 transition-colors ${isDirty ? "bg-accent/5" : ""}`}>
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
         <div className="min-w-[15rem] flex-1 space-y-1">
-          <label htmlFor={setting.key} className="block text-[12px] font-medium text-ink">
+          <label id={labelId} htmlFor={setting.key} className="block text-[12px] font-medium text-ink">
             {setting.label}
             {isDirty ? (
               <span className="ml-2 rounded border border-accent-deep bg-accent/10 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent">
@@ -640,12 +690,20 @@ function SettingRow({
             ) : null}
           </label>
           {setting.help ? (
-            <p className="max-w-prose text-[11px] leading-relaxed text-muted">{setting.help}</p>
+            <p id={helpId} className="max-w-prose text-[11px] leading-relaxed text-muted">
+              {setting.help}
+            </p>
           ) : null}
         </div>
 
         <div className="w-full max-w-sm shrink-0 space-y-1.5">
-          <Control setting={setting} value={value} onChange={onChange} errorId={errorId} />
+          <Control
+            setting={setting}
+            value={value}
+            onChange={onChange}
+            labelId={labelId}
+            describedBy={describedBy}
+          />
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[10px] text-faint">
@@ -718,14 +776,19 @@ function Control({
   setting,
   value,
   onChange,
-  errorId,
+  labelId,
+  describedBy,
 }: {
   setting: Setting;
   value: unknown;
   onChange: (value: unknown) => void;
-  errorId?: string;
+  labelId: string;
+  describedBy?: string;
 }) {
-  const invalid = errorId ? true : undefined;
+  const invalid = describedBy?.includes("-error") ? true : undefined;
+  // Every control carries the same three: what it is called, what explains it,
+  // and whether it is currently rejected.
+  const named = { "aria-labelledby": labelId, "aria-describedby": describedBy };
 
   if (setting.type === "bool") {
     const on = value === true;
@@ -735,7 +798,7 @@ function Control({
         role="switch"
         aria-checked={on}
         aria-invalid={invalid}
-        aria-describedby={errorId}
+        {...named}
         onClick={() => onChange(!on)}
         className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-[11px] font-medium transition ${
           on
@@ -770,7 +833,7 @@ function Control({
           id={setting.key}
           role="radiogroup"
           aria-invalid={invalid}
-          aria-describedby={errorId}
+          {...named}
           className="flex rounded-md border border-rule bg-sunk p-0.5"
         >
           {options.map(([optionValue, label]) => {
@@ -797,7 +860,7 @@ function Control({
         id={setting.key}
         value={String(value ?? "")}
         aria-invalid={invalid}
-        aria-describedby={errorId}
+        {...named}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-md border border-rule bg-sunk px-2.5 py-2 text-[11px] text-ink outline-none transition focus:border-accent-deep"
       >
@@ -814,7 +877,7 @@ function Control({
     const chosen = Array.isArray(value) ? (value as string[]) : [];
     const floor = setting.min_selected ?? 0;
     return (
-      <div id={setting.key} role="group" aria-describedby={errorId} className="space-y-1">
+      <div id={setting.key} role="group" {...named} className="space-y-1">
         {(setting.options ?? []).map(([optionValue, label]) => {
           const on = chosen.includes(optionValue);
           const lastOne = on && chosen.length <= floor;
@@ -826,20 +889,34 @@ function Control({
               } ${lastOne ? "cursor-not-allowed opacity-70" : ""}`}
               title={lastOne ? `At least ${floor} must stay selected` : undefined}
             >
+              {/* aria-disabled rather than disabled: a `disabled` checkbox is
+                  removed from the tab order entirely, so a keyboard user cannot
+                  reach the last selected option and the reason — which was a
+                  mouse-only tooltip — never reaches them either. This stays
+                  focusable, announces itself as unavailable, and says why in
+                  text. */}
               <input
                 type="checkbox"
                 checked={on}
-                disabled={lastOne}
-                onChange={() =>
+                aria-disabled={lastOne || undefined}
+                onChange={() => {
+                  if (lastOne) return;
                   onChange(
                     on
                       ? chosen.filter((v) => v !== optionValue)
                       : [...chosen, optionValue],
-                  )
-                }
+                  );
+                }}
                 className="mt-0.5 h-3 w-3 shrink-0 accent-[var(--accent)]"
               />
-              <span>{label}</span>
+              <span>
+                {label}
+                {lastOne ? (
+                  <span className="ml-1.5 text-[10px] text-faint">
+                    — at least {floor} must stay selected
+                  </span>
+                ) : null}
+              </span>
             </label>
           );
         })}
@@ -847,11 +924,24 @@ function Control({
     );
   }
 
-  // int / float — a slider, because a threshold is a position in a range and a
-  // bare number box hides both the bounds and how far from them you are.
-  const min = setting.min ?? 0;
-  const max = setting.max ?? 100;
-  const step = setting.type === "int" ? 1 : Math.max(0.01, Number(((max - min) / 200).toFixed(2)));
+  // A numeric setting the server did not fully describe gets no invented
+  // control. A plausible-looking 0-100 slider that sends nonsense is worse than
+  // an honest gap, because the operator cannot tell the difference.
+  if (setting.min === null || setting.max === null || setting.step === null) {
+    return (
+      <p className="rounded border border-sev-high/40 bg-sev-high/10 px-2.5 py-2 text-[11px] leading-relaxed text-sev-high">
+        This console cannot show <span className="mono">{setting.key}</span> — the service
+        did not send its range. Its current value is{" "}
+        <span className="tabular font-semibold">{describe(value)}</span>.
+      </p>
+    );
+  }
+
+  // A slider, because a threshold is a position in a range and a bare number box
+  // hides both the bounds and how far from them you are. The step comes from the
+  // schema: deriving it from the range put the shipped default between two
+  // reachable positions and made the printed maximum unselectable.
+  const { min, max, step } = setting;
   const current = typeof value === "number" ? value : Number(value ?? min);
 
   return (
@@ -865,10 +955,17 @@ function Control({
           step={step}
           value={Number.isFinite(current) ? current : min}
           aria-invalid={invalid}
-          aria-describedby={errorId}
-          onChange={(e) =>
-            onChange(setting.type === "int" ? Number.parseInt(e.target.value, 10) : Number(e.target.value))
-          }
+          {...named}
+          onChange={(e) => {
+            const raw = Number(e.target.value);
+            // Snap to the declared grid. Float ranges otherwise accumulate
+            // representation error and send values like 10.499999999999998.
+            const snapped = min + Math.round((raw - min) / step) * step;
+            const decimals = (String(step).split(".")[1] ?? "").length;
+            onChange(
+              setting.type === "int" ? Math.round(snapped) : Number(snapped.toFixed(decimals)),
+            );
+          }}
           className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-track-neutral accent-[var(--accent)]"
         />
         <span className="figure w-24 shrink-0 text-right text-[13px] font-semibold text-ink">

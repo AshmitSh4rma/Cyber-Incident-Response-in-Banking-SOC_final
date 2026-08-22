@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import math
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -146,6 +147,7 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 3,
         "min": 1,
         "max": 50,
+        "step": 1,
         "unit": "attempts",
         "affects": "Raising this hides slow password guessing; lowering it flags "
                    "users who simply mistyped.",
@@ -161,10 +163,12 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 10.0,
         "min": 1.5,
         "max": 200.0,
+        "step": 0.5,
         "unit": ": 1",
         "affects": "Raising this misses slow, low-volume theft; lowering it flags "
-                   "ordinary uploads and backups.",
-        "demo": 60.0,
+                   "ordinary uploads and backups — on the demo records, tightening it turns a "
+                   "customer downloading their own statement into a critical exfiltration alert.",
+        "demo": 5.0,
     },
     {
         "key": "detection.suspicious_score_floor",
@@ -175,6 +179,7 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 0.60,
         "min": 0.05,
         "max": 0.95,
+        "step": 0.05,
         "unit": "score",
         "affects": "Lowering this fills the queue with routine traffic; raising it "
                    "quietly drops weak signals.",
@@ -187,12 +192,17 @@ SETTINGS: list[dict[str, Any]] = [
         "help": "A ceiling, so no verdict is ever presented as certain.",
         "type": "float",
         "default": 0.95,
-        "min": 0.50,
+        # Floored at the malicious threshold rather than at an arbitrary 0.50.
+        # The cross-field rule below refuses anything under it, so a lower floor
+        # advertised a range that was two-thirds unreachable and made this
+        # setting's own "try" button fail every time.
+        "min": MALICIOUS_VERDICT_THRESHOLD,
         "max": 1.0,
+        "step": 0.01,
         "unit": "confidence",
         "affects": "Only the confidence figure shown to analysts. It never changes a "
                    "severity.",
-        "demo": 0.80,
+        "demo": 0.99,
     },
     {
         "key": "detection.campaign_min_stage",
@@ -297,6 +307,7 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 1,
         "min": 1,
         "max": 500,
+        "step": 1,
         "unit": "hosts",
         "affects": "Raising this lets one automated action touch a large part of the "
                    "estate unattended.",
@@ -316,6 +327,7 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 15.0,
         "min": 1.0,
         "max": 240.0,
+        "step": 1.0,
         "unit": "minutes",
         "affects": "The hours-saved figure on the dashboard.",
         "demo": 25.0,
@@ -330,6 +342,7 @@ SETTINGS: list[dict[str, Any]] = [
         "default": 4.0,
         "min": 0.5,
         "max": 120.0,
+        "step": 0.5,
         "unit": "minutes",
         "affects": "The hours-saved figure. Must stay below the manual figure above, "
                    "or the system is claiming to cost time.",
@@ -392,6 +405,23 @@ _cache_stamp: tuple[int, int] | None = None
 _cache: dict[str, Any] = {}
 
 
+def _parse_stored() -> dict[str, Any]:
+    """
+    The stored file as a dict, or an empty one for anything unusable.
+
+    Absence, unreadable permissions, invalid UTF-8, malformed JSON and
+    well-formed JSON of the wrong shape all land in the same place: defaults.
+    A configuration file is the last thing that should be able to stop a SOC
+    pipeline from running.
+    """
+    try:
+        raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # ValueError covers both json.JSONDecodeError and UnicodeDecodeError.
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
 def _read_overrides() -> dict[str, Any]:
     """Load the override file, tolerating absence and corruption."""
     global _cache_stamp, _cache
@@ -409,17 +439,25 @@ def _read_overrides() -> dict[str, Any]:
     if stamp == _cache_stamp:
         return _cache
 
-    try:
-        raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-        stored = raw.get("values", {}) if isinstance(raw, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        # A corrupt file must not take the pipeline down. Fall back to defaults
-        # and let the console surface the problem via `status()`.
+    stored = _parse_stored().get("values")
+    if not isinstance(stored, dict):
+        # Covers a missing key and every wrong shape: null, a list, a string.
+        # The dict comprehension below used to sit outside the guard, so
+        # `{"values": null}` raised AttributeError out of every layer at once.
         stored = {}
 
     # Drop anything the current schema no longer knows about, so a stale file
-    # cannot resurrect a removed setting.
-    _cache = {k: v for k, v in stored.items() if k in SETTINGS_BY_KEY}
+    # cannot resurrect a removed setting — and anything whose stored type no
+    # longer matches its declared one. The file is the feature's own storage
+    # format, so someone will edit it by hand; validate() must not be bypassable
+    # just because the value arrived from disk instead of over HTTP.
+    _cache = {}
+    for key, value in stored.items():
+        if key not in SETTINGS_BY_KEY:
+            continue
+        coerced, problem = _coerce(SETTINGS_BY_KEY[key], value)
+        if problem is None:
+            _cache[key] = coerced
     _cache_stamp = stamp
     return _cache
 
@@ -490,9 +528,21 @@ def values() -> dict[str, Any]:
     return resolved
 
 
+def stored_values() -> dict[str, Any]:
+    """
+    Resolved values ignoring any preview in flight.
+
+    Validation and saving must both reason about what is actually persisted:
+    deciding a cross-field rule, or a from-value for the audit trail, against a
+    candidate configuration would be quietly wrong.
+    """
+    overrides = _read_overrides()
+    return {key: overrides.get(key, default) for key, default in DEFAULTS.items()}
+
+
 def modified_keys() -> list[str]:
     """Which settings differ from their shipped default, in schema order."""
-    current = values()
+    current = stored_values()
     return [k for k in DEFAULTS if current[k] != DEFAULTS[k]]
 
 
@@ -513,8 +563,14 @@ def _coerce(spec: dict[str, Any], raw: Any) -> tuple[Any, str | None]:
             return None, f"{label} must be a number."
         try:
             value = int(raw) if kind == "int" else float(raw)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return None, f"“{raw}” is not a number."
+        # NaN compares False to every bound, so it slips through a range check
+        # unnoticed — and json.dumps then writes a bare `NaN`, which is not JSON
+        # and which poisons every later read. Infinity fails the bounds honestly;
+        # NaN has to be named.
+        if not math.isfinite(value):
+            return None, f"{label} must be an ordinary number."
         low, high = spec["min"], spec["max"]
         if value < low or value > high:
             unit = spec.get("unit", "")
@@ -578,7 +634,7 @@ def validate(patch: dict[str, Any]) -> tuple[dict[str, Any], dict[str, str]]:
     # ── Cross-field rules ────────────────────────────────────────────────────
     # Checked against the merged result, not the patch, so changing one half of
     # a pair is caught against the stored other half.
-    merged = {**values(), **cleaned}
+    merged = {**stored_values(), **cleaned}
 
     # The confidence ceiling sits above the threshold at which a verdict becomes
     # "malicious" (0.85 in detection_fusion). Set it lower and no incident can
@@ -629,9 +685,14 @@ def _append_audit(changes: list[dict[str, Any]], actor: str) -> None:
     except (OSError, json.JSONDecodeError):
         history = []
 
-    history.insert(0, {"at": _now(), "actor": actor, "changes": changes})
-    with contextlib.suppress(OSError):
-        AUDIT_PATH.write_text(json.dumps(history[:AUDIT_LIMIT], indent=2), encoding="utf-8")
+    history.insert(0, {"at": _now(), "actor": str(actor)[:120], "changes": changes})
+    with contextlib.suppress(OSError, ValueError):
+        # allow_nan=False so a non-finite value can never be written as the bare
+        # `NaN` token, which json.loads accepts on the way back in and which
+        # therefore survives every attempt to clear it.
+        AUDIT_PATH.write_text(
+            json.dumps(history[:AUDIT_LIMIT], indent=2, allow_nan=False), encoding="utf-8"
+        )
 
 
 def save(patch: dict[str, Any], actor: str = "console") -> dict[str, Any]:
@@ -645,7 +706,10 @@ def save(patch: dict[str, Any], actor: str = "console") -> dict[str, Any]:
     if errors:
         raise ValueError(json.dumps(errors))
 
-    before = values()
+    # Read past any preview in flight. A save that measured "what changed"
+    # against a candidate configuration would record the wrong before-value, and
+    # could drop a genuine change as a no-op.
+    before = stored_values()
     overrides = dict(_read_overrides())
 
     changes = []
@@ -667,11 +731,19 @@ def save(patch: dict[str, Any], actor: str = "console") -> dict[str, Any]:
         "updated_by": actor,
         "values": overrides,
     }
-    # Written via a temporary file and replaced atomically: a crash mid-write
-    # must not leave a half-parsed config that silently reverts to defaults.
-    tmp = CONFIG_PATH.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    os.replace(tmp, CONFIG_PATH)
+    # Written via a temporary file and replaced atomically: a crash mid-write must
+    # not leave a half-parsed config that silently reverts to defaults. The temp
+    # name carries the pid, because a single shared name means two concurrent
+    # saves race on the same file and the atomicity is lost exactly when it is
+    # needed.
+    tmp = CONFIG_PATH.with_name(f"{CONFIG_PATH.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
+        os.replace(tmp, CONFIG_PATH)
+    except (OSError, ValueError):
+        with contextlib.suppress(OSError):
+            tmp.unlink()
+        raise
     invalidate()
 
     _append_audit(changes, actor)
@@ -680,7 +752,7 @@ def save(patch: dict[str, Any], actor: str = "console") -> dict[str, Any]:
 
 def reset(actor: str = "console") -> dict[str, Any]:
     """Return every setting to its shipped default."""
-    before = values()
+    before = stored_values()
     changes = [
         {"key": k, "label": SETTINGS_BY_KEY[k]["label"], "from": before[k], "to": DEFAULTS[k]}
         for k in modified_keys()
@@ -697,11 +769,24 @@ def reset(actor: str = "console") -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def audit() -> list[dict[str, Any]]:
+    """
+    The change history, or nothing if it is unusable.
+
+    Deliberately defensive: status() embeds this, so a single unreadable entry
+    here used to 500 the whole settings console — including the reset endpoint
+    that was the way out. The recovery path must never depend on the audit log
+    being well-formed.
+    """
     try:
         history = json.loads(AUDIT_PATH.read_text(encoding="utf-8"))
-        return history if isinstance(history, list) else []
-    except (OSError, json.JSONDecodeError):
+    except (OSError, ValueError):
         return []
+    if not isinstance(history, list):
+        return []
+    return [
+        entry for entry in history
+        if isinstance(entry, dict) and isinstance(entry.get("changes"), list)
+    ]
 
 
 def _display_path() -> str:
@@ -721,11 +806,14 @@ def status() -> dict[str, Any]:
     updated_at = None
     updated_by = None
     if CONFIG_PATH.exists():
-        try:
-            raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        raw = _parse_stored()
+        if raw and isinstance(raw.get("values", {}), dict):
             updated_at = raw.get("updated_at")
             updated_by = raw.get("updated_by")
-        except (OSError, json.JSONDecodeError):
+        else:
+            # A file that exists but yields nothing usable. Reported rather than
+            # hidden, so the console can warn instead of quietly showing defaults
+            # as though they were chosen.
             stored_ok = False
 
     modified = modified_keys()
@@ -743,6 +831,7 @@ def status() -> dict[str, Any]:
                 "default": s["default"],
                 "min": s.get("min"),
                 "max": s.get("max"),
+                "step": s.get("step"),
                 "unit": s.get("unit"),
                 "options": [list(o) for o in s.get("options", [])] or None,
                 "min_selected": s.get("min_selected"),

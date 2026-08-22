@@ -21,8 +21,15 @@ ACTION_PATTERNS = {
     "lateral_movement":   ("lateral_movement",             "Internal host-to-host movement outside normal access paths"),
     "credential_abuse":   ("credential_abuse",             "Credential use inconsistent with the established baseline"),
     "credential_access":  ("credential_abuse",             "Credential access attempt observed"),
-    "failed_login":       ("brute_force_attempt",          "Failed authentication attempt against exposed service"),
-    "login_failure":      ("brute_force_attempt",          "Failed authentication attempt against exposed service"),
+    # "failed_login" and "login_failure" deliberately do NOT appear here.
+    #
+    # Brute force is a count, not an event: one failed login is a typo. Mapping
+    # the single-record action straight onto brute_force_attempt made the
+    # configured "failed logins before we call it an attack" threshold
+    # unreachable — the pattern was already set before the count was consulted,
+    # so a bank raising it from 3 to 50 saw no change at all. The count rule
+    # below is now the only route to this pattern, apart from a collector that
+    # explicitly says brute force.
     "brute_force":        ("brute_force_attempt",          "Repeated authentication failures consistent with credential guessing"),
     "web_attack":         ("web_attack",                   "Request pattern consistent with web application attack"),
     "suspicious_request": ("suspicious_web_access",        "Request to a sensitive or unexpected endpoint"),
@@ -70,6 +77,7 @@ def map_threat_patterns(event: dict) -> dict:
     reasons = []
     patterns = []
 
+    statistical = event.get("pattern_features", {}) or {}
     failed_logins = safe_float(behavioral.get("failed_login_count", 0))
     off_hours = as_bool(temporal.get("is_off_hours"))
     rare_source = as_bool(behavioral.get("rare_source_ip"))
@@ -79,7 +87,6 @@ def map_threat_patterns(event: dict) -> dict:
     normalized_action = action.replace("-", "").replace(" ", "").replace("_", "")
 
     is_signin = as_bool(identity.get("is_signin_activity"))
-    is_failed = as_bool(identity.get("is_failed_login"))
     is_risky_signin = as_bool(identity.get("is_risky_signin"))
     is_new_ip_for_user = as_bool(behavioral.get("is_new_ip_for_user"))
     is_new_user = as_bool(behavioral.get("is_new_user"))
@@ -96,9 +103,18 @@ def map_threat_patterns(event: dict) -> dict:
     # log has to be an auth log *and* describe a login before these rules apply.
     is_login_action = any(x in normalized_action for x in ("login", "signin"))
     if is_signin or (log_type == "auth" and is_login_action):
-        if failed_logins >= soc_config.get_int("detection.brute_force_attempts") or is_failed:
+        # Count only. This used to read `>= threshold or is_failed`, which made
+        # the threshold decorative: a single failed login already satisfied the
+        # second clause, so "how many failures is an attack" could not answer
+        # anything. One mistyped password is not an attack at any setting.
+        threshold = soc_config.get_int("detection.brute_force_attempts")
+        if failed_logins >= threshold:
             patterns.append("brute_force_attempt")
-            append_reason(reasons, "Multiple authentication attempts observed")
+            append_reason(
+                reasons,
+                f"{int(failed_logins)} failed authentication attempts "
+                f"(threshold {threshold})",
+            )
 
         if is_new_ip_for_user or rare_source:
             patterns.append("suspicious_login_behavior")
@@ -113,6 +129,23 @@ def map_threat_patterns(event: dict) -> dict:
 
         if off_hours:
             append_reason(reasons, "Authentication during off-hours")
+
+    # ── Statistical detections from Layer 1 ──────────────────────────────────
+    # These are the only route to a verdict when a log carries no action label,
+    # which is the normal case for real network telemetry. The flags were computed
+    # and then read by nothing, so the thresholds behind them — including the
+    # configurable outbound/inbound ratio — governed nothing at all.
+    if as_bool(statistical.get("exfiltration_detected")):
+        patterns.append("data_exfiltration")
+        append_reason(reasons, "Outbound volume far exceeds inbound for this source")
+
+    if as_bool(statistical.get("port_scan_detected")):
+        patterns.append("port_scan")
+        append_reason(reasons, "Many distinct ports contacted from one source")
+
+    if as_bool(statistical.get("lateral_movement_detected")):
+        patterns.append("lateral_movement")
+        append_reason(reasons, "One source reaching an unusual number of internal hosts")
 
     # ── Web request payload analysis ─────────────────────────────────────────
     if url:

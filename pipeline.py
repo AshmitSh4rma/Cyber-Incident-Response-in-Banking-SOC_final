@@ -17,6 +17,7 @@ assigns, otherwise the campaign's member ids would not match any incident the
 dashboard can open.
 """
 
+import contextlib
 import time
 from datetime import UTC, datetime
 from typing import Any
@@ -56,6 +57,45 @@ _STATEFUL_STORES = [
     ("layer_1_feature_engineering.engine_6_iot.device_profiler", "_device_store"),
     ("layer_1_feature_engineering.engine_6_iot.telemetry_analyzer", "_telemetry_store"),
 ]
+
+
+@contextlib.contextmanager
+def isolated_state():
+    """
+    Run with a clean Layer 1, then put the process back as it was.
+
+    `reset_state()` on its own is destructive: the settings screen's "preview the
+    effect" button would clear the running system's accumulated baselines and rate
+    history, so the very next real upload was scored against nothing. The button
+    is presented as consequence-free, and it has to be.
+
+    A shallow copy per store is enough — the engines mutate the containers, not
+    the values inside them.
+    """
+    import importlib
+
+    saved: list[tuple[Any, Any]] = []
+    for module_name, attr in _STATEFUL_STORES:
+        try:
+            store = getattr(importlib.import_module(module_name), attr)
+        except (ImportError, AttributeError):
+            continue
+        saved.append((store, store.copy() if hasattr(store, "copy") else None))
+
+    reset_state()
+    try:
+        yield
+    finally:
+        for store, snapshot in saved:
+            if snapshot is None:
+                continue
+            store.clear()
+            # deque has extend; dict has update. Both restore in place, which is
+            # what matters — the engines closed over these objects at import.
+            if hasattr(store, "update"):
+                store.update(snapshot)
+            else:
+                store.extend(snapshot)
 
 
 def reset_state() -> int:

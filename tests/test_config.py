@@ -52,6 +52,20 @@ def test_every_setting_is_renderable_without_reading_the_source():
         if spec["type"] in ("int", "float"):
             assert spec["min"] < spec["max"]
             assert spec["min"] <= spec["default"] <= spec["max"]
+            # The slider granularity is declared here rather than derived in the
+            # console, and it has to let an operator reach both the shipped
+            # default and the advertised maximum. A derived step did neither.
+            step = spec["step"]
+            assert step > 0, spec["key"]
+            span = spec["max"] - spec["min"]
+            reach = round(span / step, 6)
+            assert abs(reach - round(reach)) < 1e-6, (
+                f"{spec['key']}: max {spec['max']} is unreachable in steps of {step}"
+            )
+            to_default = round((spec["default"] - spec["min"]) / step, 6)
+            assert abs(to_default - round(to_default)) < 1e-6, (
+                f"{spec['key']}: default {spec['default']} is off the {step} grid"
+            )
         if spec["type"] in ("choice", "multi"):
             allowed = [o[0] for o in spec["options"]]
             assert allowed, f"{spec['key']} has no options"
@@ -499,6 +513,97 @@ def test_the_blast_radius_limit_reaches_the_approval_gate():
     assert not any(s["blast_radius"] == "multi-host" for s in disruptive_steps())
 
 
+def test_the_blast_radius_limit_changes_a_decision_not_just_a_label():
+    """
+    The first version gated on `disruptive`, which every later branch already
+    held for approval — so the limit could only ever relabel an action that was
+    being held anyway, and the narrow-but-wide-reaching case it most needs to
+    cover was never reached at all. Blocking an address across a whole campaign
+    is not disruptive by the verb test, and is exactly what should be asked about.
+    """
+    from layer_6_response.response_orchestrator import _classify_containment
+
+    step = "Block the source IP at the edge firewall."
+
+    def decision(limit, scope):
+        soc_config.save({"response.gate_above_hosts": limit})
+        return _classify_containment(step, "web-01", "user", scope)["execution"]
+
+    assert decision(1, 1) == "auto", "one host is never over a limit of one"
+    assert decision(1, 40) == "requires_approval", "forty hosts must be asked about"
+    assert decision(100, 40) == "auto", "raising the limit must authorise it again"
+
+
+def test_observational_actions_are_never_gated_on_scope():
+    """Looking something up has no blast radius, however many hosts are involved."""
+    from layer_6_response.response_orchestrator import _classify_containment
+
+    soc_config.save({"response.gate_above_hosts": 1})
+    for step in ("Enrich with threat intelligence.", "Notify the on-call analyst."):
+        assert _classify_containment(step, "web-01", "user", 500)["execution"] == "auto"
+
+
+def test_the_failed_login_threshold_governs_the_brute_force_verdict():
+    """
+    Two separate bypasses made the console's first control inert: `or is_failed`
+    in the count rule, and an ACTION_PATTERNS row mapping the single-record
+    action "failed_login" straight onto brute_force_attempt before any count was
+    consulted. One mistyped password is not an attack at any setting.
+    """
+    from layer_2_detection.engine_2_threat_analysis.pattern_mapper import (
+        map_threat_patterns,
+    )
+
+    def is_attack(failures):
+        event = {
+            "log_type": "auth",
+            "action": "failed_login",
+            "behavioral_features": {"failed_login_count": failures},
+            "identity_features": {"is_signin_activity": True},
+        }
+        return "brute_force_attempt" in map_threat_patterns(event)["matched_patterns"]
+
+    assert not is_attack(1), "a single failed login is a typo, not an attack"
+    assert is_attack(3), "the default threshold is three"
+
+    soc_config.save({"detection.brute_force_attempts": 25})
+    assert not is_attack(10), "raising the threshold must suppress smaller bursts"
+    assert is_attack(30)
+
+
+def test_password_spraying_is_still_seen_after_the_threshold_fix():
+    """
+    Failure counts exist per user and per source. Reading the per-user one first
+    defeats spraying — one attempt against each of seven accounts looks like seven
+    single failures — so the widest view has to win.
+    """
+    from layer_2_detection.layer1_adapter import adapt_layer1_event
+
+    sprayed = adapt_layer1_event({
+        "behavioral_features": {"failed_login_count": 1},
+        "user_profile": {"failed_login_count": 1},
+        "pattern_features": {"failed_login_count": 7},
+    })
+    assert sprayed["behavioral_features"]["failed_login_count"] == 7
+
+
+def test_the_exfiltration_ratio_governs_a_verdict():
+    """
+    The statistical exfiltration flag was computed and read by nothing, so the
+    ratio setting behind it governed nothing at all.
+    """
+    from layer_2_detection.engine_2_threat_analysis.pattern_mapper import (
+        map_threat_patterns,
+    )
+
+    event = {
+        "log_type": "network",
+        "action": "",
+        "pattern_features": {"exfiltration_detected": True},
+    }
+    assert "data_exfiltration" in map_threat_patterns(event)["matched_patterns"]
+
+
 def test_a_single_alert_is_never_treated_as_a_wide_action():
     """An incident with no campaign is one host, not zero and not many."""
     event = {
@@ -509,3 +614,148 @@ def test_a_single_alert_is_never_treated_as_a_wide_action():
     }
     plan = run_response(event)["containment_plan"]
     assert not any(s["blast_radius"] == "multi-host" for s in plan)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Survivability
+#
+# Every case here was found by adversarial review of the first version, and every
+# one of them took the whole settings console out of service with a 500 that its
+# own reset endpoint could not clear. A configuration file is the last thing that
+# should be able to stop a SOC pipeline.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("bad", ["nan", "NaN", "-nan", "inf", "-inf", "Infinity", 1e400])
+def test_non_finite_numbers_are_refused(bad):
+    """
+    NaN compares False to every bound, so it passed the range check, was written
+    as the bare `NaN` token — which is not JSON — and then poisoned every read.
+    """
+    for key in ("model.manual_minutes_per_alert", "detection.exfil_ratio",
+                "detection.brute_force_attempts"):
+        _, errors = soc_config.validate({key: bad})
+        assert key in errors, f"{key} accepted {bad!r}"
+
+
+def test_a_non_finite_value_can_never_be_written():
+    """Belt and braces: even if validation were bypassed, the file stays JSON."""
+    with pytest.raises(ValueError):
+        soc_config.save({"model.manual_minutes_per_alert": float("nan")})
+    assert not soc_config.CONFIG_PATH.exists()
+
+
+@pytest.mark.parametrize("content", [
+    "null", "[]", '"a string"', "42", "true",
+    '{"values": null}', '{"values": []}', '{"values": "nope"}',
+    "{ truncated", "", "   ",
+])
+def test_no_stored_file_shape_can_break_the_pipeline_or_the_console(content):
+    soc_config.CONFIG_PATH.write_text(content)
+    soc_config.invalidate()
+    # Both must survive: the pipeline reads get(), the console reads status().
+    assert soc_config.get("detection.brute_force_attempts") == 3
+    assert soc_config.status()["values"]["detection.brute_force_attempts"] == 3
+
+
+def test_invalid_utf8_in_the_stored_file_does_not_raise():
+    soc_config.CONFIG_PATH.write_bytes(b'{"values": {"reporting.min_severity": "low"}}\xff\xfe')
+    soc_config.invalidate()
+    assert soc_config.get("reporting.min_severity") == "high"
+    assert soc_config.status()["stored_file_readable"] is False
+
+
+def test_a_hand_edited_file_cannot_bypass_validation():
+    """
+    The file is the feature's own storage format, so someone will open it. A value
+    of the wrong type must be ignored, not obeyed — otherwise the file is a way
+    around every bound and cross-field rule the API enforces.
+    """
+    soc_config.CONFIG_PATH.write_text(json.dumps({"values": {
+        "detection.brute_force_attempts": "lots",     # wrong type
+        "detection.brute_force_attempts_typo": 5,     # unknown key
+        "reporting.min_severity": "nonsense",         # not an option
+        "detection.exfil_ratio": 9_000_000,           # out of range
+        "model.manual_minutes_per_alert": 30.0,       # legitimate
+    }}))
+    soc_config.invalidate()
+    assert soc_config.get("detection.brute_force_attempts") == 3
+    assert soc_config.get("reporting.min_severity") == "high"
+    assert soc_config.get("detection.exfil_ratio") == 10.0
+    assert soc_config.get("model.manual_minutes_per_alert") == 30.0
+
+
+@pytest.mark.parametrize("content", [
+    "null", '"x"', "{}", '[{"changes": null}]', '["junk"]', "{ truncated",
+])
+def test_a_broken_audit_log_cannot_brick_the_console(content):
+    """
+    status() embeds the audit log, so an unreadable entry used to 500 every
+    endpoint — including the reset that was the only way out.
+    """
+    soc_config.AUDIT_PATH.write_text(content)
+    assert isinstance(soc_config.status()["audit"], list)
+
+
+def test_reset_recovers_from_an_unusable_stored_file():
+    soc_config.CONFIG_PATH.write_text("{ not json at all")
+    soc_config.AUDIT_PATH.write_text("also not json")
+    soc_config.invalidate()
+    soc_config.reset()
+    assert soc_config.status()["is_default"] is True
+    assert soc_config.status()["stored_file_readable"] is True
+
+
+def test_concurrent_saves_do_not_share_a_temp_file():
+    """
+    A single shared temp name loses the atomicity the write is built around: two
+    saves in flight race on one path and the file can end up empty.
+    """
+    import os
+    assert str(os.getpid()) in soc_config.CONFIG_PATH.with_name(
+        f"{soc_config.CONFIG_PATH.name}.{os.getpid()}.tmp"
+    ).name
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The preview overlay must not leak into decisions
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_save_during_a_preview_records_the_stored_before_value():
+    """
+    save() used to read through the preview overlay, so a write overlapping a
+    preview would record the candidate as the previous value and could drop a
+    real change as a no-op.
+    """
+    with soc_config.previewing({"detection.brute_force_attempts": 40}):
+        result = soc_config.save({"detection.brute_force_attempts": 9})
+    assert result["changes"][0]["from"] == 3, "the from-value must be what was stored"
+    assert soc_config.get("detection.brute_force_attempts") == 9
+
+
+def test_cross_field_rules_ignore_a_preview_in_flight():
+    soc_config.save({"model.manual_minutes_per_alert": 20.0})
+    with soc_config.previewing({"model.manual_minutes_per_alert": 2.0}):
+        # Judged against the stored 20.0, not the previewed 2.0.
+        _, errors = soc_config.validate({"model.review_minutes_per_incident": 10.0})
+    assert not errors
+
+
+def test_a_preview_leaves_layer_one_state_untouched():
+    """
+    "Preview the effect" is presented as consequence-free. It reruns the pipeline,
+    which mutates Layer 1's per-source history, so without isolation a read-only
+    what-if silently changed how the next real upload would be scored.
+    """
+    import pipeline
+    from layer_1_feature_engineering.engine_3_statistical import pattern_detector
+
+    pipeline.reset_state()
+    pattern_detector._pattern_store["10.0.0.9"]["unique_ports_seen"] = {22, 443}
+    before = {k: dict(v) for k, v in pattern_detector._pattern_store.items()}
+
+    with pipeline.isolated_state():
+        assert pattern_detector._pattern_store == {}, "the isolated run must start cold"
+        pattern_detector._pattern_store["1.2.3.4"]["unique_ports_seen"] = {80}
+
+    assert set(pattern_detector._pattern_store) == set(before)
+    assert pattern_detector._pattern_store["10.0.0.9"]["unique_ports_seen"] == {22, 443}

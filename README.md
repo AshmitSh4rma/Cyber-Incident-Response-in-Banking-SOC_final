@@ -178,14 +178,20 @@ candidate applied — and returns both outcomes and their difference. Nothing is
 saved.
 
 ```
-Withhold automatic IP blocking      actions_automatic        39 -> 19
-                                    actions_needing_approval 21 -> 41
-Only CERT-In applies to us          notification_deadlines    8 -> 2
-Analyst triage 15 -> 25 minutes     hours_saved             6.0 -> 10.2
-Port scans are critical, not medium severity spread  medium 6 · high 12 · critical 3
-                                                  -> critical 9 · high 12
-Compromise gate at Reconnaissance   campaigns                 3 -> 2
+Withhold automatic IP blocking       actions_automatic         31 -> 17
+                                     actions_needing_approval  25 -> 39
+Only CERT-In applies to us           notification_deadlines     8 -> 2
+Analyst triage 15 -> 25 minutes      hours_saved              6.0 -> 10.2
+Failed-login threshold 3 -> 25       severity  medium 8 · high 10 -> medium 12 · high 6
+Tighten the exfiltration ratio to 5  actionable                21 -> 22
+                                     (a customer downloading their own statement
+                                      becomes a critical exfiltration alert)
+Compromise gate at Reconnaissance    campaigns                  3 -> 2
+                                     investigations             4 -> 3
 ```
+
+A setting that changes only what the console shows says so instead of running the
+pipeline and reporting no difference, which would read as the control being inert.
 
 Layer 1 accumulates per-source history in module state, so `pipeline.reset_state()`
 runs before each of the two comparison runs. Without it the second inherits the
@@ -222,7 +228,7 @@ incidents in place instead of duplicating them.
 ### Tests
 
 ```bash
-pytest -q        # 136 tests
+pytest -q        # 177 tests
 ```
 
 ### Optional: local LLM for Layer 4
@@ -350,7 +356,7 @@ Measured on the shipped scenario:
 | | |
 | --- | --- |
 | Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
-| Test suite | **136 / 136** |
+| Test suite | **177 / 177** |
 | CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |

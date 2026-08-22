@@ -6,14 +6,14 @@
     "actionable": 21,
     "severity": {
       "critical": 3,
-      "high": 12,
-      "medium": 6,
+      "high": 10,
+      "medium": 8,
       "low": 0
     },
     "severity_all": {
       "critical": 3,
-      "high": 12,
-      "medium": 6,
+      "high": 10,
+      "medium": 8,
       "low": 4
     }
   },
@@ -34,7 +34,7 @@
     "cvss_scored_pct": 100
   },
   "time": {
-    "pipeline_seconds": 0.08,
+    "pipeline_seconds": 0.07,
     "manual_baseline_minutes": 375,
     "assisted_minutes": 16,
     "minutes_saved": 359,
@@ -52,10 +52,10 @@
     "alerts_suppressed": 0
   },
   "response": {
-    "gated_actions": 21,
-    "auto_executable_actions": 39,
-    "incidents_needing_approval": 13,
-    "auto_share_pct": 65
+    "gated_actions": 25,
+    "auto_executable_actions": 31,
+    "incidents_needing_approval": 15,
+    "auto_share_pct": 55
   },
   "worst_campaign": {
     "campaign_id": "CMP-003",
