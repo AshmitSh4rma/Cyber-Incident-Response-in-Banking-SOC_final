@@ -26,3 +26,6 @@ layer3_output.json
 # the shipped defaults in soc_config.py until someone changes something.
 soc_config.json
 soc_config_audit.json
+
+# Local process logs from scripts/dev_stack.sh
+.dev-logs/
