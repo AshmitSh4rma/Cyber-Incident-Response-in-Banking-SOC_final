@@ -68,11 +68,9 @@ def main() -> int:
 
     # Persist. The database is the source of truth the API serves from; the JSON
     # copies are the static fallback the dashboard can read with no backend.
-    from db_manager import replace_campaigns, save_incident
+    from db_manager import persist_pipeline_results
 
-    for event in events:
-        save_incident(event)
-    replace_campaigns(campaigns)
+    persist_pipeline_results(events, campaigns)
 
     _write_json(BASE_DIR / "frontend_output.json", output)
     _write_json(BASE_DIR / "Frontend" / "public" / "frontend_output.json", output)
@@ -108,7 +106,7 @@ def main() -> int:
         print(f"  {stage:22s} {secs}")
     print()
     print("Wrote frontend_output.json, Frontend/public/frontend_output.json,")
-    print("      Frontend/public/soc_metrics.json, soc_incidents.db")
+    print("      Frontend/public/soc_metrics.json, and the configured database")
     return 0
 
 

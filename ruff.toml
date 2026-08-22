@@ -33,8 +33,12 @@ ignore = [
 
 [lint.per-file-ignores]
 # Tests assert on literals and build fixtures inline; the usual guidance about
-# magic values and long expressions does not help there.
-"tests/*" = ["ARG", "SIM"]
+# magic values and long expressions does not help there. In particular a stub or
+# a monkeypatched lambda has to match a signature whose arguments it ignores.
+#
+# The glob is "**/tests/*" rather than "tests/*" so this applies to every test
+# directory in the tree, not only the top-level one.
+"**/tests/*" = ["ARG", "SIM"]
 
 [lint.isort]
 known-first-party = [
