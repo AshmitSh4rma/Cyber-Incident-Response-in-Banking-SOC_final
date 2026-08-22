@@ -5,11 +5,17 @@ import Link from "next/link";
 import { ArrowRight, GitBranch, KeyRound, Server, Users } from "lucide-react";
 
 import {
+  Block,
   EmptyState,
   KillChainMeter,
   PlainEnglish,
+  Screen,
   SeverityChip,
+  Skeleton,
 } from "@/components/soc/primitives";
+import { useDetail } from "@/lib/detail";
+import { riseIn } from "@/lib/motion";
+import { motion } from "framer-motion";
 import { formatTimestamp, severityTone } from "@/lib/severity";
 
 type Campaign = {
@@ -33,6 +39,7 @@ type Campaign = {
 };
 
 export default function CampaignsPage() {
+  const { isAnalyst } = useDetail();
   const [campaigns, setCampaigns] = useState<Campaign[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,19 +61,19 @@ export default function CampaignsPage() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
-      <header className="space-y-3">
-        <p className="eyebrow">Campaign correlation</p>
+    <Screen>
+      <Block className="space-y-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Attacks</p>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          One intrusion, many alerts
+          One attack, many alerts
         </h1>
         <PlainEnglish>
-          Alerts arrive one at a time; an intruder does not. A campaign is a set of
-          alerts that turned out to describe the same attacker moving through the
+          Alerts arrive one at a time; an attacker does not. Each card below is a set
+          of separate alerts that turned out to be the same person moving through the
           network — including the step most tools miss, where a machine that was
           attacked becomes the source of the next alert.
         </PlainEnglish>
-      </header>
+      </Block>
 
       {error ? (
         <EmptyState
@@ -79,7 +86,7 @@ export default function CampaignsPage() {
       {!campaigns && !error ? (
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-44 animate-pulse rounded-md border border-rule bg-surface" />
+            <Skeleton key={i} className="h-44" />
           ))}
         </div>
       ) : null}
@@ -96,10 +103,10 @@ export default function CampaignsPage() {
         {campaigns?.map((c) => {
           const tone = severityTone(c.severity);
           return (
+            <motion.div key={c.campaign_id} variants={riseIn}>
             <Link
-              key={c.campaign_id}
               href={`/campaigns/${c.campaign_id}`}
-              className={`group relative block overflow-hidden rounded-md border ${tone.border} bg-surface transition hover:bg-raised/40`}
+              className={`group relative block overflow-hidden rounded-lg border ${tone.border} bg-surface transition hover:-translate-y-0.5 hover:bg-raised/40 hover:shadow-lg`}
             >
               <span className={`absolute left-0 top-0 h-full w-0.5 ${tone.mark}`} aria-hidden />
 
@@ -108,18 +115,18 @@ export default function CampaignsPage() {
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <SeverityChip value={c.severity} />
-                      <span className="mono text-[10px] text-faint">{c.campaign_id}</span>
+                      {isAnalyst ? <span className="mono text-[10px] text-faint">{c.campaign_id}</span> : null}
                       {c.escalated ? (
                         <span
                           className="rounded border border-sev-high/35 bg-sev-high/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sev-high"
                           title={`Individual alerts peaked at ${c.member_max_severity}; raised because the chain spans ${c.stages_reached} stages`}
                         >
-                          escalated
+                          worse together
                         </span>
                       ) : null}
                       {c.notification?.reportable ? (
                         <span className="rounded border border-sev-critical/35 bg-sev-critical/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sev-critical">
-                          reportable
+                          must be reported
                         </span>
                       ) : null}
                     </div>
@@ -190,9 +197,10 @@ export default function CampaignsPage() {
                 </div>
               </div>
             </Link>
+            </motion.div>
           );
         })}
       </div>
-    </div>
+    </Screen>
   );
 }

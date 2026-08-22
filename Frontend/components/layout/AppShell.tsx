@@ -1,20 +1,23 @@
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
+import { DetailProvider } from "@/lib/detail";
 
 /**
- * Application frame: persistent left navigation, a context bar, and the page.
+ * Application frame: persistent navigation, a context bar, and the page.
  *
- * Previously this also carried a splash screen behind a `showEntry` flag that was
- * hardcoded to false — a branch that could never run. Gone.
+ * DetailProvider sits here so the overview/analyst choice is one setting for the
+ * whole console rather than per screen.
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+    <DetailProvider>
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar />
+          <main className="flex-1 p-4 md:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </DetailProvider>
   );
 }

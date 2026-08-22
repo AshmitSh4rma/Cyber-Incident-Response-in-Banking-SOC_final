@@ -292,6 +292,12 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 22 on 10.30.4.22.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -302,7 +308,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 22 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: port scan.",
+        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 22 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -348,7 +354,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 22 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: port scan.",
+        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 22 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -710,6 +716,10 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 80 on 10.30.4.22.",
+        "signals": [
+          "off hours activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -720,7 +730,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 80 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 80 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -766,7 +776,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 80 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 80 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -1126,6 +1136,10 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 443 on 10.30.4.22.",
+        "signals": [
+          "off hours activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -1136,7 +1150,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 443 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 443 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -1182,7 +1196,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 443 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 443 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -1542,6 +1556,10 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 3389 on 10.30.4.22.",
+        "signals": [
+          "off hours activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -1552,7 +1570,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 3389 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "narrative": "The source 10.99.0.5 appears to be performing reconnaissance by probing 3389 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -1598,7 +1616,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 3389 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "analyst_notes": "The source 10.99.0.5 appears to be performing reconnaissance by probing 3389 on 10.30.4.22. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -1966,6 +1984,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -1976,7 +2000,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: root.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account root was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -2030,7 +2054,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: root.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account root was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -2403,6 +2427,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -2413,7 +2443,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: admin.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account admin was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -2467,7 +2497,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: admin.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account admin was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -2840,6 +2870,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -2850,7 +2886,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: oracle.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account oracle was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -2904,7 +2940,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: oracle.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account oracle was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -3277,6 +3313,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -3287,7 +3329,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: jenkins.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account jenkins was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -3341,7 +3383,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: jenkins.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account jenkins was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -3714,6 +3756,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -3724,7 +3772,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: deploy.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account deploy was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -3778,7 +3826,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: deploy.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account deploy was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -4151,6 +4199,12 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: failed login"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -4161,7 +4215,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: postgres.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account postgres was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -4215,7 +4269,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: failed login. Potentially affected user: postgres.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'brute_force_attempt' with severity 'high'. The account postgres was involved.",
         "playbook": "brute_force_attempt",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'brute force attempt' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -4587,6 +4641,10 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
+        "signals": [
+          "off hours activity",
+          "observed action: credential abuse"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -4597,7 +4655,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'credential_abuse' with severity 'high'. Observed anomaly indicators: off_hours_activity. Observed action: credential abuse. Potentially affected user: deploy.",
+        "narrative": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'credential_abuse' with severity 'high'. The account deploy was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -4651,7 +4709,7 @@
         "auto_executable": 0,
         "awaiting_approval": 3,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'credential_abuse' with severity 'high'. Observed anomaly indicators: off_hours_activity. Observed action: credential abuse. Potentially affected user: deploy.",
+        "analyst_notes": "A potentially suspicious event was observed from 45.128.62.19 affecting ssh-bastion-01. The event was classified as 'credential_abuse' with severity 'high'. The account deploy was involved.",
         "playbook": "credential_abuse",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'credential abuse' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -4950,6 +5008,12 @@
       "ai_analysis": {
         "intent": "Suspicious Web Request",
         "summary": "Suspicious web request from 10.50.1.88 targeted /retail/accounts/summary.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: allow"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -4960,7 +5024,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "A suspicious request was sent from 10.50.1.88 to /retail/accounts/summary, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: r.mehta.",
+        "narrative": "A suspicious request was sent from 10.50.1.88 to /retail/accounts/summary, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself.  The account r.mehta was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -4998,7 +5062,7 @@
         "auto_executable": 1,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A suspicious request was sent from 10.50.1.88 to /retail/accounts/summary, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: r.mehta.",
+        "analyst_notes": "A suspicious request was sent from 10.50.1.88 to /retail/accounts/summary, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself.  The account r.mehta was involved.",
         "playbook": "generic",
         "escalation": "P2 — handle within this shift. Confirm the suspicious activity finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -5071,14 +5135,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5314,6 +5378,12 @@
       "ai_analysis": {
         "intent": "Network Suspicious Activity",
         "summary": "Suspicious network activity from 10.50.1.90 to 10.30.4.22 over tcp was detected.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: allow"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -5324,7 +5394,7 @@
           "integrity": "low",
           "availability": "low"
         },
-        "narrative": "A suspicious network event was identified involving source 10.50.1.90 and destination 10.30.4.22. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow.",
+        "narrative": "A suspicious network event was identified involving source 10.50.1.90 and destination 10.30.4.22. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -5363,7 +5433,7 @@
         "auto_executable": 1,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A suspicious network event was identified involving source 10.50.1.90 and destination 10.30.4.22. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow.",
+        "analyst_notes": "A suspicious network event was identified involving source 10.50.1.90 and destination 10.30.4.22. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. ",
         "playbook": "generic",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'suspicious activity' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -5436,14 +5506,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5744,6 +5814,12 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 203.0.113.55 targeted port 443 on 10.20.0.11.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -5754,7 +5830,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 203.0.113.55 appears to be performing reconnaissance by probing 443 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: port scan.",
+        "narrative": "The source 203.0.113.55 appears to be performing reconnaissance by probing 443 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -5800,7 +5876,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 203.0.113.55 appears to be performing reconnaissance by probing 443 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: port scan.",
+        "analyst_notes": "The source 203.0.113.55 appears to be performing reconnaissance by probing 443 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -6179,6 +6255,10 @@
       "ai_analysis": {
         "intent": "Port Scanning / Reconnaissance",
         "summary": "Reconnaissance activity from 203.0.113.55 targeted port 8080 on 10.20.0.11.",
+        "signals": [
+          "off hours activity",
+          "observed action: port scan"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -6189,7 +6269,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "The source 203.0.113.55 appears to be performing reconnaissance by probing 8080 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "narrative": "The source 203.0.113.55 appears to be performing reconnaissance by probing 8080 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -6235,7 +6315,7 @@
         "auto_executable": 2,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "The source 203.0.113.55 appears to be performing reconnaissance by probing 8080 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: port scan.",
+        "analyst_notes": "The source 203.0.113.55 appears to be performing reconnaissance by probing 8080 on 10.20.0.11. This behavior is consistent with service discovery prior to exploitation. ",
         "playbook": "port_scan",
         "escalation": "P2 — handle within this shift. Confirm the port scan finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -6586,6 +6666,10 @@
       "ai_analysis": {
         "intent": "Web Application Attack — SQL injection",
         "summary": "Sql injection attempt from 203.0.113.55 targeted /retail/login?user=admin' OR '1'='1-- on dmz-web-01.",
+        "signals": [
+          "off hours activity",
+          "observed action: web attack"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -6596,7 +6680,7 @@
           "integrity": "low",
           "availability": "none"
         },
-        "narrative": "A request from 203.0.113.55 to /retail/login?user=admin' OR '1'='1-- on dmz-web-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity. Observed action: web attack.",
+        "narrative": "A request from 203.0.113.55 to /retail/login?user=admin' OR '1'='1-- on dmz-web-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -6650,7 +6734,7 @@
         "auto_executable": 3,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A request from 203.0.113.55 to /retail/login?user=admin' OR '1'='1-- on dmz-web-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity. Observed action: web attack.",
+        "analyst_notes": "A request from 203.0.113.55 to /retail/login?user=admin' OR '1'='1-- on dmz-web-01 carries a SQL injection payload, consistent with T1190 (Exploit Public-Facing Application). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. ",
         "playbook": "web_attack",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'web attack' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -7023,6 +7107,10 @@
       "ai_analysis": {
         "intent": "Web Application Attack — webshell / file upload abuse",
         "summary": "Webshell / file upload abuse attempt from 203.0.113.55 targeted /admin/upload.php on dmz-web-01.",
+        "signals": [
+          "off hours activity",
+          "observed action: web attack"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -7033,7 +7121,7 @@
           "integrity": "low",
           "availability": "none"
         },
-        "narrative": "A request from 203.0.113.55 to /admin/upload.php on dmz-web-01 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity. Observed action: web attack.",
+        "narrative": "A request from 203.0.113.55 to /admin/upload.php on dmz-web-01 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -7087,7 +7175,7 @@
         "auto_executable": 3,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A request from 203.0.113.55 to /admin/upload.php on dmz-web-01 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity. Observed action: web attack.",
+        "analyst_notes": "A request from 203.0.113.55 to /admin/upload.php on dmz-web-01 carries a webshell / file upload abuse payload, consistent with T1505.003 (Web Shell). If the application does not validate this input server-side, the attacker could read or alter data they are not authorised to reach — which for a banking application means customer records and transaction integrity. ",
         "playbook": "web_attack",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'web attack' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -7391,6 +7479,12 @@
       "ai_analysis": {
         "intent": "Suspicious Web Request",
         "summary": "Suspicious web request from 10.50.1.91 targeted /retail/statements/download.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: allow"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -7401,7 +7495,7 @@
           "integrity": "none",
           "availability": "none"
         },
-        "narrative": "A suspicious request was sent from 10.50.1.91 to /retail/statements/download, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: s.iyer.",
+        "narrative": "A suspicious request was sent from 10.50.1.91 to /retail/statements/download, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself.  The account s.iyer was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -7439,7 +7533,7 @@
         "auto_executable": 1,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A suspicious request was sent from 10.50.1.91 to /retail/statements/download, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself. Relevant control context: Insecure Design. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: s.iyer.",
+        "analyst_notes": "A suspicious request was sent from 10.50.1.91 to /retail/statements/download, indicating possible probing of application behaviour on dmz-web-01 (consistent with T1595 (Active Scanning)). No exploit payload was identified in the request itself.  The account s.iyer was involved.",
         "playbook": "generic",
         "escalation": "P2 — handle within this shift. Confirm the suspicious activity finding is not authorised activity before escalating.",
         "cvss_basis": {
@@ -7512,14 +7606,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -7800,6 +7894,12 @@
       "ai_analysis": {
         "intent": "Command-and-Control Beaconing",
         "summary": "Possible beaconing behavior was detected between 10.20.0.11 and 185.14.22.91.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: beaconing"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -7810,7 +7910,7 @@
           "integrity": "low",
           "availability": "none"
         },
-        "narrative": "Repeated or patterned communication suggests possible beaconing activity from 10.20.0.11 toward 185.14.22.91. This may indicate malware establishing command-and-control connectivity or maintaining persistence. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: beaconing.",
+        "narrative": "Repeated or patterned communication suggests possible beaconing activity from 10.20.0.11 toward 185.14.22.91. This may indicate malware establishing command-and-control connectivity or maintaining persistence. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -7857,7 +7957,7 @@
         "auto_executable": 1,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "Repeated or patterned communication suggests possible beaconing activity from 10.20.0.11 toward 185.14.22.91. This may indicate malware establishing command-and-control connectivity or maintaining persistence. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: beaconing.",
+        "analyst_notes": "Repeated or patterned communication suggests possible beaconing activity from 10.20.0.11 toward 185.14.22.91. This may indicate malware establishing command-and-control connectivity or maintaining persistence. ",
         "playbook": "beaconing",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'beaconing' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -8233,6 +8333,12 @@
       "ai_analysis": {
         "intent": "Internal Lateral Movement",
         "summary": "Potential lateral movement from 10.20.0.11 toward core-app-02 was detected.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: lateral movement"
+        ],
         "attack_vector": "adjacent",
         "attack_complexity": "low",
         "privileges_required": "low",
@@ -8243,7 +8349,7 @@
           "integrity": "high",
           "availability": "none"
         },
-        "narrative": "The event suggests internal movement from 10.20.0.11 toward core-app-02, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: lateral movement. Potentially affected user: svc_payments.",
+        "narrative": "The event suggests internal movement from 10.20.0.11 toward core-app-02, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise.  The account svc_payments was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -8297,7 +8403,7 @@
         "auto_executable": 1,
         "awaiting_approval": 2,
         "requires_human_approval": true,
-        "analyst_notes": "The event suggests internal movement from 10.20.0.11 toward core-app-02, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Ensure 'aaa authentication ssh console' is configured correctly. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: lateral movement. Potentially affected user: svc_payments.",
+        "analyst_notes": "The event suggests internal movement from 10.20.0.11 toward core-app-02, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise.  The account svc_payments was involved.",
         "playbook": "lateral_movement",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'lateral movement' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -8660,6 +8766,11 @@
       "ai_analysis": {
         "intent": "Suspicious Activity",
         "summary": "Suspicious activity was detected from 10.30.4.22 affecting core-app-02.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "observed action: credential abuse"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -8670,7 +8781,7 @@
           "integrity": "high",
           "availability": "low"
         },
-        "narrative": "A potentially suspicious event was observed from 10.30.4.22 affecting core-app-02. The event was classified as 'credential_abuse' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip. Observed action: credential abuse. Potentially affected user: svc_payments.",
+        "narrative": "A potentially suspicious event was observed from 10.30.4.22 affecting core-app-02. The event was classified as 'credential_abuse' with severity 'high'. The account svc_payments was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -8724,7 +8835,7 @@
         "auto_executable": 0,
         "awaiting_approval": 3,
         "requires_human_approval": true,
-        "analyst_notes": "A potentially suspicious event was observed from 10.30.4.22 affecting core-app-02. The event was classified as 'credential_abuse' with severity 'high'. Observed anomaly indicators: off_hours_activity, rare_source_ip. Observed action: credential abuse. Potentially affected user: svc_payments.",
+        "analyst_notes": "A potentially suspicious event was observed from 10.30.4.22 affecting core-app-02. The event was classified as 'credential_abuse' with severity 'high'. The account svc_payments was involved.",
         "playbook": "credential_abuse",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'credential abuse' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -9041,6 +9152,12 @@
       "ai_analysis": {
         "intent": "Network Suspicious Activity",
         "summary": "Suspicious network activity from 10.50.1.92 to 10.40.9.7 over tcp was detected.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: allow"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -9051,7 +9168,7 @@
           "integrity": "low",
           "availability": "low"
         },
-        "narrative": "A suspicious network event was identified involving source 10.50.1.92 and destination 10.40.9.7. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: svc_reporting.",
+        "narrative": "A suspicious network event was identified involving source 10.50.1.92 and destination 10.40.9.7. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity.  The account svc_reporting was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -9090,7 +9207,7 @@
         "auto_executable": 1,
         "awaiting_approval": 0,
         "requires_human_approval": false,
-        "analyst_notes": "A suspicious network event was identified involving source 10.50.1.92 and destination 10.40.9.7. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: allow. Potentially affected user: svc_reporting.",
+        "analyst_notes": "A suspicious network event was identified involving source 10.50.1.92 and destination 10.40.9.7. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity.  The account svc_reporting was involved.",
         "playbook": "generic",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'suspicious activity' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -9163,14 +9280,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -9449,6 +9566,10 @@
       "ai_analysis": {
         "intent": "Internal Lateral Movement",
         "summary": "Potential lateral movement from 10.30.4.22 toward db-core-01 was detected.",
+        "signals": [
+          "off hours activity",
+          "observed action: lateral movement"
+        ],
         "attack_vector": "adjacent",
         "attack_complexity": "low",
         "privileges_required": "low",
@@ -9459,7 +9580,7 @@
           "integrity": "high",
           "availability": "none"
         },
-        "narrative": "The event suggests internal movement from 10.30.4.22 toward db-core-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: lateral movement. Potentially affected user: svc_payments.",
+        "narrative": "The event suggests internal movement from 10.30.4.22 toward db-core-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise.  The account svc_payments was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -9513,7 +9634,7 @@
         "auto_executable": 1,
         "awaiting_approval": 2,
         "requires_human_approval": true,
-        "analyst_notes": "The event suggests internal movement from 10.30.4.22 toward db-core-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. Relevant control context: Ensure 'threat-detection statistics' is set to 'tcp-intercept'. Observed anomaly indicators: off_hours_activity. Observed action: lateral movement. Potentially affected user: svc_payments.",
+        "analyst_notes": "The event suggests internal movement from 10.30.4.22 toward db-core-01, which may indicate an attacker attempting to expand access within the environment. If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise.  The account svc_payments was involved.",
         "playbook": "lateral_movement",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'lateral movement' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -9872,6 +9993,11 @@
       "ai_analysis": {
         "intent": "Network Suspicious Activity",
         "summary": "Suspicious network activity from 10.40.9.7 to 203.0.113.55 over https was detected.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "observed action: data exfiltration"
+        ],
         "attack_vector": "network",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -9882,7 +10008,7 @@
           "integrity": "high",
           "availability": "high"
         },
-        "narrative": "A suspicious network event was identified involving source 10.40.9.7 and destination 203.0.113.55. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: off_hours_activity, rare_source_ip. Observed action: data exfiltration. Potentially affected user: svc_payments.",
+        "narrative": "A suspicious network event was identified involving source 10.40.9.7 and destination 203.0.113.55. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity.  The account svc_payments was involved.",
         "source": "deterministic"
       },
       "cvss": {
@@ -9936,7 +10062,7 @@
         "auto_executable": 2,
         "awaiting_approval": 1,
         "requires_human_approval": true,
-        "analyst_notes": "A suspicious network event was identified involving source 10.40.9.7 and destination 203.0.113.55. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. Relevant control context: Ensure 'TLS 1.0' is set for HTTPS access. Observed anomaly indicators: off_hours_activity, rare_source_ip. Observed action: data exfiltration. Potentially affected user: svc_payments.",
+        "analyst_notes": "A suspicious network event was identified involving source 10.40.9.7 and destination 203.0.113.55. The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity.  The account svc_payments was involved.",
         "playbook": "data_exfiltration",
         "escalation": "P1 — escalate to SOC Tier-2 now. A critical 'data exfiltration' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -10296,6 +10422,12 @@
       "ai_analysis": {
         "intent": "IoT Device Threat Activity",
         "summary": "Suspicious IoT activity was detected involving device branch-camera-07 from source 192.0.2.45.",
+        "signals": [
+          "off hours activity",
+          "rare source ip",
+          "rare user activity",
+          "observed action: credential abuse"
+        ],
         "attack_vector": "adjacent",
         "attack_complexity": "low",
         "privileges_required": "none",
@@ -10306,7 +10438,7 @@
           "integrity": "low",
           "availability": "low"
         },
-        "narrative": "An anomalous IoT-related event was detected involving branch-camera-07. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Use Unique Passwords. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: credential abuse.",
+        "narrative": "An anomalous IoT-related event was detected involving branch-camera-07. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. ",
         "source": "deterministic"
       },
       "cvss": {
@@ -10360,7 +10492,7 @@
         "auto_executable": 0,
         "awaiting_approval": 3,
         "requires_human_approval": true,
-        "analyst_notes": "An anomalous IoT-related event was detected involving branch-camera-07. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. Relevant control context: Use Unique Passwords. Observed anomaly indicators: off_hours_activity, rare_source_ip, rare_user_activity. Observed action: credential abuse.",
+        "analyst_notes": "An anomalous IoT-related event was detected involving branch-camera-07. The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. IoT incidents are important because compromised devices can become entry points into segmented environments. ",
         "playbook": "credential_abuse",
         "escalation": "P1 — escalate to SOC Tier-2 now. A high 'credential abuse' finding requires containment within the current shift.",
         "cvss_basis": {
@@ -10443,7 +10575,7 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10451,7 +10583,7 @@
           "Activity reached Initial Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10463,7 +10595,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T09:58:46.137184+00:00",
+            "deadline": "2026-08-22T10:31:22.829419+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10477,7 +10609,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T11:58:46.137184+00:00",
+            "deadline": "2026-08-22T12:31:22.829419+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10491,7 +10623,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T17:58:46.137184+00:00",
+            "deadline": "2026-08-23T18:31:22.829419+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10505,7 +10637,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T05:58:46.137184+00:00",
+            "deadline": "2026-08-26T06:31:22.829419+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10520,7 +10652,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T09:58:46.137184+00:00",
+          "deadline": "2026-08-22T10:31:22.829419+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10638,7 +10770,7 @@
         "activity reached 10.40.9.7 at Lateral Movement, which then originated further activity"
       ],
       "narrative": "9 alerts that were raised separately describe a single sequence of activity involving 3 assets (core-app-02, db-core-01, dmz-web-01), beginning at 203.0.113.55. Observed progression: Reconnaissance -> Initial Access -> Persistence -> Lateral Movement -> Command and Control -> Exfiltration. Correlated because same source address 203.0.113.55. The chain reaches Exfiltration, meaning data may already have left the environment — treat as an active breach and start the regulatory notification clock.",
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": true,
         "confidence": "high",
@@ -10646,7 +10778,7 @@
           "Activity reached Exfiltration, so customer or transaction data may already have been accessed or moved.",
           "Severity is critical."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10658,7 +10790,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T09:58:46.137184+00:00",
+            "deadline": "2026-08-22T10:31:22.829419+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10672,7 +10804,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T11:58:46.137184+00:00",
+            "deadline": "2026-08-22T12:31:22.829419+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10686,7 +10818,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T17:58:46.137184+00:00",
+            "deadline": "2026-08-23T18:31:22.829419+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10700,7 +10832,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T05:58:46.137184+00:00",
+            "deadline": "2026-08-26T06:31:22.829419+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10715,7 +10847,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T09:58:46.137184+00:00",
+          "deadline": "2026-08-22T10:31:22.829419+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10785,7 +10917,7 @@
         "same source address 45.128.62.19"
       ],
       "narrative": "7 alerts that were raised separately describe a single sequence of activity involving ssh-bastion-01, beginning at 45.128.62.19. Observed progression: Initial Access -> Credential Access. Correlated because same source address 45.128.62.19. Credentials are being targeted directly; assume account compromise until disproven.",
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10793,7 +10925,7 @@
           "Activity reached Credential Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10805,7 +10937,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T09:58:46.137184+00:00",
+            "deadline": "2026-08-22T10:31:22.829419+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10819,7 +10951,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T11:58:46.137184+00:00",
+            "deadline": "2026-08-22T12:31:22.829419+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10833,7 +10965,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T17:58:46.137184+00:00",
+            "deadline": "2026-08-23T18:31:22.829419+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10847,7 +10979,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T05:58:46.137184+00:00",
+            "deadline": "2026-08-26T06:31:22.829419+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10862,7 +10994,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T09:58:46.137184+00:00",
+          "deadline": "2026-08-22T10:31:22.829419+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10913,14 +11045,14 @@
         "same source address 10.99.0.5"
       ],
       "narrative": "4 alerts that were raised separately describe a single sequence of activity involving core-app-02, beginning at 10.99.0.5. Observed progression: Reconnaissance. Correlated because same source address 10.99.0.5. Activity is still pre-compromise reconnaissance.",
-      "determined_at": "2026-08-22T05:58:46.137184+00:00",
+      "determined_at": "2026-08-22T06:31:22.829419+00:00",
       "notification": {
         "reportable": false,
         "confidence": "medium",
         "reasons": [
           "Activity has not progressed past reconnaissance and does not meet a materiality threshold on its own."
         ],
-        "determined_at": "2026-08-22T05:58:46.137184+00:00",
+        "determined_at": "2026-08-22T06:31:22.829419+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -10935,14 +11067,14 @@
     "worst_stage_order": 14
   },
   "timing": {
-    "layer1_features": 0.002,
-    "layer2_detection": 0.004,
-    "layer3_cis": 0.114,
-    "format": 0.003,
+    "layer1_features": 0.003,
+    "layer2_detection": 0.003,
+    "layer3_cis": 0.22,
+    "format": 0.005,
     "layer2_5_campaigns": 0.0,
-    "layer4_analysis": 0.009,
-    "layer5_cvss": 0.003,
+    "layer4_analysis": 0.01,
+    "layer5_cvss": 0.004,
     "layer6_response": 0.0,
-    "total": 0.134
+    "total": 0.245
   }
 }

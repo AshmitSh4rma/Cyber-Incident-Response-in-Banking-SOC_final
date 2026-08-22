@@ -5,14 +5,21 @@ import Link from "next/link";
 import { ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
 
 import {
+  Block,
   ClockRow,
   EmptyState,
   HeroFigure,
   PlainEnglish,
+  Reveal,
+  Screen,
   Section,
   SeverityChip,
+  Skeleton,
   type Clock,
 } from "@/components/soc/primitives";
+import { useDetail } from "@/lib/detail";
+import { riseIn } from "@/lib/motion";
+import { motion } from "framer-motion";
 import { formatRemaining, severityTone } from "@/lib/severity";
 
 type Item = {
@@ -51,6 +58,7 @@ type Regime = {
 };
 
 export default function CompliancePage() {
+  const { isAnalyst } = useDetail();
   const [payload, setPayload] = useState<Payload | null>(null);
   const [regimes, setRegimes] = useState<Regime[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -78,24 +86,24 @@ export default function CompliancePage() {
   const tightest = payload?.items?.[0]?.notification.tightest;
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
-      <header className="space-y-3">
-        <p className="eyebrow">Regulatory notification</p>
+    <Screen>
+      <Block className="space-y-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">Reporting</p>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           How long is left to report
         </h1>
         <PlainEnglish>
-          In banking, being slow to tell the regulator is a violation on its own —
-          separate from whatever the attacker did. Those deadlines start the moment an
-          incident is <em>determined</em>, which is the moment this pipeline reaches a
-          verdict. So the clocks below are already running.
+          In banking, being slow to tell the regulator is itself a breach of the rules —
+          separate from whatever the attacker did. The clock starts the moment an
+          incident is confirmed, which is the moment this system reached its verdict.
+          So the countdowns below are already running.
         </PlainEnglish>
-      </header>
+      </Block>
 
       {error ? <EmptyState title="Could not load notification state" detail={error} /> : null}
 
       {!payload && !error ? (
-        <div className="h-40 animate-pulse rounded-md border border-rule bg-surface" />
+        <Skeleton className="h-40" />
       ) : null}
 
       {payload ? (
@@ -133,7 +141,8 @@ export default function CompliancePage() {
               />
             </div>
 
-            <Section title="The clocks that apply" hint="Deadlines are from the regulation, not our interpretation">
+            <Section title="The rules behind these deadlines" hint="Taken from the regulations themselves">
+              <Reveal label="Show the four regimes and their deadlines" count={regimes.length}>
               <div className="scroll-x">
                 <table className="w-full min-w-[560px] text-left text-xs">
                   <thead>
@@ -169,6 +178,7 @@ export default function CompliancePage() {
                   </tbody>
                 </table>
               </div>
+              </Reveal>
             </Section>
           </div>
 
@@ -186,16 +196,17 @@ export default function CompliancePage() {
                 const href =
                   item.kind === "campaign" ? `/campaigns/${item.id}` : `/incident/${item.id}`;
                 return (
-                  <div
+                  <motion.div
                     key={item.id}
-                    className={`relative overflow-hidden rounded-md border ${tone.border} bg-surface`}
+                    variants={riseIn}
+                    className={`relative overflow-hidden rounded-lg border ${tone.border} bg-surface`}
                   >
                     <span className={`absolute left-0 top-0 h-full w-0.5 ${tone.mark}`} aria-hidden />
                     <div className="grid gap-5 p-5 pl-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <SeverityChip value={item.severity} size="xs" />
-                          <span className="mono text-[10px] text-faint">{item.id}</span>
+                          {isAnalyst ? <span className="mono text-[10px] text-faint">{item.id}</span> : null}
                           <span className="rounded border border-rule bg-raised px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted">
                             {item.kind}
                           </span>
@@ -236,7 +247,7 @@ export default function CompliancePage() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -247,6 +258,6 @@ export default function CompliancePage() {
           </p>
         </>
       ) : null}
-    </div>
+    </Screen>
   );
 }

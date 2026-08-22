@@ -147,7 +147,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
                 f"consistent with {technique}. If the application does not validate this input server-side, the "
                 f"attacker could read or alter data they are not authorised to reach — which for a banking "
                 f"application means customer records and transaction integrity. "
-                f"Relevant control context: {cis_title}."
+                f""
             )
             confidentiality = "high"
             integrity = "low"
@@ -161,7 +161,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
                 f"A suspicious request was sent from {source_ip} to {url or 'a web endpoint'}, "
                 f"indicating possible probing of application behaviour on {affected_host} "
                 f"(consistent with {technique}). No exploit payload was identified in the request itself. "
-                f"Relevant control context: {cis_title}."
+                f""
             )
             confidentiality = "low"
             integrity = "none"
@@ -185,7 +185,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"The source {source_ip} appears to be performing reconnaissance by probing "
             f"{port or 'multiple network ports'} on {destination_ip if destination_ip != 'unknown destination' else affected_host}. "
             f"This behavior is consistent with service discovery prior to exploitation. "
-            f"Relevant control context: {cis_title}."
+            f""
         )
         confidentiality = "low"
         integrity = "none"
@@ -209,7 +209,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"Repeated or patterned communication suggests possible beaconing activity from {source_ip} "
             f"toward {destination_ip if destination_ip != 'unknown destination' else affected_host}. "
             f"This may indicate malware establishing command-and-control connectivity or maintaining persistence. "
-            f"Relevant control context: {cis_title}."
+            f""
         )
         confidentiality = "high"
         integrity = "low"
@@ -231,7 +231,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"The event suggests internal movement from {source_ip} toward {target_name}, "
             f"which may indicate an attacker attempting to expand access within the environment. "
             f"If confirmed, this behavior increases the likelihood of privilege abuse and broader compromise. "
-            f"Relevant control context: {cis_title}."
+            f""
         )
         confidentiality = "high"
         integrity = "high"
@@ -252,7 +252,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"An anomalous IoT-related event was detected involving {affected_host}. "
             f"The activity may reflect device misuse, insecure exposure, or abnormal firmware or communication behavior. "
             f"IoT incidents are important because compromised devices can become entry points into segmented environments. "
-            f"Relevant control context: {cis_title}."
+            f""
         )
         confidentiality = "high"
         integrity = "low"
@@ -277,7 +277,7 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
             f"A suspicious network event was identified involving source {source_ip} "
             f"and destination {target_name}. "
             f"The behavior may indicate unauthorized access attempts, abnormal communications, or malicious discovery activity. "
-            f"Relevant control context: {cis_title}."
+            f""
         )
         confidentiality = "low"
         integrity = "low"
@@ -313,19 +313,25 @@ def _build_rule_based_fallback(incident_data: dict) -> dict:
     integrity = integrity if integrity in allowed_impact else "low"
     availability = availability if availability in allowed_impact else "low"
 
-    if anomaly_flags:
-        flags_text = ", ".join(str(flag) for flag in anomaly_flags[:4])
-        narrative += f" Observed anomaly indicators: {flags_text}."
-
-    if action and action not in {"suspicious_activity", "unknown"}:
-        narrative += f" Observed action: {action.replace('_', ' ')}."
-
+    # The narrative is the one field a non-technical reader will actually read, so
+    # it stays prose. Machine detail — raw anomaly flag names, the action verb, the
+    # control string — used to be appended to it as sentence fragments, which made
+    # the paragraph read like a log line halfway through. Those move to their own
+    # field, where the UI can show them under "why we flagged it" and leave the
+    # narrative clean.
     if affected_user and affected_user != "unknown user":
-        narrative += f" Potentially affected user: {affected_user}."
+        narrative += f" The account {affected_user} was involved."
+
+    signals: list[str] = []
+    if anomaly_flags:
+        signals.extend(str(flag).replace("_", " ") for flag in anomaly_flags[:4])
+    if action and action not in {"suspicious_activity", "unknown"}:
+        signals.append(f"observed action: {action.replace('_', ' ')}")
 
     return {
         "intent": intent,
         "summary": summary,
+        "signals": signals,
         "attack_vector": attack_vector,
         "attack_complexity": attack_complexity,
         "privileges_required": privileges_required,

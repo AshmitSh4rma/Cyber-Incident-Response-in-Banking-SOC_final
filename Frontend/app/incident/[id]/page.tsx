@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
   Download,
   ExternalLink,
@@ -13,29 +15,36 @@ import {
   ShieldCheck,
   TriangleAlert,
   X,
-  Zap,
 } from "lucide-react";
 
 import {
+  Block,
   ClockRow,
   EmptyState,
   KillChainMeter,
   PlainEnglish,
+  Reveal,
+  Screen,
   Section,
   SeverityChip,
+  Skeleton,
   VerdictChip,
   type Clock,
 } from "@/components/soc/primitives";
-import { ATTACK_TACTICS, formatTimestamp, severityTone } from "@/lib/severity";
+import { useDetail } from "@/lib/detail";
+import { EASE_OUT, fadeIn } from "@/lib/motion";
+import { formatTimestamp, severityTone } from "@/lib/severity";
 
 /**
- * The incident workspace.
+ * The investigation.
  *
- * This used to be five tabbed pages — overview, analysis, pipeline, report,
- * response. Investigating meant clicking between them and holding the context in
- * your head. It is one page now: once an alert becomes a case, the job is
- * correlating evidence, and evidence you have to navigate between is evidence you
- * do not compare.
+ * One page, not a tab set: once an alert becomes a case the job is comparing
+ * evidence, and evidence you have to navigate between is evidence you do not
+ * compare.
+ *
+ * In simple mode this reads as four short answers — what happened, is it part of
+ * something bigger, how long to report it, what to do. Every identifier, vector
+ * and raw record is one labelled click away.
  */
 
 type ContainmentStep = {
@@ -56,12 +65,7 @@ type Incident = {
   ai_analysis?: Record<string, unknown>;
   response?: Record<string, unknown>;
   mitre_attack?: {
-    primary?: {
-      technique_id?: string;
-      technique_name?: string;
-      tactic_name?: string;
-      url?: string;
-    };
+    primary?: { technique_id?: string; technique_name?: string; tactic_name?: string; url?: string };
     techniques?: { technique_id: string; technique_name: string; tactic_name: string; url: string }[];
     kill_chain_stage?: string;
     kill_chain_order?: number;
@@ -69,22 +73,17 @@ type Incident = {
   campaign?: {
     campaign_id: string;
     name: string;
-    severity: string;
     incident_count: number;
     furthest_stage: string;
     progression_pct: number;
   } | null;
-  notification?: {
-    reportable: boolean;
-    reasons: string[];
-    clocks: Clock[];
-    disclaimer: string;
-  } | null;
+  notification?: { reportable: boolean; reasons: string[]; clocks: Clock[]; disclaimer: string } | null;
 };
 
 export default function IncidentWorkspace() {
   const params = useParams<{ id: string }>();
   const incidentId = params?.id ?? "";
+  const { isAnalyst } = useDetail();
 
   const [incident, setIncident] = useState<Incident | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +94,7 @@ export default function IncidentWorkspace() {
     (async () => {
       try {
         const res = await fetch(`/api/incidents/${incidentId}`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+        if (!res.ok) throw new Error(`Service returned ${res.status}`);
         const data = await res.json();
         if (alive) setIncident(data);
       } catch (e) {
@@ -109,19 +108,19 @@ export default function IncidentWorkspace() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4">
-        <BackLink />
-        <EmptyState title={`Could not load ${incidentId}`} detail={error} />
-      </div>
+      <Screen className="max-w-3xl">
+        <Block><BackLink /></Block>
+        <EmptyState title="Couldn't load this" detail={error} />
+      </Screen>
     );
   }
 
   if (!incident) {
     return (
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <BackLink />
-        <div className="h-72 animate-pulse rounded-md border border-rule bg-surface" />
-      </div>
+      <Screen>
+        <Block><BackLink /></Block>
+        <Block><Skeleton className="h-64" /></Block>
+      </Screen>
     );
   }
 
@@ -137,309 +136,271 @@ export default function IncidentWorkspace() {
   const plan = (resp.containment_plan ?? []) as ContainmentStep[];
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-5">
-      <BackLink />
+    <Screen>
+      <Block><BackLink /></Block>
 
-      {/* ── Header: the verdict, at a glance ─────────────────────────────────── */}
-      <div className={`relative overflow-hidden rounded-md border ${tone.border} bg-surface p-5`}>
-        <span className={`absolute left-0 top-0 h-full w-1 ${tone.mark}`} aria-hidden />
+      {/* ── What this is ─────────────────────────────────────────────────────── */}
+      <motion.div
+        variants={fadeIn}
+        className={`relative overflow-hidden rounded-lg border ${tone.border} bg-surface p-5`}
+      >
+        <motion.span
+          className={`absolute left-0 top-0 w-1 ${tone.mark}`}
+          initial={{ height: 0 }}
+          animate={{ height: "100%" }}
+          transition={{ duration: 0.5, ease: EASE_OUT }}
+          aria-hidden
+        />
         <div className="flex flex-wrap items-start justify-between gap-4 pl-2">
           <div className="min-w-0 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <SeverityChip value={det.severity} />
-              <VerdictChip value={det.label} />
-              <span className="mono text-[11px] text-faint">{incident.event_id}</span>
-              {resp.requires_human_approval ? (
-                <span className="rounded border border-sev-high/35 bg-sev-high/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sev-high">
-                  awaiting approval
-                </span>
-              ) : null}
+              {isAnalyst ? <VerdictChip value={det.label} /> : null}
+              {isAnalyst ? <span className="mono text-[11px] text-faint">{incident.event_id}</span> : null}
             </div>
             <h1 className="text-lg font-semibold tracking-tight text-ink">
               {dash.alert_title ?? incident.summary ?? "Incident"}
             </h1>
-            <p className="mono text-[11px] text-muted">
-              {dash.source_ip ?? "—"} → {dash.affected_host ?? "—"}
+            <p className="text-[11px] text-muted">
+              {formatTimestamp(raw.timestamp)}
               {dash.affected_user && dash.affected_user !== "unattributed"
-                ? ` · ${dash.affected_user}`
-                : ""}{" "}
-              · {formatTimestamp(raw.timestamp)}
+                ? ` · account ${dash.affected_user}`
+                : ""}
             </p>
           </div>
 
           <a
             href={`/api/incidents/${incident.event_id}/report`}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded border border-accent-deep bg-accent/10 px-3 py-2 text-[11px] font-semibold text-accent transition hover:bg-accent/20"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-md border border-accent-deep bg-accent/10 px-3 py-2 text-[11px] font-semibold text-accent transition hover:bg-accent/20"
           >
-            <Download className="h-3.5 w-3.5" />
-            Export audit record
+            <Download className="h-3.5 w-3.5 transition group-hover:translate-y-0.5" />
+            Download the record
           </a>
         </div>
 
-        {/* Campaign context: the most important thing to know about this alert. */}
         {incident.campaign ? (
           <Link
             href={`/campaigns/${incident.campaign.campaign_id}`}
-            className="mt-4 flex items-center gap-3 rounded border border-sev-critical/30 bg-sev-critical/8 px-3 py-2.5 transition hover:bg-sev-critical/15"
+            className="group mt-4 flex items-center gap-3 rounded-md border border-sev-critical/30 bg-sev-critical/8 px-3 py-2.5 transition hover:bg-sev-critical/15"
           >
             <GitBranch className="h-4 w-4 shrink-0 text-sev-critical" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-ink">
-                This is not an isolated alert — it is part of a correlated intrusion
+              <p className="text-[12px] font-medium text-ink">
+                This is not a one-off — it is part of a larger attack
               </p>
               <p className="mt-0.5 truncate text-[10px] text-muted">
-                <span className="mono">{incident.campaign.campaign_id}</span> ·{" "}
-                {incident.campaign.incident_count} alerts · reached{" "}
-                <span className="font-medium text-sev-critical">
-                  {incident.campaign.furthest_stage}
-                </span>{" "}
-                ({incident.campaign.progression_pct}% of the attack lifecycle)
+                {incident.campaign.incident_count} related alerts, and the attacker got as far
+                as <span className="font-medium text-sev-critical">{incident.campaign.furthest_stage}</span>
               </p>
             </div>
-            <ExternalLink className="h-3 w-3 shrink-0 text-faint" />
+            <ArrowRight className="h-3 w-3 shrink-0 text-faint transition group-hover:translate-x-0.5" />
           </Link>
         ) : null}
+      </motion.div>
 
-        {/* Key numbers */}
-        <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded border border-rule bg-rule sm:grid-cols-4">
-          {[
-            { label: "CVSS 3.1 base score", value: String(cvss.base_score ?? "—") },
-            { label: "Detection confidence", value: det.confidence != null ? `${Math.round(Number(det.confidence) * 100)}%` : "—" },
-            { label: "Response priority", value: String(resp.priority ?? "—") },
-            { label: "Control", value: String(cis.benchmark_id ?? "—") },
-          ].map((s) => (
-            <div key={s.label} className="bg-surface px-4 py-3">
-              <p className="eyebrow truncate">{s.label}</p>
-              <p className="figure mt-1.5 truncate text-base font-semibold text-ink">{s.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-        {/* ── Left: what happened and why we think so ──────────────────────── */}
-        <div className="space-y-5">
-          <Section title="Assessment" hint={`Generated by the ${String(ai.source ?? "deterministic")} analyst`}>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start">
+        <div className="space-y-4">
+          {/* ── What happened ───────────────────────────────────────────────── */}
+          <Section title="What happened">
             <div className="space-y-3">
-              {ai.intent ? (
-                <p className="text-xs font-medium text-ink">{String(ai.intent)}</p>
-              ) : null}
-              <p className="max-w-3xl text-sm leading-relaxed text-muted">
+              {ai.intent ? <p className="text-[13px] font-medium text-ink">{String(ai.intent)}</p> : null}
+              <p className="max-w-3xl text-[13px] leading-relaxed text-muted">
                 {String(ai.narrative ?? ai.summary ?? "No analysis available.")}
               </p>
-            </div>
-          </Section>
 
-          <Section title="Why the pipeline flagged this" hint="Every signal that contributed">
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-1.5">
-                {((det.triggered_engines ?? []) as string[]).map((engine) => (
-                  <span
-                    key={engine}
-                    className="rounded border border-rule bg-raised px-1.5 py-0.5 text-[10px] text-muted"
-                  >
-                    {engine.replaceAll("_", " ")}
-                  </span>
-                ))}
-              </div>
-              <ul className="space-y-1.5">
-                {((det.reasoning ?? []) as string[]).map((reason, i) => (
-                  <li key={i} className="flex items-start gap-2 text-[11px] leading-relaxed text-muted">
-                    <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${tone.mark}`} aria-hidden />
-                    <span>{reason}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Section>
-
-          {/* ATT&CK */}
-          {attack?.primary?.technique_id ? (
-            <Section title="MITRE ATT&CK" hint="The industry-standard name for this behaviour">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <a
-                    href={attack.primary.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mono inline-flex items-center gap-1.5 text-sm font-semibold text-accent transition hover:underline"
-                  >
-                    {attack.primary.technique_id}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                  <p className="text-xs font-medium text-ink">{attack.primary.technique_name}</p>
-                  <p className="text-[11px] text-muted">Tactic: {attack.primary.tactic_name}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="eyebrow">
-                    Stage {attack.kill_chain_order} of {ATTACK_TACTICS.length} —{" "}
-                    {attack.kill_chain_stage}
-                  </p>
-                  <KillChainMeter
-                    reachedOrders={[attack.kill_chain_order ?? 0]}
-                    furthestOrder={attack.kill_chain_order ?? 0}
-                    showLabels
-                  />
-                </div>
-
-                {(attack.techniques ?? []).length > 1 ? (
-                  <div className="space-y-2 border-t border-rule-soft pt-3">
-                    <p className="eyebrow">Corroborating techniques</p>
-                    <ul className="space-y-1.5">
-                      {(attack.techniques ?? [])
-                        .filter((t) => t.technique_id !== attack.primary?.technique_id)
-                        .map((t) => (
-                          <li key={t.technique_id} className="flex items-baseline gap-2 text-[11px]">
-                            <a
-                              href={t.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mono shrink-0 text-accent hover:underline"
-                            >
-                              {t.technique_id}
-                            </a>
-                            <span className="text-muted">{t.technique_name}</span>
-                            <span className="ml-auto shrink-0 text-faint">{t.tactic_name}</span>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            </Section>
-          ) : null}
-
-          {/* CIS control — the audit evidence */}
-          <Section
-            title="Control mapping"
-            hint={
-              cis.match_type === "catalog_retrieval"
-                ? "Matched against the shipped benchmark catalog"
-                : "Selected from the threat-class control mapping"
-            }
-          >
-            {cis.benchmark_id ? (
-              <div className="space-y-3.5">
-                <PlainEnglish>
-                  Banks are audited against security control frameworks. This is the
-                  specific control the activity relates to — generated now, not
-                  reconstructed for an auditor months later.
-                </PlainEnglish>
-
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="mono text-sm font-semibold text-accent">
-                    {String(cis.benchmark_id)}
-                  </span>
-                  <span className="text-xs font-medium text-ink">{String(cis.title ?? "")}</span>
-                  {cis.framework ? (
-                    <span className="rounded border border-rule bg-raised px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted">
-                      {String(cis.framework)}
-                    </span>
+              <div className="space-y-2 pt-1">
+                <Reveal label="Why we flagged it" count={((det.reasoning ?? []) as string[]).length}>
+                  <ul className="space-y-1.5">
+                    {((det.reasoning ?? []) as string[]).map((reason, i) => (
+                      <li key={i} className="flex items-start gap-2 text-[11px] leading-relaxed text-muted">
+                        <span className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${tone.mark}`} aria-hidden />
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {((ai.signals ?? []) as string[]).length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5 border-t border-rule-soft pt-3">
+                      {((ai.signals ?? []) as string[]).map((signal) => (
+                        <span key={signal} className="rounded border border-rule bg-raised px-1.5 py-0.5 text-[10px] text-muted">
+                          {signal}
+                        </span>
+                      ))}
+                    </div>
                   ) : null}
-                </div>
+                  {((det.triggered_engines ?? []) as string[]).length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5 border-t border-rule-soft pt-3">
+                      {((det.triggered_engines ?? []) as string[]).map((engine) => (
+                        <span key={engine} className="rounded border border-rule bg-raised px-1.5 py-0.5 text-[10px] text-muted">
+                          {engine.replaceAll("_", " ")}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </Reveal>
 
-                {cis.description ? (
-                  <Field label="What the control requires" body={String(cis.description)} />
+                {attack?.primary?.technique_id ? (
+                  <Reveal label="How this attack is classified">
+                    <div className="space-y-3.5">
+                      <div className="space-y-1.5">
+                        <a
+                          href={attack.primary.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mono inline-flex items-center gap-1.5 text-[13px] font-semibold text-accent transition hover:underline"
+                        >
+                          {attack.primary.technique_id}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <p className="text-[12px] font-medium text-ink">{attack.primary.technique_name}</p>
+                        <p className="text-[11px] text-muted">
+                          A recognised attack technique, catalogued by MITRE. This one belongs to
+                          the &ldquo;{attack.primary.tactic_name}&rdquo; stage of an attack.
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
+                          Stage {attack.kill_chain_order} of 15 — {attack.kill_chain_stage}
+                        </p>
+                        <KillChainMeter
+                          reachedOrders={[attack.kill_chain_order ?? 0]}
+                          furthestOrder={attack.kill_chain_order ?? 0}
+                          showLabels
+                        />
+                      </div>
+                      {(attack.techniques ?? []).length > 1 ? (
+                        <ul className="space-y-1.5 border-t border-rule-soft pt-3">
+                          {(attack.techniques ?? [])
+                            .filter((t) => t.technique_id !== attack.primary?.technique_id)
+                            .map((t) => (
+                              <li key={t.technique_id} className="flex items-baseline gap-2 text-[11px]">
+                                <a href={t.url} target="_blank" rel="noopener noreferrer" className="mono shrink-0 text-accent hover:underline">
+                                  {t.technique_id}
+                                </a>
+                                <span className="text-muted">{t.technique_name}</span>
+                              </li>
+                            ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  </Reveal>
                 ) : null}
-                {cis.rationale ? <Field label="Why it applies" body={String(cis.rationale)} /> : null}
-                {cis.remediation ? (
-                  <div className="space-y-1 border-l-2 border-accent-deep pl-3">
-                    <p className="eyebrow">Remediation</p>
-                    <p className="whitespace-pre-line text-xs leading-relaxed text-ink">
-                      {String(cis.remediation).trim()}
-                    </p>
-                  </div>
+
+                {cis.benchmark_id ? (
+                  <Reveal label="Which security rule this breaks">
+                    <div className="space-y-3">
+                      <PlainEnglish>
+                        Banks are audited against published security standards. This is the
+                        specific rule the activity relates to — recorded now, so nobody has to
+                        reconstruct it for an auditor months later.
+                      </PlainEnglish>
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <span className="mono text-[13px] font-semibold text-accent">{String(cis.benchmark_id)}</span>
+                        <span className="text-[12px] font-medium text-ink">{String(cis.title ?? "")}</span>
+                      </div>
+                      {cis.description ? (
+                        <Field label="What the rule requires" body={String(cis.description)} />
+                      ) : null}
+                      {cis.remediation ? (
+                        <div className="space-y-1 border-l-2 border-accent-deep pl-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">How to fix it</p>
+                          <p className="whitespace-pre-line text-[12px] leading-relaxed text-ink">
+                            {String(cis.remediation).trim()}
+                          </p>
+                        </div>
+                      ) : null}
+                      {cis.audit_procedure ? (
+                        <Reveal label="Auditor's check procedure">
+                          <pre className="mono scroll-x text-[10px] leading-relaxed text-muted">
+                            {String(cis.audit_procedure).trim()}
+                          </pre>
+                        </Reveal>
+                      ) : null}
+                    </div>
+                  </Reveal>
                 ) : null}
-                {cis.audit_procedure ? (
-                  <details className="rounded border border-rule bg-sunk/40">
-                    <summary className="eyebrow cursor-pointer list-none px-3 py-2 transition hover:text-ink">
-                      Audit procedure
-                    </summary>
-                    <pre className="mono scroll-x border-t border-rule-soft px-3 py-3 text-[10px] leading-relaxed text-muted">
-                      {String(cis.audit_procedure).trim()}
-                    </pre>
-                  </details>
-                ) : null}
+
+                <Reveal label="The original log entry">
+                  <pre className="mono scroll-x max-h-64 overflow-y-auto text-[10px] leading-relaxed text-muted">
+                    {JSON.stringify(raw, null, 2)}
+                  </pre>
+                </Reveal>
               </div>
-            ) : (
-              <p className="text-xs text-faint">No control mapping produced for this incident.</p>
-            )}
+            </div>
           </Section>
 
-          {/* Raw evidence, last — available but not in the way */}
-          <details className="overflow-hidden rounded-md border border-rule bg-surface">
-            <summary className="eyebrow cursor-pointer list-none px-4 py-2.5 transition hover:text-ink">
-              Raw log record
-            </summary>
-            <pre className="mono scroll-x max-h-72 overflow-y-auto border-t border-rule-soft px-4 py-3 text-[10px] leading-relaxed text-muted">
-              {JSON.stringify(raw, null, 2)}
-            </pre>
-          </details>
+          <SeverityCard cvss={cvss} />
         </div>
 
-        {/* ── Right: what to do about it ───────────────────────────────────── */}
-        <div className="space-y-5">
-          {/* Notification clock, if this alert stands alone */}
+        {/* ── What to do ─────────────────────────────────────────────────────── */}
+        <div className="space-y-4">
           {incident.notification?.reportable ? (
-            <Section title="Regulatory notification" hint="This looks reportable">
-              <div className="space-y-4">
+            <Section title="Time left to report">
+              <div className="space-y-3.5">
                 <PlainEnglish>
-                  A bank has to tell its regulator about a serious incident within hours.
-                  The clock started when the pipeline reached its verdict.
+                  This is serious enough that the regulator has to be told. The countdown
+                  started when we worked out what happened.
                 </PlainEnglish>
-                <div className="space-y-3.5">
-                  {incident.notification.clocks.map((clock) => (
-                    <ClockRow key={clock.regime_id} clock={clock} />
-                  ))}
-                </div>
-                <p className="text-[10px] leading-relaxed text-faint">
-                  {incident.notification.disclaimer}
-                </p>
+                <ClockRow clock={incident.notification.clocks[0]} prominent />
+                <Reveal label="Other reporting deadlines" count={incident.notification.clocks.length - 1}>
+                  <div className="space-y-3.5">
+                    {incident.notification.clocks.slice(1).map((clock) => (
+                      <ClockRow key={clock.regime_id} clock={clock} />
+                    ))}
+                    <p className="text-[10px] leading-relaxed text-faint">{incident.notification.disclaimer}</p>
+                  </div>
+                </Reveal>
               </div>
             </Section>
           ) : null}
 
           <ContainmentPanel plan={plan} response={resp} incidentId={incident.event_id} />
 
-          {/* CVSS */}
-          <Section title="Severity score" hint="CVSS 3.1, computed from the published equations">
-            <div className="space-y-3">
-              <PlainEnglish>
-                A standard 0–10 severity score used across the industry. It is calculated
-                by formula, not estimated — anyone can re-derive it from the vector below.
-              </PlainEnglish>
-              <div className="flex items-baseline gap-3">
-                <span className="figure text-3xl font-semibold leading-none text-ink">
-                  {String(cvss.base_score ?? "—")}
-                </span>
-                <SeverityChip value={cvss.severity} />
-              </div>
-              {cvss.vector_string ? (
-                <p className="mono scroll-x rounded border border-rule bg-sunk px-2 py-1.5 text-[10px] text-muted">
-                  {String(cvss.vector_string)}
-                </p>
-              ) : null}
-            </div>
-          </Section>
-
           <FeedbackPanel incidentId={incident.event_id} />
         </div>
       </div>
-    </div>
+    </Screen>
   );
 }
 
-/* ─── Pieces ───────────────────────────────────────────────────────────────── */
+function SeverityCard({ cvss }: { cvss: Record<string, string | number> }) {
+  return (
+          <Section title="How serious it is">
+            <div className="space-y-3">
+              <div className="flex items-baseline gap-3">
+                <span className="figure text-4xl font-semibold leading-none text-ink">
+                  {String(cvss.base_score ?? "—")}
+                </span>
+                <span className="text-[11px] text-muted">out of 10</span>
+                <SeverityChip value={cvss.severity} />
+              </div>
+              <PlainEnglish>
+                The standard severity score used across the industry. It is calculated by a
+                published formula, not estimated, so the same incident always scores the same.
+              </PlainEnglish>
+              {cvss.vector_string ? (
+                <Reveal label="Show the calculation">
+                  <p className="mono scroll-x rounded border border-rule bg-sunk px-2 py-1.5 text-[10px] text-muted">
+                    {String(cvss.vector_string)}
+                  </p>
+                  <p className="mt-2 text-[10px] leading-relaxed text-faint">
+                    Anyone can re-derive the score above from this string using the published
+                    CVSS 3.1 equations.
+                  </p>
+                </Reveal>
+              ) : null}
+            </div>
+          </Section>
+  );
+}
 
 function BackLink() {
   return (
     <Link
       href="/dashboard"
-      className="inline-flex items-center gap-1.5 text-[11px] text-muted transition hover:text-ink"
+      className="group inline-flex items-center gap-1.5 text-[11px] text-muted transition hover:text-ink"
     >
-      <ArrowLeft className="h-3 w-3" />
-      Back to queue
+      <ArrowLeft className="h-3 w-3 transition group-hover:-translate-x-0.5" />
+      Back
     </Link>
   );
 }
@@ -448,7 +409,7 @@ function Field({ label, body }: { label: string; body: string }) {
   if (!body.trim()) return null;
   return (
     <div className="space-y-1">
-      <p className="eyebrow">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">{label}</p>
       <p className="whitespace-pre-line text-[11px] leading-relaxed text-muted">{body.trim()}</p>
     </div>
   );
@@ -510,8 +471,8 @@ function ContainmentPanel({
 
   if (plan.length === 0) {
     return (
-      <Section title="Containment">
-        <p className="text-xs text-faint">No containment actions recommended.</p>
+      <Section title="What to do">
+        <p className="text-xs text-faint">No action recommended.</p>
       </Section>
     );
   }
@@ -520,112 +481,80 @@ function ContainmentPanel({
   const gated = plan.filter((s) => s.execution === "requires_approval");
 
   return (
-    <Section
-      title="Containment plan"
-      hint={`${auto.length} automatic · ${gated.length} need a human`}
-    >
+    <Section title="What to do" hint={gated.length ? `${gated.length} need your approval` : "All handled automatically"}>
       <div className="space-y-4">
-        <PlainEnglish>
-          Some fixes are safe to apply automatically. Others could take a live banking
-          service offline — which would be a worse outage than the attack — so a person
-          decides those. The split is by how much damage the fix itself could do, not by
-          how bad the attack is.
-        </PlainEnglish>
-
-        {auto.length > 0 ? (
-          <div className="space-y-2">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sev-benign">
-              <Zap className="h-3 w-3" />
-              Applied automatically
-            </p>
-            <ul className="space-y-1.5">
-              {auto.map((step) => (
-                <li
-                  key={step.action}
-                  className="flex items-start gap-2.5 rounded border border-sev-benign/25 bg-sev-benign/8 px-3 py-2"
-                >
-                  <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sev-benign" />
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="text-xs text-ink">{step.action}</p>
-                    <p className="text-[10px] leading-relaxed text-muted">{step.rationale}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
         {gated.length > 0 ? (
           <div className="space-y-2">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-sev-high">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-sev-high">
               <TriangleAlert className="h-3 w-3" />
               Waiting on you
             </p>
+            <PlainEnglish>
+              These fixes could take a live banking service offline — a worse outage than
+              the attack — so a person decides, not the system.
+            </PlainEnglish>
             <ul className="space-y-2">
               {gated.map((step) => {
                 const index = plan.indexOf(step);
                 const state = states[index] ?? "idle";
                 return (
-                  <li
-                    key={step.action}
-                    className="space-y-2 rounded border border-sev-high/25 bg-sev-high/8 px-3 py-2.5"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <p className="text-xs font-medium text-ink">{step.action}</p>
-                        <span className="rounded border border-sev-high/35 bg-sev-high/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-sev-high">
-                          {step.blast_radius}
-                        </span>
-                      </div>
-                      <p className="text-[10px] leading-relaxed text-muted">{step.rationale}</p>
-                    </div>
-
+                  <li key={step.action} className="space-y-2 rounded-md border border-sev-high/25 bg-sev-high/8 px-3 py-2.5">
+                    <p className="text-[12px] font-medium text-ink">{step.action}</p>
+                    <p className="text-[10px] leading-relaxed text-muted">{step.rationale}</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      {state === "idle" ? (
-                        <button
-                          onClick={() => request(index, step.action)}
-                          className="rounded border border-rule bg-raised px-2.5 py-1 text-[10px] font-semibold text-ink transition hover:border-accent-deep"
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                          key={state}
+                          variants={fadeIn}
+                          initial="hidden"
+                          animate="shown"
+                          exit="hidden"
+                          className="flex flex-wrap items-center gap-2"
                         >
-                          Submit for approval
-                        </button>
-                      ) : null}
-                      {state === "submitting" ? (
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted">
-                          <Loader2 className="h-3 w-3 animate-spin" /> Working…
-                        </span>
-                      ) : null}
-                      {state === "pending" ? (
-                        <>
-                          <span className="text-[10px] text-sev-high">Queued —</span>
-                          <button
-                            onClick={() => decide(index, "approve")}
-                            className="inline-flex items-center gap-1 rounded border border-sev-benign/40 bg-sev-benign/12 px-2.5 py-1 text-[10px] font-semibold text-sev-benign transition hover:bg-sev-benign/20"
-                          >
-                            <Check className="h-3 w-3" /> Approve
-                          </button>
-                          <button
-                            onClick={() => decide(index, "reject")}
-                            className="inline-flex items-center gap-1 rounded border border-sev-critical/40 bg-sev-critical/12 px-2.5 py-1 text-[10px] font-semibold text-sev-critical transition hover:bg-sev-critical/20"
-                          >
-                            <X className="h-3 w-3" /> Reject
-                          </button>
-                        </>
-                      ) : null}
-                      {state === "approved" ? (
-                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-sev-benign">
-                          <Check className="h-3 w-3" /> Approved — cleared to execute
-                        </span>
-                      ) : null}
-                      {state === "rejected" ? (
-                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-sev-critical">
-                          <X className="h-3 w-3" /> Rejected — will not execute
-                        </span>
-                      ) : null}
-                      {state === "error" ? (
-                        <span className="text-[10px] text-sev-critical">
-                          Backend unreachable. Start it and retry.
-                        </span>
-                      ) : null}
+                          {state === "idle" ? (
+                            <button
+                              onClick={() => request(index, step.action)}
+                              className="rounded border border-rule bg-raised px-2.5 py-1 text-[10px] font-semibold text-ink transition hover:border-accent-deep"
+                            >
+                              Review this
+                            </button>
+                          ) : null}
+                          {state === "submitting" ? (
+                            <span className="flex items-center gap-1.5 text-[10px] text-muted">
+                              <Loader2 className="h-3 w-3 animate-spin" /> Working…
+                            </span>
+                          ) : null}
+                          {state === "pending" ? (
+                            <>
+                              <button
+                                onClick={() => decide(index, "approve")}
+                                className="inline-flex items-center gap-1 rounded border border-sev-benign/40 bg-sev-benign/12 px-2.5 py-1 text-[10px] font-semibold text-sev-benign transition hover:bg-sev-benign/20"
+                              >
+                                <Check className="h-3 w-3" /> Do it
+                              </button>
+                              <button
+                                onClick={() => decide(index, "reject")}
+                                className="inline-flex items-center gap-1 rounded border border-sev-critical/40 bg-sev-critical/12 px-2.5 py-1 text-[10px] font-semibold text-sev-critical transition hover:bg-sev-critical/20"
+                              >
+                                <X className="h-3 w-3" /> Don&rsquo;t
+                              </button>
+                            </>
+                          ) : null}
+                          {state === "approved" ? (
+                            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-sev-benign">
+                              <Check className="h-3 w-3" /> Approved
+                            </span>
+                          ) : null}
+                          {state === "rejected" ? (
+                            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-sev-critical">
+                              <X className="h-3 w-3" /> Declined
+                            </span>
+                          ) : null}
+                          {state === "error" ? (
+                            <span className="text-[10px] text-sev-critical">Service unreachable.</span>
+                          ) : null}
+                        </motion.div>
+                      </AnimatePresence>
                     </div>
                   </li>
                 );
@@ -634,17 +563,30 @@ function ContainmentPanel({
           </div>
         ) : null}
 
-        {(response.recommended_actions as string[] | undefined)?.length ? (
-          <div className="space-y-1.5 border-t border-rule-soft pt-3">
-            <p className="eyebrow">Investigation steps</p>
-            <ul className="space-y-1">
-              {(response.recommended_actions as string[]).map((a) => (
-                <li key={a} className="text-[11px] leading-relaxed text-muted">
-                  · {a}
+        {auto.length > 0 ? (
+          <Reveal label={`Already handled automatically`} count={auto.length}>
+            <ul className="space-y-1.5">
+              {auto.map((step) => (
+                <li key={step.action} className="flex items-start gap-2.5">
+                  <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sev-benign" />
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="text-[11px] text-ink">{step.action}</p>
+                    <p className="text-[10px] leading-relaxed text-muted">{step.rationale}</p>
+                  </div>
                 </li>
               ))}
             </ul>
-          </div>
+          </Reveal>
+        ) : null}
+
+        {(response.recommended_actions as string[] | undefined)?.length ? (
+          <Reveal label="Suggested next steps" count={(response.recommended_actions as string[]).length}>
+            <ul className="space-y-1">
+              {(response.recommended_actions as string[]).map((a) => (
+                <li key={a} className="text-[11px] leading-relaxed text-muted">· {a}</li>
+              ))}
+            </ul>
+          </Reveal>
         ) : null}
       </div>
     </Section>
@@ -652,15 +594,15 @@ function ContainmentPanel({
 }
 
 const FEEDBACK_REASONS = [
-  { value: "known_good_ip", label: "Known good source" },
-  { value: "authorized_scan", label: "Authorised security scan" },
-  { value: "test_activity", label: "Test or lab activity" },
-  { value: "maintenance_window", label: "Scheduled maintenance" },
-  { value: "expected_behavior", label: "Expected behaviour" },
+  { value: "authorized_scan", label: "It was an authorised security scan" },
+  { value: "known_good_ip", label: "The source is known and trusted" },
+  { value: "test_activity", label: "It was testing" },
+  { value: "maintenance_window", label: "It was scheduled maintenance" },
+  { value: "expected_behavior", label: "This is normal for us" },
 ];
 
 function FeedbackPanel({ incidentId }: { incidentId: string }) {
-  const [reason, setReason] = useState(FEEDBACK_REASONS[1].value);
+  const [reason, setReason] = useState(FEEDBACK_REASONS[0].value);
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -677,64 +619,62 @@ function FeedbackPanel({ incidentId }: { incidentId: string }) {
       setMessage(data.message ?? "Recorded.");
       setState("done");
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Could not record feedback.");
+      setMessage(e instanceof Error ? e.message : "Couldn't record that.");
       setState("error");
     }
   };
 
   return (
-    <Section title="Analyst decision" hint="Marking a false positive stops it recurring">
-      <div className="space-y-3">
-        <PlainEnglish>
-          If this alert was wrong, saying so here creates a rule that stops the same
-          pattern being raised again. That is how the system gets quieter over time
-          instead of noisier.
-        </PlainEnglish>
-
+    <Section title="Was this a real problem?">
+      <AnimatePresence mode="wait" initial={false}>
         {state === "done" ? (
-          <p className="rounded border border-sev-benign/30 bg-sev-benign/10 px-3 py-2 text-[11px] leading-relaxed text-ink">
+          <motion.p
+            key="done"
+            variants={fadeIn}
+            initial="hidden"
+            animate="shown"
+            className="rounded-md border border-sev-benign/30 bg-sev-benign/10 px-3 py-2.5 text-[11px] leading-relaxed text-ink"
+          >
             {message}
-          </p>
+          </motion.p>
         ) : (
-          <>
+          <motion.div key="form" variants={fadeIn} initial="hidden" animate="shown" className="space-y-3">
+            <PlainEnglish>
+              If this was a false alarm, telling us stops the same thing being raised again.
+              That is how the system gets quieter over time rather than noisier.
+            </PlainEnglish>
             <label className="block space-y-1.5">
-              <span className="eyebrow">Reason</span>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">If it was a false alarm, why?</span>
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full rounded border border-rule bg-sunk px-2 py-1.5 text-[11px] text-ink outline-none transition focus:border-accent-deep"
               >
                 {FEEDBACK_REASONS.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
+                  <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
             </label>
-
             <div className="flex gap-2">
               <button
                 disabled={state === "sending"}
                 onClick={() => send("true_positive")}
                 className="flex-1 rounded border border-rule bg-raised px-3 py-2 text-[11px] font-semibold text-ink transition hover:border-accent-deep disabled:opacity-50"
               >
-                Confirm real
+                Yes, it&rsquo;s real
               </button>
               <button
                 disabled={state === "sending"}
                 onClick={() => send("false_positive")}
                 className="flex-1 rounded border border-sev-benign/40 bg-sev-benign/12 px-3 py-2 text-[11px] font-semibold text-sev-benign transition hover:bg-sev-benign/20 disabled:opacity-50"
               >
-                False positive
+                No, false alarm
               </button>
             </div>
-
-            {state === "error" ? (
-              <p className="text-[10px] text-sev-critical">{message}</p>
-            ) : null}
-          </>
+            {state === "error" ? <p className="text-[10px] text-sev-critical">{message}</p> : null}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </Section>
   );
 }
