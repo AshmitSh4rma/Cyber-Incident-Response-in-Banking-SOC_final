@@ -216,6 +216,12 @@ def test_read_cursor_sets_transaction_read_only(monkeypatch):
 
 
 def test_transient_connection_failure_retries_once_without_retrying_query_errors(monkeypatch):
+    # retrieval.py falls back to `OperationalError = PoolTimeout = ()` when psycopg
+    # is absent, so there is no exception type to raise and no retry path to test.
+    # The behaviour under test is defined by psycopg's own error classes.
+    if not isinstance(retrieval.OperationalError, type):
+        pytest.skip("psycopg is not installed")
+
     attempts = []
 
     @contextmanager

@@ -1,120 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { BarChart3, GitBranch, Landmark, LayoutDashboard, ShieldCheck, SlidersHorizontal, UploadCloud } from "lucide-react";
+import {
+  BarChart3,
+  Bot,
+  Crosshair,
+  GitBranch,
+  Landmark,
+  LayoutDashboard,
+  ListTodo,
+  SlidersHorizontal,
+} from "lucide-react";
 
-import { EASE_OUT } from "@/lib/motion";
+import Dock from "./Dock";
 
 /**
- * Primary navigation.
+ * Primary navigation: a vertical dock of destinations.
  *
- * Four destinations, named for what you go there to do rather than for the layer
- * of the pipeline that produces them.
+ * Icon-only, with the name appearing on hover or focus. Every destination the
+ * console has is here — dropping one from the rail is the same as removing the
+ * feature, since there is no other way to reach it.
  *
- * The footer used to show three always-green rows — "Threat Pipeline", "ML
- * Detection Engine", "MITRE Framework". They were hardcoded, so they were
- * decoration rather than status, and one of them advertised machine learning this
- * system does not use: detection is rule-based, which the README says plainly.
- * It now reports one thing it can actually determine — whether the analysis
- * service is answering.
+ * The footer reports one thing it can actually determine: whether the analysis
+ * service is answering. An earlier revision of this rail had a permanently green
+ * pulsing dot next to a version number, which is decoration wearing the costume
+ * of status. A dot that is green whatever happens is worse than no dot.
  */
 
 const NAV = [
-  {
-    href: "/dashboard",
-    label: "Overview",
-    sublabel: "What needs attention",
-    icon: LayoutDashboard,
-  },
-  {
-    href: "/campaigns",
-    label: "Attacks",
-    sublabel: "Alerts that are one attack",
-    icon: GitBranch,
-  },
-  {
-    href: "/compliance",
-    label: "Reporting",
-    sublabel: "Regulator deadlines",
-    icon: Landmark,
-  },
-  {
-    href: "/upload",
-    label: "Simulation",
-    sublabel: "Replay an attack",
-    icon: UploadCloud,
-  },
-  {
-    href: "/statistics",
-    label: "Statistics",
-    sublabel: "What this is worth",
-    icon: BarChart3,
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    sublabel: "Thresholds and policy",
-    icon: SlidersHorizontal,
-  },
+  { href: "/dashboard", label: "Overview", icon: <LayoutDashboard size={20} strokeWidth={2} /> },
+  { href: "/queue", label: "Triage queue", icon: <ListTodo size={20} strokeWidth={2} /> },
+  { href: "/campaigns", label: "Attacks", icon: <GitBranch size={20} strokeWidth={2} /> },
+  { href: "/compliance", label: "Reporting", icon: <Landmark size={20} strokeWidth={2} /> },
+  { href: "/ai", label: "Ask SENTRA", icon: <Bot size={20} strokeWidth={2} /> },
+  { href: "/upload", label: "Simulation", icon: <Crosshair size={20} strokeWidth={2} /> },
+  { href: "/statistics", label: "Statistics", icon: <BarChart3 size={20} strokeWidth={2} /> },
+  { href: "/settings", label: "Settings", icon: <SlidersHorizontal size={20} strokeWidth={2} /> },
 ];
 
 export default function Sidebar() {
-  const pathname = usePathname() ?? "";
-
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-rule bg-sunk md:flex">
-      {/* Mark */}
-      <div className="flex items-center gap-3 border-b border-rule px-5 py-4">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-accent-deep/40 bg-accent/10">
-          <ShieldCheck className="h-4 w-4 text-accent" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[13px] font-semibold leading-none tracking-tight text-ink">SENTRA</p>
-          <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-faint">Banking SOC</p>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3">
-        {NAV.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="relative flex items-center gap-3 rounded-md px-3 py-2.5 transition"
-            >
-              {active ? (
-                <motion.span
-                  layoutId="nav-active"
-                  transition={{ duration: 0.26, ease: EASE_OUT }}
-                  className="absolute inset-0 rounded-md border border-rule bg-raised"
-                />
-              ) : null}
-              <Icon
-                className={`relative h-4 w-4 shrink-0 transition-colors ${
-                  active ? "text-accent" : "text-faint group-hover:text-muted"
-                }`}
-              />
-              <span className="relative min-w-0">
-                <span
-                  className={`block truncate text-[12px] font-medium leading-tight transition-colors ${
-                    active ? "text-ink" : "text-muted"
-                  }`}
-                >
-                  {item.label}
-                </span>
-                <span className="mt-0.5 block truncate text-[10px] text-faint">{item.sublabel}</span>
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-
+    <aside className="relative z-50 hidden w-[80px] shrink-0 flex-col md:flex">
+      <Dock items={NAV} />
       <ServiceStatus />
     </aside>
   );
@@ -124,7 +51,9 @@ export default function Sidebar() {
  * One honest status line: is the analysis service answering?
  *
  * Polled, not asserted. If the backend is down this says so, which is the whole
- * point — an indicator that is green whatever happens is worse than none.
+ * point. The rail is too narrow for a sentence, so the words live in the title
+ * and the colour carries it at a glance — but the colour is derived from a real
+ * request, never hardcoded.
  */
 function ServiceStatus() {
   const [state, setState] = useState<"checking" | "up" | "down">("checking");
@@ -149,23 +78,26 @@ function ServiceStatus() {
 
   const tone =
     state === "up"
-      ? { dot: "bg-sev-benign", text: "text-sev-benign", label: "Connected" }
+      ? { dot: "bg-sev-benign", text: "text-sev-benign", label: "Connected", short: "LIVE" }
       : state === "down"
-        ? { dot: "bg-sev-critical", text: "text-sev-critical", label: "Not reachable" }
-        : { dot: "bg-faint", text: "text-faint", label: "Checking" };
+        ? { dot: "bg-sev-critical", text: "text-sev-critical", label: "Not reachable", short: "DOWN" }
+        : { dot: "bg-faint", text: "text-faint", label: "Checking", short: "···" };
 
   return (
-    <div className="border-t border-rule p-3">
-      <div className="flex items-center justify-between rounded-md border border-rule bg-surface px-3 py-2.5">
-        <span className="text-[10px] uppercase tracking-[0.14em] text-faint">Analysis service</span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${tone.dot} ${state === "checking" ? "pulse-dot" : ""}`}
-            aria-hidden
-          />
-          <span className={`text-[10px] font-semibold ${tone.text}`}>{tone.label}</span>
-        </span>
-      </div>
+    <div
+      className="absolute bottom-4 left-0 right-0 z-40 flex flex-col items-center gap-1.5 py-4"
+      title={`Analysis service: ${tone.label}`}
+    >
+      <span
+        className={`h-2 w-2 rounded-full ${tone.dot} ${state === "checking" ? "pulse-dot" : ""}`}
+        aria-hidden
+      />
+      <span className={`text-[8px] font-semibold uppercase tracking-[0.12em] ${tone.text}`}>
+        {tone.short}
+      </span>
+      <span className="sr-only" role="status">
+        Analysis service: {tone.label}
+      </span>
     </div>
   );
 }

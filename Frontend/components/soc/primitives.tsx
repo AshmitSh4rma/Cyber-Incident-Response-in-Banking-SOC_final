@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
@@ -232,9 +233,17 @@ export function StatTile({
 export function SeverityBar({
   counts,
   total,
+  linkTo,
 }: {
   counts: Partial<Record<Severity, number>>;
   total: number;
+  /**
+   * Makes each band a link to that severity on its own. Optional because the
+   * bar is also used where there is nowhere to drill into — the point of the
+   * distribution on the overview is to be the way *into* the work, and a count
+   * you can read but not follow makes the reader go find the filter themselves.
+   */
+  linkTo?: (severity: Severity) => string;
 }) {
   const reduced = usePrefersReducedMotion();
   const order: Severity[] = ["critical", "high", "medium", "low", "benign"];
@@ -259,13 +268,29 @@ export function SeverityBar({
         ))}
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {present.map((s) => (
-          <span key={s} className="flex items-center gap-1.5 text-[11px]">
-            <span className={`h-2 w-2 rounded-full ${severityTone(s).mark}`} aria-hidden />
-            <span className="tabular font-semibold text-ink">{counts[s]}</span>
-            <span className="text-muted">{s}</span>
-          </span>
-        ))}
+        {present.map((s) => {
+          const body = (
+            <>
+              <span className={`h-2 w-2 rounded-full ${severityTone(s).mark}`} aria-hidden />
+              <span className="tabular font-semibold text-ink">{counts[s]}</span>
+              <span className="text-muted">{s}</span>
+            </>
+          );
+          return linkTo ? (
+            <Link
+              key={s}
+              href={linkTo(s)}
+              className="flex items-center gap-1.5 rounded text-[11px] transition hover:opacity-80"
+              title={`Open the ${s} alerts`}
+            >
+              {body}
+            </Link>
+          ) : (
+            <span key={s} className="flex items-center gap-1.5 text-[11px]">
+              {body}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -356,52 +381,96 @@ export function ClockRow({ clock, prominent = false }: { clock: Clock; prominent
   const tone = clockTone(live.state);
   const reduced = usePrefersReducedMotion();
 
+  /**
+   * The dial reads from `live`, not from the `seconds_remaining` the server sent.
+   * That field is a snapshot from the moment of the response, so a dial driven by
+   * it is frozen at page load while looking like it is counting — the one failure
+   * mode a notification deadline cannot have.
+   */
+  const radius = 9;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - live.elapsed * circumference;
+
+  // Derived from the same three states the backend actually emits — overdue,
+  // due_soon, on_track. An unreachable fourth state here would silently paint a
+  // deadline about to be missed in the on-track colour.
+  const dialStroke =
+    live.state === "overdue"
+      ? "stroke-sev-critical"
+      : live.state === "due_soon"
+        ? "stroke-sev-high"
+        : "stroke-sev-benign";
+
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span
-          className={[
-            "min-w-0 truncate font-medium text-ink",
-            prominent ? "text-[13px]" : "text-[11px]",
-          ].join(" ")}
-        >
-          {clock.authority}
-        </span>
-        <span className="flex items-center gap-2">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-rule-soft/60 bg-raised/40 p-3 transition hover:border-rule">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
           <span
             className={[
-              "tabular font-semibold",
-              prominent ? "text-[15px]" : "text-[11px]",
-              live.state === "overdue" ? "text-sev-critical" : "text-ink",
+              "min-w-0 truncate font-semibold text-ink",
+              prominent ? "text-[13px]" : "text-xs",
             ].join(" ")}
           >
-            {live.label}
+            {clock.authority}
           </span>
           <span
-            className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tone.chip}`}
+            className={`inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tone.chip}`}
           >
             {live.state !== "on_track" && !reduced ? (
               <span className={`h-1 w-1 rounded-full ${tone.mark} pulse-dot`} aria-hidden />
             ) : null}
             {tone.label}
           </span>
-        </span>
-      </div>
+        </div>
 
-      <div className="h-1 w-full overflow-hidden rounded-sm bg-track-neutral">
-        <motion.div
-          className={`h-full ${tone.mark}`}
-          initial={reduced ? false : { width: 0 }}
-          animate={{ width: `${live.elapsed * 100}%` }}
-          transition={{ duration: 0.9, ease: EASE_OUT }}
-        />
-      </div>
-
-      {prominent ? (
-        <p className="text-[10px] text-faint">
-          {clock.clock_label} from {clock.starts_from}
+        <p className="flex flex-wrap items-baseline gap-1.5 text-[10px] text-faint">
+          <span className="truncate">{clock.clock_label}</span>
+          <span aria-hidden>·</span>
+          <span
+            className={[
+              "tabular font-semibold",
+              prominent ? "text-[13px]" : "text-[11px]",
+              live.state === "overdue" ? "text-sev-critical" : "text-ink",
+            ].join(" ")}
+          >
+            {live.label}
+          </span>
         </p>
-      ) : null}
+
+        {prominent && clock.starts_from ? (
+          <p className="truncate text-[10px] text-faint">from {clock.starts_from}</p>
+        ) : null}
+      </div>
+
+      <div
+        className="relative flex h-7 w-7 shrink-0 items-center justify-center"
+        title={`${Math.round(live.elapsed * 100)}% of the window elapsed · ${live.label}`}
+      >
+        <svg className="h-7 w-7 -rotate-90" viewBox="0 0 24 24" aria-hidden>
+          <circle
+            cx="12"
+            cy="12"
+            r={radius}
+            className="stroke-track-neutral"
+            strokeWidth="2.5"
+            fill="transparent"
+          />
+          <motion.circle
+            cx="12"
+            cy="12"
+            r={radius}
+            className={dialStroke}
+            strokeWidth="2.5"
+            strokeDasharray={circumference}
+            strokeLinecap="round"
+            fill="transparent"
+            initial={reduced ? false : { strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 0.9, ease: EASE_OUT }}
+          />
+        </svg>
+        <span className="absolute h-1.5 w-1.5 rounded-full bg-ink/80" aria-hidden />
+      </div>
     </div>
   );
 }

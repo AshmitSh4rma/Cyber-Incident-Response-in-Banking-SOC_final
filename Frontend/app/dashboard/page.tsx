@@ -238,7 +238,11 @@ export default function DashboardPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-faint">
                   How serious they are
                 </p>
-                <SeverityBar counts={severityCounts} total={metrics.queue.actionable} />
+                <SeverityBar
+                  counts={severityCounts}
+                  total={metrics.queue.actionable}
+                  linkTo={(s) => `/queue?severity=${s}`}
+                />
               </div>
             </>
           ) : (

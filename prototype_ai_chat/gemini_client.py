@@ -4,10 +4,32 @@ from __future__ import annotations
 
 import asyncio
 
-from google import genai
-from google.genai import errors, types
+from prototype_ai_chat.config import GeminiConfigurationError, GeminiSettings
 
-from prototype_ai_chat.config import GeminiSettings
+
+def _load_sdk():
+    """
+    Import the Gemini SDK on demand.
+
+    google-genai is declared in prototype_ai_chat/requirements.txt, not in the
+    repository's own requirements.txt, so the ordinary case is a checkout that
+    does not have it. Importing it at module scope makes that case an ImportError
+    while `chat_service` is still being imported, which takes down the whole
+    module — including the deterministic retrieval path that needs no model at
+    all, and the "no Gemini configured" fallback that exists precisely for this.
+
+    Deferring it means the chatbot answers from the SENTRA records with the SDK
+    absent, and only the generation step is unavailable.
+    """
+    try:
+        from google import genai
+        from google.genai import errors, types
+    except ImportError as exc:  # pragma: no cover - depends on the environment
+        raise GeminiConfigurationError(
+            "The google-genai package is not installed.\n"
+            "Install it with: pip install -r prototype_ai_chat/requirements.txt"
+        ) from exc
+    return genai, errors, types
 
 
 class GeminiClientError(RuntimeError):
@@ -42,7 +64,9 @@ class GeminiClient:
     """Generate text without logging credentials, prompts, or responses."""
 
     def __init__(self, settings: GeminiSettings) -> None:
+        genai, errors, types = _load_sdk()
         self._settings = settings
+        self._errors = errors
         self._client = genai.Client(
             api_key=settings.api_key,
             http_options=types.HttpOptions(
@@ -64,7 +88,7 @@ class GeminiClient:
             )
         except TimeoutError as exc:
             raise GeminiTimeoutError("Gemini request timed out.") from exc
-        except errors.APIError as exc:
+        except self._errors.APIError as exc:
             code = getattr(exc, "code", None)
             if code in {401, 403}:
                 raise GeminiAuthenticationError(

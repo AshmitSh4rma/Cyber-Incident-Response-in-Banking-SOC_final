@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowRight, ExternalLink, ShieldCheck, TriangleAlert } from "lucide-react";
 
 import {
   Block,
@@ -137,6 +137,8 @@ export default function CompliancePage() {
                   )
                 }
               />
+
+              <DeadlineCaution overdue={payload.overdue} tightest={tightest} />
             </div>
 
             <Section title="The rules behind these deadlines" hint="Taken from the regulations themselves">
@@ -276,5 +278,47 @@ function LiveRemaining({ clock }: { clock: Clock }) {
     >
       {live.label}
     </span>
+  );
+}
+
+/**
+ * The state of the nearest deadline, called out rather than read off.
+ *
+ * The figure above says how many incidents are on a clock, which is the count.
+ * This says whether anything is actually in trouble, which is the decision. It
+ * appears only when there is something to say — a permanent green "all clear"
+ * banner is the kind of thing people stop seeing.
+ */
+function DeadlineCaution({ overdue, tightest }: { overdue: number; tightest?: Clock }) {
+  const live = useLiveCountdown(
+    tightest?.deadline ?? new Date().toISOString(),
+    tightest?.window_hours ?? 1,
+  );
+
+  if (!tightest) return null;
+  if (overdue === 0 && live.state === "on_track") return null;
+
+  const critical = overdue > 0 || live.state === "overdue";
+  const tone = critical
+    ? "border-sev-critical/40 bg-sev-critical/10 text-sev-critical"
+    : "border-sev-high/40 bg-sev-high/10 text-sev-high";
+
+  return (
+    <div className={`mt-4 flex items-start gap-2.5 rounded-md border px-3 py-2.5 ${tone}`}>
+      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <div className="space-y-0.5 text-xs">
+        <p className="font-semibold">
+          {overdue > 0
+            ? `${overdue} notification ${overdue === 1 ? "deadline has" : "deadlines have"} passed`
+            : "A notification deadline is close"}
+        </p>
+        <p className="text-muted">
+          {tightest.authority} — {tightest.clock_label}, {live.label}.
+          {overdue > 0
+            ? " Late notification is a separate breach from the incident itself."
+            : ""}
+        </p>
+      </div>
+    </div>
   );
 }

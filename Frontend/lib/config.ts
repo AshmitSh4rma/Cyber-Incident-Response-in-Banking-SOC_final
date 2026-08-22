@@ -11,3 +11,15 @@ const BACKEND_BASE_URL =
 
 export const backendUrl = (path: string): string =>
   `${BACKEND_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+
+/**
+ * The Ask SENTRA chat service, which runs as its own process:
+ *   uvicorn prototype_ai_chat.api:app --port 8100
+ *
+ * Separate from the main backend on purpose — it needs PostgreSQL and the
+ * Gemini SDK, and the rest of the console has to keep working without them.
+ */
+const AI_BASE_URL = process.env.AI_API_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8100";
+
+export const aiUrl = (path: string): string =>
+  `${AI_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;

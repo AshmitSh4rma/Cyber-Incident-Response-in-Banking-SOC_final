@@ -74,6 +74,17 @@
   --track-medium: #33290a;
   --track-low: #0f2b3d;
   --track-neutral: #0d2e19;
+
+  /* Categorical chart series.
+     Deliberately a cool ramp, held away from the severity hues: a bar coloured
+     like --sev-high would read as "high severity" when it only means "the second
+     category". These are for distinguishing categories from each other, and
+     nothing else encodes meaning by position in the ramp. */
+  --chart-1: #00e5ff;
+  --chart-2: #00b8d4;
+  --chart-3: #4d8cff;
+  --chart-4: #a77bff;
+  --chart-5: #00d68f;
 }
 
 @theme inline {
@@ -102,6 +113,12 @@
   --color-track-medium: var(--track-medium);
   --color-track-low: var(--track-low);
   --color-track-neutral: var(--track-neutral);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 
   --color-background: var(--ground);
   --color-foreground: var(--text);
