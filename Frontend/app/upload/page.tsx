@@ -385,6 +385,39 @@ export default function ScenarioReplayPage() {
     [submit],
   );
 
+  /**
+   * Dropping a log file anywhere on the page replays it.
+   *
+   * The button in the header opens a picker and stays: dragging a file in is
+   * quicker when you already have it in a window, and unusable if you are
+   * driving by keyboard. Both routes end at the same onUpload.
+   */
+  const [dragging, setDragging] = useState(false);
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    setDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback((e: React.DragEvent) => {
+    // Fires when moving between children too, so only a leave that exits the
+    // element itself counts.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragging(false);
+  }, []);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      if (phase === "running") return;
+      const file = e.dataTransfer.files?.[0];
+      if (file) void onUpload(file);
+    },
+    [onUpload, phase],
+  );
+
   const reset = () => {
     setPhase("idle");
     setActiveId(null);
@@ -397,6 +430,18 @@ export default function ScenarioReplayPage() {
   const activeLabel = SCENARIOS.find((s) => s.id === activeId)?.label ?? "your logs";
 
   return (
+    <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} className="relative">
+      {dragging ? (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-ground/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-lg border-2 border-dashed border-accent bg-surface px-6 py-5">
+            <Upload className="h-5 w-5 text-accent" />
+            <div>
+              <p className="text-sm font-semibold text-ink">Drop the log file to replay it</p>
+              <p className="text-[11px] text-muted">A JSON array, or JSONL with one record per line.</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     <Screen>
       {/* ── Lead ──────────────────────────────────────────────────────────── */}
       <Block>
@@ -665,6 +710,7 @@ export default function ScenarioReplayPage() {
         </div>
       ) : null}
     </Screen>
+    </div>
   );
 }
 
