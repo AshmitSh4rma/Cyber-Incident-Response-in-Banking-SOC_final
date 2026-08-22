@@ -42,6 +42,20 @@ export function DetailProvider({ children }: { children: React.ReactNode }) {
   const [level, setLevelState] = useState<DetailLevel>("overview");
 
   useEffect(() => {
+    // A URL override wins over the stored preference, so a link can open the
+    // console at a known detail level — useful for a demo, a bug report, or a
+    // screenshot that has to be reproducible.
+    //   ?detail=analyst  ·  ?detail=overview
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("detail");
+      if (fromUrl === "analyst" || fromUrl === "overview") {
+        setLevelState(fromUrl);
+        return;
+      }
+    } catch {
+      /* fall through to the stored preference */
+    }
+
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored === "analyst" || stored === "overview") setLevelState(stored);

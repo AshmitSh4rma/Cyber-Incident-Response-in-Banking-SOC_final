@@ -153,7 +153,7 @@ export default function DashboardPage() {
   return (
     <Screen>
       {/* ── The two things that matter on arrival ────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <Block className="rounded-lg border border-rule bg-surface p-5">
           {metrics ? (
             <>
