@@ -326,3 +326,40 @@ def test_a_determination_survives_a_re_run(tmp_path, monkeypatch):
     # A different subject gets its own clock.
     other = db_manager.determination_time("campaign:def", "2026-08-22T17:30:00+00:00")
     assert other == "2026-08-22T17:30:00+00:00"
+
+
+def test_a_campaign_of_merely_suspicious_alerts_is_not_reported_as_confirmed():
+    """
+    for_campaign hardcoded verdict="malicious", so a cluster of unconfirmed alerts
+    started a legal clock while the console labelled it high confidence — asserting
+    to a compliance officer something the detector had never concluded.
+    """
+    suspicious_only = {
+        "severity": "critical",
+        "furthest_stage": "Exfiltration",
+        "furthest_stage_order": 14,
+        "determined_at": T0.isoformat(),
+        "member_verdict": "suspicious",
+        "malicious_members": 0,
+    }
+    confirmed = {**suspicious_only, "member_verdict": "malicious", "malicious_members": 3}
+
+    unconfirmed_result = for_campaign(suspicious_only, now=T0)
+    confirmed_result = for_campaign(confirmed, now=T0)
+
+    # Both may be reportable — reaching Exfiltration is enough — but they must not
+    # claim the same confidence.
+    assert confirmed_result["confidence"] == "high"
+    assert unconfirmed_result["confidence"] != "high", (
+        "an unconfirmed campaign must not be presented with the same confidence as a "
+        "confirmed one"
+    )
+
+
+def test_a_campaign_with_no_verdict_defaults_to_suspicious_not_malicious():
+    """Absent information, understate. The alternative starts a clock on nothing."""
+    result = for_campaign({
+        "severity": "high", "furthest_stage": "Initial Access",
+        "furthest_stage_order": 3, "determined_at": T0.isoformat(),
+    }, now=T0)
+    assert result["confidence"] != "high"

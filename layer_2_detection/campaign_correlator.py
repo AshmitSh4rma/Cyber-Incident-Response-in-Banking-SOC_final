@@ -360,6 +360,17 @@ def correlate_campaigns(events: list[dict], min_size: int = 2) -> dict[str, Any]
                 "incident_ids": [m["event_id"] for m in members],
                 "severity": _RANK_TO_SEVERITY[escalated_rank],
                 "member_max_severity": _RANK_TO_SEVERITY[worst_rank],
+                # The strongest verdict any member earned. Reportability was
+                # assuming "malicious" for every campaign, so a cluster of merely
+                # suspicious alerts started a legal clock while the compliance
+                # screen called it high confidence. What a regulator is told has to
+                # reflect what the detector actually concluded.
+                "member_verdict": (
+                    "malicious"
+                    if any(m["label"] == "malicious" for m in members)
+                    else "suspicious"
+                ),
+                "malicious_members": sum(1 for m in members if m["label"] == "malicious"),
                 "escalated": escalated_rank > worst_rank,
                 "confidence": round(max(m["confidence"] for m in members), 2),
                 "first_seen": min(timestamps) if timestamps else "",

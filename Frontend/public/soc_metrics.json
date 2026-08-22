@@ -1,44 +1,44 @@
 {
   "queue": {
-    "total_alerts": 25,
-    "benign_filtered": 4,
+    "total_alerts": 47,
+    "benign_filtered": 17,
     "analyst_suppressed": 0,
-    "actionable": 21,
+    "actionable": 30,
     "severity": {
-      "critical": 3,
-      "high": 10,
-      "medium": 8,
-      "low": 0
+      "critical": 4,
+      "high": 17,
+      "medium": 7,
+      "low": 2
     },
     "severity_all": {
-      "critical": 3,
-      "high": 10,
-      "medium": 8,
-      "low": 4
+      "critical": 4,
+      "high": 17,
+      "medium": 7,
+      "low": 19
     }
   },
   "consolidation": {
-    "actionable_alerts": 21,
-    "investigations": 4,
-    "campaigns": 3,
-    "standalone": 1,
-    "ratio": 5.2,
-    "headline": "21 actionable alerts consolidated into 4 investigations"
+    "actionable_alerts": 30,
+    "investigations": 5,
+    "campaigns": 2,
+    "standalone": 3,
+    "ratio": 6.0,
+    "headline": "30 actionable alerts consolidated into 5 investigations"
   },
   "coverage": {
-    "cis_mapped": 25,
+    "cis_mapped": 47,
     "cis_mapped_pct": 100,
-    "attack_mapped": 21,
-    "attack_mapped_pct": 84,
-    "cvss_scored": 25,
+    "attack_mapped": 28,
+    "attack_mapped_pct": 60,
+    "cvss_scored": 47,
     "cvss_scored_pct": 100
   },
   "time": {
-    "pipeline_seconds": 0.05,
-    "manual_baseline_minutes": 375,
-    "assisted_minutes": 16,
-    "minutes_saved": 359,
-    "hours_saved": 6.0,
+    "pipeline_seconds": 0.27,
+    "manual_baseline_minutes": 705,
+    "assisted_minutes": 20,
+    "minutes_saved": 685,
+    "hours_saved": 11.4,
     "assumptions": {
       "manual_triage_minutes_per_alert": 15.0,
       "review_minutes_per_incident": 4.0,
@@ -52,17 +52,17 @@
     "alerts_suppressed": 0
   },
   "response": {
-    "gated_actions": 25,
-    "auto_executable_actions": 31,
-    "incidents_needing_approval": 15,
-    "auto_share_pct": 55
+    "gated_actions": 35,
+    "auto_executable_actions": 55,
+    "incidents_needing_approval": 26,
+    "auto_share_pct": 61
   },
   "worst_campaign": {
-    "campaign_id": "CMP-003",
+    "campaign_id": "CMP-001",
     "name": "Data theft originating from 203.0.113.55",
     "severity": "critical",
     "furthest_stage": "Exfiltration",
     "progression_pct": 93,
-    "incident_count": 9
+    "incident_count": 15
   }
 }

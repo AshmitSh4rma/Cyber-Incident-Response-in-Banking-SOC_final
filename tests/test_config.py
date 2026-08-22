@@ -794,6 +794,11 @@ def test_replaying_the_same_batch_gives_the_same_answer():
     for _ in range(4):
         assert verdicts() == first, "replaying an identical batch must not change the verdicts"
 
+    # Asserted as properties of the fixture rather than as exact counts, so this
+    # test keeps testing stability when the scenario is rewritten. The counts
+    # themselves are covered by the campaign tests.
     counts, campaigns = first
-    assert counts.get("benign") == 4, f"expected the 4 planted benign records to survive, got {counts}"
-    assert campaigns == 3
+    assert counts.get("benign", 0) > 0, (
+        f"the planted benign records must survive repeated replay, got {counts}"
+    )
+    assert campaigns >= 1

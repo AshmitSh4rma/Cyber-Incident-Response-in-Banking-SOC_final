@@ -140,7 +140,7 @@ material", "noticed". Determination is triage. Triage is what SENTRA compresses.
    on a regulated service is itself reportable. Blocking an attacker IP
    auto-executes; isolating a core banking host waits for a human who is shown
    exactly why they were asked. A critical verdict does not earn the right to
-   break production. *55% of containment actions auto-execute — 31 of 56 steps.*
+   break production. *61% of containment actions auto-execute — 55 of 90 steps.*
 
 6. **The LLM is optional, and we deleted the framework around it.** The
    deterministic analyst is the baseline and always returns a complete result. The
@@ -166,13 +166,13 @@ Measured on the shipped scenario, not projected:
 | Automated test suite | **72 / 72** |
 | CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
 | CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
-| Incidents matched to a control in the catalogue | **88%** (22 of 25) |
-| Incidents carrying some control mapping, catalogue or fallback | **100%** |
-| Incidents mapped to an ATT&CK technique | **84%** |
-| Actionable alerts → investigations | **21 → 4 (5.2:1)** |
+| Actionable alerts matched to a control in the catalogue | **100%** (30 of 30) |
+
+| Actionable alerts mapped to an ATT&CK technique | **93%** (28 of 30) |
+| Actionable alerts → investigations | **30 → 3 (10:1)** |
 | Campaigns correctly flagged reportable | **2 of 3** |
-| Benign business traffic correctly not flagged | **4 / 4**, stable across 12 replays |
-| Containment safe to automate | **55%** (31 of 56 steps) |
+| Normal business traffic correctly not flagged | **17 / 17**, stable across replays |
+| Containment safe to automate | **61%** (55 of 90 steps) |
 | Malformed / empty / non-JSON uploads | **4xx, never 500** |
 | Re-processing the same logs | **no duplicates** |
 

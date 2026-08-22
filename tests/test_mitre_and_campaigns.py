@@ -301,3 +301,94 @@ def test_correlation_does_not_compare_every_pair(monkeypatch):
         f"be a small multiple of n; comparing every pair would be {every_pair:,}."
     )
     assert calls < every_pair / 20, "this is within an order of magnitude of the old pairwise scan"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Earned, not told
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_headline_finding_survives_having_its_labels_removed():
+    """
+    The most important test in this repo, and the one a hostile judge would write.
+
+    The demo scenario used to carry action values that WERE the threat class —
+    action: "lateral_movement", action: "data_exfiltration". No firewall or auth
+    log emits those. Fifteen of twenty-five records told the detector its own
+    answer, and deleting the field collapsed 21 findings to 4 and the headline
+    from a six-stage intrusion at 93% of the lifecycle to two alerts at 33%.
+
+    The scenario now uses what real collectors write — allow, deny, accept,
+    failed_login — so detection has to come from the evidence: eighteen distinct
+    ports from one source, twelve failed logins, four hosts reached by one
+    internal address, a 340,000:1 outbound ratio, a SQL payload in a URL.
+
+    This asserts that. Blank every action that names a threat class and the
+    headline intrusion must still be reconstructed.
+    """
+    import json
+    import pathlib
+
+    from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
+    from layer_2_detection.engine_2_threat_analysis.pattern_mapper import (
+        ACTION_PATTERNS,
+    )
+    from pipeline import isolated_state, run_full_pipeline
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    records = json.loads((root / "demo_attack_scenario.json").read_text())
+
+    # Replace any action that is itself a threat label with a neutral one a real
+    # collector would write.
+    blinded = [
+        {**r, "action": "allow"} if r.get("action") in ACTION_PATTERNS else r
+        for r in records
+    ]
+    assert blinded != records, "the fixture no longer contains any labelled action"
+
+    with isolated_state():
+        out = run_full_pipeline(process_json_text(json.dumps(blinded)))
+
+    campaigns = out["campaigns"]
+    assert campaigns, "no campaign reconstructed without the labels"
+
+    worst = max(campaigns, key=lambda c: c["furthest_stage_order"])
+    assert worst["furthest_stage"] == "Exfiltration", (
+        f"the intrusion should still be traced to Exfiltration, got {worst['furthest_stage']}"
+    )
+    assert worst["severity"] == "critical"
+    assert worst["incident_count"] >= 8, (
+        f"expected the chain to survive, got {worst['incident_count']} alerts"
+    )
+
+    actionable = [
+        e for e in out["events"]
+        if str((e.get("detection") or {}).get("label", "")).lower() not in ("benign", "suppressed")
+    ]
+    assert len(actionable) >= 20, (
+        f"only {len(actionable)} findings survived label removal — detection is being told, "
+        "not earned"
+    )
+
+
+def test_the_scenario_does_not_pre_label_its_own_attacks():
+    """
+    A guard on the fixture itself. Beaconing is the one exception: interval
+    regularity has no detector here, and a bank's NDR genuinely does hand the SOC
+    a classified alert, so that one is an honest input rather than a shortcut.
+    """
+    import json
+    import pathlib
+
+    from layer_2_detection.engine_2_threat_analysis.pattern_mapper import (
+        ACTION_PATTERNS,
+    )
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    records = json.loads((root / "demo_attack_scenario.json").read_text())
+
+    labelled = [r for r in records if r.get("action") in ACTION_PATTERNS]
+    kinds = {r["action"] for r in labelled}
+    assert kinds <= {"beaconing"}, f"these actions pre-label their own threat: {kinds - {'beaconing'}}"
+    assert len(labelled) / len(records) < 0.15, (
+        f"{len(labelled)} of {len(records)} records are pre-labelled"
+    )

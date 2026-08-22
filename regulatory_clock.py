@@ -232,9 +232,13 @@ def assess_reportability(
 
     return {
         "reportable": True,
-        # High confidence only where data is plausibly gone; otherwise this is a
-        # judgement call that compliance should confirm.
-        "confidence": "high" if data_at_risk and rank >= 3 else "medium",
+        # High confidence needs two things: data plausibly gone, AND a detector
+        # that actually concluded this was an attack. Reaching Exfiltration on
+        # nothing but unconfirmed alerts is a reason to look, not a reason to tell
+        # a compliance officer we are sure — they are the one who signs the filing.
+        "confidence": (
+            "high" if data_at_risk and rank >= 3 and verdict == "malicious" else "medium"
+        ),
         "reasons": reasons,
     }
 
@@ -339,6 +343,11 @@ def for_campaign(campaign: dict, now: datetime | None = None) -> dict[str, Any]:
 
     A campaign is the right unit here: regulators care about the incident, and nine
     alerts that are one intrusion are one incident with one deadline — not nine.
+
+    The verdict comes from the members. It used to be hardcoded to "malicious",
+    which meant a cluster of merely suspicious alerts started a legal clock while
+    the console called it high confidence — asserting to a compliance officer
+    something the detector had not concluded.
     """
     return build_clocks(
         determined_at=campaign.get("determined_at") or campaign.get("last_seen"),
@@ -346,7 +355,7 @@ def for_campaign(campaign: dict, now: datetime | None = None) -> dict[str, Any]:
         stage_order=int(campaign.get("furthest_stage_order") or 0),
         stage_name=campaign.get("furthest_stage") or "",
         threat_type="",
-        verdict="malicious",
+        verdict=campaign.get("member_verdict") or "suspicious",
         now=now,
     )
 

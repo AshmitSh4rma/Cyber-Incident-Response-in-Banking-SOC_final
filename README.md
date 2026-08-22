@@ -10,7 +10,7 @@ reconstructs multi-host intrusions by chaining compromised hosts, and gates
 containment on blast radius.
 
 ```
-25 raw log records  →  4 investigations  →  1 active breach at Exfiltration
+47 raw log records  →  4 investigations  →  1 active breach at Exfiltration
                                             → 3h 59m left to notify the EU regulator
 ```
 
@@ -94,7 +94,7 @@ Isolating db-core-01                     →  approval  (service-affecting)
 Disabling the payments service account   →  approval  (service-affecting)
 ```
 
-55% of containment actions auto-execute on the demo dataset — 31 of 56 steps; the rest wait
+61% of containment actions auto-execute on the demo dataset — 55 of 90 steps; the rest wait
 for a human who is told exactly why they were asked.
 
 ### The regulatory clock
@@ -221,14 +221,14 @@ python dev_run.py path/to/your.json     # any JSON or JSONL log file
 ```
 
 Prints the verdict spread, the campaigns it reconstructed, the consolidation
-ratio, and per-layer timing. Completes in about 0.09 s on the 25-record scenario
+ratio, and per-layer timing. Completes in about 66 ms on the 47-record scenario
 and is idempotent — incident IDs derive from log content, so re-running updates
 incidents in place instead of duplicating them.
 
 ### Tests
 
 ```bash
-pytest -q        # 201 tests
+pytest -q        # 210 tests
 ```
 
 ### Optional: local LLM for Layer 4
@@ -355,17 +355,17 @@ Measured on the shipped scenario:
 
 | | |
 | --- | --- |
-| Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
-| Test suite | **201 / 201** |
+| Full pipeline, 47 records ingest to stored incident | **66 ms** (median of 15, 51–95 ms) |
+| Test suite | **210 / 210** |
 | CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
 | CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
-| Incidents matched to a control in the catalogue | **88%** (22 of 25) |
-| Incidents carrying some control mapping, catalogue or fallback | **100%** |
-| Incidents mapped to an ATT&CK technique | **84%** |
-| Actionable alerts → investigations | **21 → 4 (5.2:1)** |
-| Campaigns correctly flagged reportable | **2 of 3** (recon cluster correctly excluded) |
-| Benign business traffic correctly not flagged | **4 / 4**, stable across 12 replays |
-| Containment actions safe to automate | **55%** (31 of 56 steps) |
+| Actionable alerts matched to a control in the catalogue | **100%** (30 of 30) |
+
+| Actionable alerts mapped to an ATT&CK technique | **93%** (28 of 30) |
+| Actionable alerts → investigations | **30 → 3 (10:1)** |
+| Campaigns flagged reportable | **2 of 2**, one at high confidence and one at medium |
+| Normal business traffic correctly not flagged | **17 / 17**, stable across replays |
+| Containment actions safe to automate | **61%** (55 of 90 steps) |
 | Malformed / empty / non-JSON uploads | **4xx, never 500** |
 | Re-processing the same logs | **no duplicates** |
 
@@ -397,6 +397,29 @@ Stated plainly, because they matter when reading the output.
   recomputed.
 
 ---
+
+### The demo detects; it is not told
+
+An earlier version of `demo_attack_scenario.json` carried `action` values that
+were themselves the threat class — `action: "lateral_movement"`,
+`action: "data_exfiltration"`. No firewall or auth log emits those. Fifteen of
+twenty-five records told the detector its own answer, and deleting the field
+collapsed 21 findings to 4 and the headline from a six-stage intrusion to two
+alerts at a third of the lifecycle.
+
+The scenario now uses what real collectors write — `allow`, `deny`, `accept`,
+`failed_login` — so the findings have to be earned from evidence: eighteen
+distinct ports from one source, twelve failed logins, four hosts reached by one
+internal address, a 340,000:1 outbound ratio, a SQL payload in a URL. Blank every
+threat-named action and the headline intrusion is still reconstructed at
+Exfiltration, critical, with the chain intact. A test asserts exactly that, because
+it is the claim most worth checking.
+
+One finding is still told rather than deduced: the C2 beaconing, which needs an
+interval-regularity detector this does not have. That is left in and labelled,
+because a bank's NDR genuinely does hand its SOC a pre-classified alert — but it
+is four records of forty-seven, and the test caps the pre-labelled share at 15%.
+
 
 ## Stack
 
