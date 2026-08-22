@@ -16,7 +16,6 @@ const TITLES: [RegExp, string][] = [
   [/^\/ai/, "Ask SENTRA"],
   [/^\/upload/, "Simulation"],
   [/^\/statistics/, "Statistics"],
-  [/^\/settings/, "Settings"],
 ];
 
 /**

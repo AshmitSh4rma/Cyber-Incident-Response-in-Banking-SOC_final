@@ -9,7 +9,6 @@ import {
   Landmark,
   LayoutDashboard,
   ListTodo,
-  SlidersHorizontal,
 } from "lucide-react";
 
 import Dock from "./Dock";
@@ -35,7 +34,6 @@ const NAV = [
   { href: "/ai", label: "Ask SENTRA", icon: <Bot size={20} strokeWidth={2} /> },
   { href: "/upload", label: "Simulation", icon: <Crosshair size={20} strokeWidth={2} /> },
   { href: "/statistics", label: "Statistics", icon: <BarChart3 size={20} strokeWidth={2} /> },
-  { href: "/settings", label: "Settings", icon: <SlidersHorizontal size={20} strokeWidth={2} /> },
 ];
 
 export default function Sidebar() {

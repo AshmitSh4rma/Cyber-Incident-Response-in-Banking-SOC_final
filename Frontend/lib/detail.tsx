@@ -28,11 +28,11 @@ const STORAGE_KEY = "sentra.detail";
 const FALLBACK: DetailLevel = "overview";
 
 /**
- * The level configured in Settings, for viewers who have not chosen one.
+ * The configured default level, for viewers who have not chosen one.
  *
  * Held separately from the stored preference on purpose. Writing the configured
  * default into localStorage would turn it into that viewer's own choice, which
- * has two consequences: a later change in Settings would never reach them, and
+ * has two consequences: a later change to the configuration would never reach them, and
  * the console could no longer tell "the administrator set this" apart from "this
  * person picked it". So it is a session-level fallback, never persisted.
  */
@@ -124,7 +124,7 @@ type Ctx = {
   /**
    * Has this viewer actually chosen a level, or are they seeing the fallback?
    *
-   * The configured default from Settings should apply to someone who has never
+   * The configured default should apply to someone who has never
    * expressed a preference, and must never overwrite someone who has. Without
    * this the two are indistinguishable, because both look like "overview".
    */

@@ -72,17 +72,25 @@ up)
   "$PGBIN/createdb" -h 127.0.0.1 -p "$PGPORT" -U "$USER" sentra 2>/dev/null || true
   "$PGBIN/createdb" -h 127.0.0.1 -p "$PGPORT" -U "$USER" sentra_test 2>/dev/null || true
 
-  [ -n "$(port_pid "$API_PORT")" ] || {
-    nohup "$VENV" -m uvicorn api_server:app --host 127.0.0.1 --port "$API_PORT" \
-      > "$LOGS/api.log" 2>&1 &
+  # setsid and </dev/null matter: without a new session and a detached stdin the
+  # children stay in the caller's process group, so whatever invoked this script
+  # waits on them and kills them when it gives up.
+  spawn() { # logfile, command...
+    local log=$1; shift
+    setsid nohup "$@" > "$log" 2>&1 < /dev/null &
+    disown 2>/dev/null || true
   }
-  [ -n "$(port_pid "$AI_PORT")" ] || {
-    nohup "$VENV" -m uvicorn prototype_ai_chat.api:app --host 127.0.0.1 --port "$AI_PORT" \
-      > "$LOGS/ai.log" 2>&1 &
-  }
-  [ -n "$(port_pid "$WEB_PORT")" ] || {
-    ( cd Frontend && nohup npx next start -p "$WEB_PORT" > "$LOGS/web.log" 2>&1 & )
-  }
+
+  [ -n "$(port_pid "$API_PORT")" ] || spawn "$LOGS/api.log" \
+    "$VENV" -m uvicorn api_server:app --host 127.0.0.1 --port "$API_PORT"
+
+  [ -n "$(port_pid "$AI_PORT")" ] || spawn "$LOGS/ai.log" \
+    "$VENV" -m uvicorn prototype_ai_chat.api:app --host 127.0.0.1 --port "$AI_PORT"
+
+  # The local binary, not npx: npx will go to the network if it cannot resolve.
+  [ -n "$(port_pid "$WEB_PORT")" ] || ( cd Frontend && \
+    setsid nohup ./node_modules/.bin/next start -p "$WEB_PORT" \
+      > "$LOGS/web.log" 2>&1 < /dev/null & disown 2>/dev/null || true )
 
   wait_for "http://127.0.0.1:$API_PORT/health" "SOC API      :$API_PORT" || true
   wait_for "http://127.0.0.1:$AI_PORT/health"  "Ask SENTRA   :$AI_PORT"  || true

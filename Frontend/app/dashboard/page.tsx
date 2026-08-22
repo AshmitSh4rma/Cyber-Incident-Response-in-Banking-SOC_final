@@ -78,7 +78,7 @@ export default function DashboardPage() {
 
   const [query, setQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<"all" | Severity>("all");
-  // The configured defaults from Settings. Applied once, and never over the top
+  // The configured defaults from soc_config. Applied once, and never over the top
   // of a choice the viewer has already made — a default that overrides a
   // deliberate click is not a default.
   const [grouping, setGrouping] = useState<"investigations" | "alerts">("investigations");
