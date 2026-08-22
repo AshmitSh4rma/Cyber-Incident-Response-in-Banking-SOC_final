@@ -52,64 +52,49 @@ def fuse_detection(event: dict) -> dict:
     # ----------------------------
     # Final severity
     # ----------------------------
-    severity_rank = {"low": 1, "medium": 2, "high": 3, "critical": 4}
+    # Severity answers ONE question: what could this class of activity achieve?
+    # It is therefore a pure function of the threat type, and nothing else moves it.
+    #
+    # Confidence, threat-intel matches and correlation strength deliberately do NOT
+    # raise it. They answer a different question — how sure are we this is
+    # happening — and conflating the two produced the same behaviour at two
+    # different severities: two identical port scans came out `medium` and `high`
+    # purely because one source also appeared in the indicator feed. That makes the
+    # queue impossible to sort honestly and inflated the high-severity count to 14
+    # of 25.
+    #
+    # Corroboration still surfaces, in the two places it belongs: it drives the
+    # LABEL above (benign -> suspicious -> malicious) and it is reported as
+    # `confidence`. An analyst sorts by severity to decide what matters and reads
+    # confidence to decide how much to trust it. Those have to stay separable.
+    SEVERITY_BY_THREAT = {
+        # Pre-compromise: information gathering, nothing achieved yet.
+        "suspicious_request": "low",
+        "web_probe": "low",
+        "network_anomaly": "low",
+        "suspicious_web_access": "medium",
+        "port_scan": "medium",
+        "iot_anomaly": "medium",
+        "firmware_anomaly": "medium",
+        "insecure_protocol_use": "medium",
+        "suspicious_login_behavior": "medium",
+        # Access achieved, or credentials in play.
+        "web_attack": "high",
+        "credential_abuse": "high",
+        "brute_force_attempt": "high",
+        "beaconing": "high",
+        "device_compromise": "high",
+        "risky_signin_detected": "high",
+        "suspicious_command_execution": "high",
+        "privilege_escalation": "high",
+        # Hands on keyboard inside the network, or data/systems affected.
+        "lateral_movement": "critical",
+        "endpoint_compromise": "critical",
+        "malware_execution": "critical",
+        "data_exfiltration": "critical",
+    }
 
-    def raise_severity(current: str, new_level: str) -> str:
-        if severity_rank.get(new_level, 1) > severity_rank.get(current, 1):
-            return new_level
-        return current
-
-    final_severity = threat_severity if threat_severity in severity_rank else "low"
-
-    # 1. Threat-type based severity
-    if threat_type in {"suspicious_request", "web_probe", "network_anomaly"}:
-        final_severity = raise_severity(final_severity, "low")
-
-    elif threat_type in {"port_scan", "iot_anomaly", "firmware_anomaly"}:
-        final_severity = raise_severity(final_severity, "medium")
-
-    elif threat_type in {"web_attack", "credential_abuse", "beaconing", "device_compromise"}:
-        final_severity = raise_severity(final_severity, "high")
-
-    elif threat_type in {"lateral_movement", "endpoint_compromise", "malware_execution"}:
-        final_severity = raise_severity(final_severity, "critical")
-
-    # 2. IOC-based severity raise
-    if ioc_risk == "high":
-        final_severity = raise_severity(final_severity, "high")
-    elif ioc_risk == "medium":
-        final_severity = raise_severity(final_severity, "medium")
-
-    # 3. Anomaly-score based raise
-    if anomaly_score >= 0.90:
-        final_severity = raise_severity(final_severity, "high")
-    elif anomaly_score >= 0.70:
-        final_severity = raise_severity(final_severity, "medium")
-
-    # 4. Correlation-confidence based raise
-    # Confidence says how SURE we are, not how BAD it is. High confidence in a
-    # port scan is still a port scan, so confidence alone caps out at "high" —
-    # only the threat class itself (rule 1) or a malicious verdict on a
-    # critical-class threat can reach "critical".
-    if adjusted_confidence >= 0.75:
-        final_severity = raise_severity(final_severity, "high")
-    elif adjusted_confidence >= 0.50:
-        final_severity = raise_severity(final_severity, "medium")
-
-    # 5. Correlation-strength raise
-    if correlation_strength == "strong":
-        final_severity = raise_severity(final_severity, "high")
-    elif correlation_strength == "medium":
-        final_severity = raise_severity(final_severity, "medium")
-
-    # 6. Label floor. Benign events keep low severity — flooring them to medium
-    # is what turns a clean queue into 46% false positives.
-    if label == "malicious":
-        final_severity = raise_severity(final_severity, "high")
-    elif label == "suspicious":
-        final_severity = raise_severity(final_severity, "medium")
-    else:
-        final_severity = "low"
+    final_severity = SEVERITY_BY_THREAT.get(threat_type, "low")
 
     # remove duplicate reasoning while preserving order
     deduped_reasoning = []

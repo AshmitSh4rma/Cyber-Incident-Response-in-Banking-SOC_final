@@ -29,10 +29,24 @@ MANUAL_TRIAGE_MINUTES_PER_ALERT = 15.0
 REVIEW_MINUTES_PER_INCIDENT = 4.0
 
 
-def _severity_counts(incidents: list[dict]) -> dict[str, int]:
+def _severity_counts(incidents: list[dict], actionable_only: bool = False) -> dict[str, int]:
+    """
+    Count incidents by severity.
+
+    `actionable_only` excludes benign and analyst-suppressed alerts. The dashboard
+    labels its distribution bar "the actionable queue", so it must be given
+    actionable counts — feeding it the whole ingest made the label a lie and put
+    four benign events in the severity breakdown.
+    """
     counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     for inc in incidents:
-        sev = str(((inc.get("detection") or {}).get("severity") or "low")).lower()
+        detection = inc.get("detection") or {}
+        if actionable_only:
+            if str(detection.get("label") or "").lower() == "benign":
+                continue
+            if detection.get("suppressed"):
+                continue
+        sev = str(detection.get("severity") or "low").lower()
         if sev in counts:
             counts[sev] += 1
     return counts
@@ -107,7 +121,8 @@ def compute_metrics(
             "benign_filtered": benign,
             "analyst_suppressed": suppressed,
             "actionable": actionable,
-            "severity": _severity_counts(incidents),
+            "severity": _severity_counts(incidents, actionable_only=True),
+            "severity_all": _severity_counts(incidents),
         },
         "consolidation": {
             "actionable_alerts": actionable,

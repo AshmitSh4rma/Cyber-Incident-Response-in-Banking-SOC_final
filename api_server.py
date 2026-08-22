@@ -57,6 +57,24 @@ MAX_UPLOAD_RECORDS = 5000
 _LAST_RUN_SECONDS: float | None = None
 
 
+def _last_run_seconds() -> float | None:
+    """
+    Duration of the most recent pipeline run.
+
+    Prefers a run in this process, then falls back to the timing block in the
+    output file — otherwise a freshly-started server reports no latency at all
+    even though the shipped demo data was produced by a real run, and the
+    dashboard renders a blank metric.
+    """
+    if _LAST_RUN_SECONDS is not None:
+        return _LAST_RUN_SECONDS
+    try:
+        with open(OUTPUT_PATHS[1], "r", encoding="utf-8") as f:
+            return (json.load(f).get("timing") or {}).get("total")
+    except Exception:
+        return None
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     print("[api_server] Initializing SQLite database...")
@@ -278,7 +296,7 @@ async def metrics():
     for incident in incidents:
         feedback.extend(get_feedback_for_incident(incident.get("event_id", "")))
 
-    return compute_metrics(incidents, campaigns, feedback, _LAST_RUN_SECONDS)
+    return compute_metrics(incidents, campaigns, feedback, _last_run_seconds())
 
 
 
