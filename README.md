@@ -94,7 +94,7 @@ Isolating db-core-01                     →  approval  (service-affecting)
 Disabling the payments service account   →  approval  (service-affecting)
 ```
 
-Roughly 65% of containment actions auto-execute on the demo dataset; the rest wait
+55% of containment actions auto-execute on the demo dataset — 31 of 56 steps; the rest wait
 for a human who is told exactly why they were asked.
 
 ### The regulatory clock
@@ -359,12 +359,13 @@ Measured on the shipped scenario:
 | Test suite | **201 / 201** |
 | CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
 | CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
-| Incidents mapped to a named CIS control | **100%** |
+| Incidents matched to a control in the catalogue | **88%** (22 of 25) |
+| Incidents carrying some control mapping, catalogue or fallback | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
 | Actionable alerts → investigations | **21 → 4 (5.2:1)** |
 | Campaigns correctly flagged reportable | **2 of 3** (recon cluster correctly excluded) |
-| Benign business traffic correctly not flagged | **4 / 4** |
-| Containment actions safe to automate | **65%** |
+| Benign business traffic correctly not flagged | **4 / 4**, stable across 12 replays |
+| Containment actions safe to automate | **55%** (31 of 56 steps) |
 | Malformed / empty / non-JSON uploads | **4xx, never 500** |
 | Re-processing the same logs | **no duplicates** |
 

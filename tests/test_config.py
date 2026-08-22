@@ -759,3 +759,41 @@ def test_a_preview_leaves_layer_one_state_untouched():
 
     assert set(pattern_detector._pattern_store) == set(before)
     assert pattern_detector._pattern_store["10.0.0.9"]["unique_ports_seen"] == {22, 443}
+
+
+def test_replaying_the_same_batch_gives_the_same_answer():
+    """
+    Layer 1 accumulates per-source history in module state and none of it decays,
+    so without isolation the same file scored differently on every upload: by the
+    second replay the four benign records in the demo scenario had been dragged
+    over the port-scan and brute-force thresholds by their own earlier selves, and
+    the benign class collapsed to zero. On a server that had been used at all, it
+    was zero from the first replay.
+
+    A verdict that depends on how many times you pressed the button is not a
+    verdict, and this is the property a live demo most needs.
+    """
+    import pathlib as _pathlib
+
+    from layer_1_feature_engineering.ingestion_orchestrator import process_json_text
+    from pipeline import isolated_state, run_full_pipeline
+
+    scenario = _pathlib.Path(soc_config.ROOT) / "demo_attack_scenario.json"
+    records = process_json_text(scenario.read_text(encoding="utf-8"))
+
+    def verdicts():
+        with isolated_state():
+            output = run_full_pipeline(records)
+        counts: dict[str, int] = {}
+        for event in output["events"]:
+            label = str((event.get("detection") or {}).get("label", "")).lower()
+            counts[label] = counts.get(label, 0) + 1
+        return counts, len(output["campaigns"])
+
+    first = verdicts()
+    for _ in range(4):
+        assert verdicts() == first, "replaying an identical batch must not change the verdicts"
+
+    counts, campaigns = first
+    assert counts.get("benign") == 4, f"expected the 4 planted benign records to survive, got {counts}"
+    assert campaigns == 3

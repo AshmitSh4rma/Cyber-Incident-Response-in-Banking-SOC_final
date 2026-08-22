@@ -220,8 +220,23 @@ async def run_pipeline(file: UploadFile = File(...)):
             },
         )
 
+    # Each submitted batch is analysed on its own merits.
+    #
+    # Layer 1 accumulates per-source history — unique ports seen per address,
+    # failed logins per account, byte ratios — in module state, and none of it
+    # decays. Without isolation the same file scored differently on every upload:
+    # by the second replay of the demo scenario the four benign records had been
+    # dragged over the port-scan and brute-force thresholds by their own earlier
+    # selves, and the benign class collapsed to zero. A verdict that depends on
+    # how many times you pressed the button is not a verdict.
+    #
+    # This is an ingestion endpoint for log *files*, so treating each batch as
+    # self-contained is also the honest semantic: the alternative is cross-batch
+    # counters with no time window, which in a real deployment means an address
+    # that scanned fifteen ports last year still counts today.
     started = time.perf_counter()
-    output = run_full_pipeline(normalized)
+    with isolated_state():
+        output = run_full_pipeline(normalized)
     _LAST_RUN_SECONDS = time.perf_counter() - started
 
     events = output["events"]
