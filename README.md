@@ -53,7 +53,7 @@ Seven stages. Each is independently testable, and data flows strictly forward.
 | **L5** | Scores how bad it is, consistently | CVSS 3.1 base score computed from the published equations |
 | **L6** | Says what to do, and what needs a person | Threat-specific playbook + blast-radius approval gate |
 | **Clock** | **Says how long until you must tell the regulator** | Reportability assessment + per-regime countdown |
-| **Settings** | **Lets the bank change any of the above without a developer** | 22 declared settings read at the point of use; validated, previewable, reversible |
+| **Settings** | **Lets the bank change any of the above without a developer** | 23 declared settings read at the point of use; validated, previewable, reversible |
 
 ### Campaign correlation is the interesting bit
 
@@ -137,7 +137,7 @@ That disclaimer ships in every API response.
 
 Every number that decides how this system behaves was a Python literal, and a
 system whose risk appetite is a literal cannot be deployed twice. **Settings**
-(`/settings`) exposes 22 of them — thresholds, severity policy, jurisdiction,
+(`/settings`) exposes 23 of them — thresholds, severity policy, jurisdiction,
 response autonomy, the savings model, and console defaults — with no code change
 and no restart.
 
@@ -228,7 +228,7 @@ incidents in place instead of duplicating them.
 ### Tests
 
 ```bash
-pytest -q        # 177 tests
+pytest -q        # 201 tests
 ```
 
 ### Optional: local LLM for Layer 4
@@ -319,7 +319,7 @@ layer_2_detection/            4 detection engines + suppression
   mitre_mapper.py             ATT&CK techniques and tactics
   campaign_correlator.py      Layer 2.5
 layer_3_cis/                  CIS/OWASP catalogues + IDF-weighted matcher
-soc_config.py                 the 22 runtime settings: schema, validation, storage
+soc_config.py                 the 23 runtime settings: schema, validation, storage
 layer_4_ai_analysis/          deterministic analyst + optional LLM enrichment
 layer_5_cvss/                 4 CVSS engines
 layer_6_response/             playbooks + blast-radius approval gate
@@ -356,7 +356,7 @@ Measured on the shipped scenario:
 | | |
 | --- | --- |
 | Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
-| Test suite | **177 / 177** |
+| Test suite | **201 / 201** |
 | CVSS 3.1 vs NVD-published reference vectors | **9 / 9 exact** |
 | CVSS 3.1 vs an independent implementation, whole metric space | **2,592 / 2,592** |
 | Incidents mapped to a named CIS control | **100%** |
