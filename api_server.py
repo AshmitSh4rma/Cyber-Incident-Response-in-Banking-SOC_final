@@ -14,6 +14,7 @@ from fastapi import Body, FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
+import soc_config
 from audit_report import campaign_report, incident_report
 from db_manager import (
     clear_all_incidents,
@@ -36,7 +37,7 @@ from layer_1_feature_engineering.ingestion_orchestrator import (
     process_json_text,
     process_jsonl_text,
 )
-from pipeline import run_full_pipeline
+from pipeline import reset_state, run_full_pipeline
 from regulatory_clock import REGIMES, for_campaign, for_incident, format_remaining
 from soc_metrics import compute_metrics
 
@@ -536,3 +537,237 @@ async def campaign_audit_report(campaign_id: str):
         campaign_report(campaign, get_all_incidents()),
         headers={"Content-Disposition": f'attachment; filename="campaign-{campaign_id}.md"'},
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration
+#
+# The whole point of these endpoints is that a bank should not need a developer
+# to change its own risk appetite. Two things make that safe rather than merely
+# possible:
+#
+#   - Nothing is written unless the entire patch validates. Field errors come
+#     back keyed by setting, so the console renders each against its control
+#     rather than showing one banner and losing the rest.
+#   - A change can be previewed before it is kept. `/api/config/preview` runs the
+#     pipeline twice over the same records — once as configured, once with the
+#     candidate applied — and returns both, so "what will this do" is answered
+#     with numbers rather than a guess.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_DEMO_SCENARIO = Path(__file__).resolve().parent / "demo_attack_scenario.json"
+
+
+def _outcome(output: dict) -> dict:
+    """
+    The handful of numbers that tell an operator whether a config change did what
+    they wanted. Deliberately the same shape for the before and after side, so the
+    console can diff them without knowing what any of them mean.
+    """
+    events = output.get("events", []) or []
+    campaigns = output.get("campaigns", []) or []
+
+    actionable = [
+        e for e in events
+        if str((e.get("detection") or {}).get("label", "")).lower() not in ("benign", "suppressed")
+    ]
+
+    severity: dict[str, int] = {}
+    for event in actionable:
+        detection = event.get("detection") or {}
+        key = str(detection.get("severity", "unknown")).lower()
+        severity[key] = severity.get(key, 0) + 1
+
+    auto = gated = 0
+    for event in events:
+        for step in (event.get("response") or {}).get("containment_plan", []) or []:
+            if step.get("execution") == "auto":
+                auto += 1
+            else:
+                gated += 1
+
+    reportable = 0
+    clocks = 0
+    for campaign in campaigns:
+        notification = campaign.get("notification") or {}
+        if notification.get("reportable") is True:
+            reportable += 1
+            clocks += len(notification.get("clocks") or [])
+
+    metrics = compute_metrics(events, campaigns)
+
+    return {
+        "alerts": len(events),
+        "actionable": len(actionable),
+        "filtered_out": len(events) - len(actionable),
+        "severity": severity,
+        "campaigns": len(campaigns),
+        "investigations": (metrics.get("consolidation") or {}).get("investigations"),
+        "reportable_campaigns": reportable,
+        "notification_deadlines": clocks,
+        "actions_automatic": auto,
+        "actions_needing_approval": gated,
+        "hours_saved": (metrics.get("time") or {}).get("hours_saved"),
+    }
+
+
+def _run_demo_scenario() -> dict | None:
+    """
+    Run the canonical demo records through every layer.
+
+    Layer 1 accumulates per-source history in module state, so the run is reset
+    first — otherwise the second of two comparison runs inherits the first one's
+    traffic and the comparison measures the wrong thing.
+    """
+    if not _DEMO_SCENARIO.exists():
+        return None
+    try:
+        records = process_json_text(_DEMO_SCENARIO.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    reset_state()
+    return run_full_pipeline(records)
+
+
+@app.get("/api/config")
+async def read_config():
+    """The schema, the current values, what differs from default, and recent changes."""
+    return soc_config.status()
+
+
+@app.put("/api/config")
+async def write_config(payload: dict = Body(...)):
+    """
+    Apply a change.
+
+    Returns 422 with per-field messages if anything is invalid, and writes nothing
+    in that case. On success the stored settings are live immediately — every layer
+    reads them at the point of use — and the response says what changed.
+    """
+    patch = payload.get("values", payload) if isinstance(payload, dict) else None
+    if not isinstance(patch, dict) or not patch:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Send an object of setting keys to new values."},
+        )
+
+    cleaned, errors = soc_config.validate(patch)
+    if errors:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "status": "invalid",
+                "message": f"{len(errors)} setting{'s' if len(errors) != 1 else ''} "
+                           "could not be applied. Nothing was saved.",
+                "errors": errors,
+            },
+        )
+
+    if not cleaned:
+        return {"status": "success", "message": "Nothing to change.", "changes": [],
+                **soc_config.status()}
+
+    result = soc_config.save(cleaned, actor=str(payload.get("actor") or "console"))
+
+    if not result["changes"]:
+        return {"status": "success", "message": "Those values were already in effect.",
+                "changes": [], **soc_config.status()}
+
+    return {
+        "status": "success",
+        "message": f"Saved {len(result['changes'])} change"
+                   f"{'s' if len(result['changes']) != 1 else ''}. "
+                   "Re-run the pipeline to score existing alerts with the new settings.",
+        "changes": result["changes"],
+        **soc_config.status(),
+    }
+
+
+@app.post("/api/config/reset")
+async def reset_config():
+    """Return every setting to its shipped default."""
+    result = soc_config.reset()
+    count = len(result["changes"])
+    return {
+        "status": "success",
+        "message": "Already at defaults." if not count else
+                   f"Reset {count} setting{'s' if count != 1 else ''} to default.",
+        "changes": result["changes"],
+        **soc_config.status(),
+    }
+
+
+@app.post("/api/config/preview")
+async def preview_config(payload: dict = Body(...)):
+    """
+    What would this change do?
+
+    Runs the demo records twice — as configured, then with the candidate applied —
+    and returns both outcomes plus the difference. Nothing is saved.
+
+    One honest caveat: the preview holds the candidate settings in process state
+    for the duration of the run, so two previews at the same instant would
+    interfere. That is acceptable for a console one operator drives, and saying so
+    is better than pretending otherwise.
+    """
+    patch = payload.get("values", payload) if isinstance(payload, dict) else None
+    if not isinstance(patch, dict) or not patch:
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "Send an object of setting keys to new values."},
+        )
+
+    cleaned, errors = soc_config.validate(patch)
+    if errors:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "status": "invalid",
+                "message": "Cannot preview a configuration that would not be accepted.",
+                "errors": errors,
+            },
+        )
+
+    baseline = _run_demo_scenario()
+    if baseline is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "No demo records available to preview against. "
+                           "Replay a scenario from Simulation first.",
+            },
+        )
+    before = _outcome(baseline)
+
+    # Summarised inside the block, not after it: several of these figures are
+    # themselves computed from configuration (hours saved from the minutes model,
+    # the clock count from the regime list), so measuring them once the candidate
+    # has been withdrawn reports the old value and hides the effect.
+    with soc_config.previewing(cleaned):
+        candidate = _run_demo_scenario()
+        after = _outcome(candidate) if candidate else before
+
+    differences = [
+        {"metric": key, "before": before[key], "after": after[key]}
+        for key in before
+        if key not in ("severity",) and before[key] != after.get(key)
+    ]
+    if before["severity"] != after["severity"]:
+        differences.append(
+            {"metric": "severity", "before": before["severity"], "after": after["severity"]}
+        )
+
+    return {
+        "status": "success",
+        "message": (
+            "No measurable difference on the demo records."
+            if not differences
+            else f"{len(differences)} figure{'s' if len(differences) != 1 else ''} would change."
+        ),
+        "source": _DEMO_SCENARIO.name,
+        "candidate": cleaned,
+        "before": before,
+        "after": after,
+        "differences": differences,
+    }

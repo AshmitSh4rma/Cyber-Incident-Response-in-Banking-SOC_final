@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { GitBranch, LayoutDashboard, Landmark, ShieldCheck, UploadCloud } from "lucide-react";
+import { GitBranch, Landmark, LayoutDashboard, ShieldCheck, SlidersHorizontal, UploadCloud } from "lucide-react";
 
 import { EASE_OUT } from "@/lib/motion";
 
@@ -46,6 +46,12 @@ const NAV = [
     label: "Simulation",
     sublabel: "Replay an attack",
     icon: UploadCloud,
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+    sublabel: "Thresholds and policy",
+    icon: SlidersHorizontal,
   },
 ];
 

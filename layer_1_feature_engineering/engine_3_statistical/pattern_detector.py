@@ -22,6 +22,8 @@
 
 from collections import defaultdict
 
+import soc_config
+
 # ─────────────────────────────────────────
 # IN-MEMORY PATTERN STORE
 # Tracks per-source behavior for pattern detection
@@ -38,7 +40,7 @@ _pattern_store: dict[str, dict] = defaultdict(lambda: {
 # Thresholds
 PORT_SCAN_THRESHOLD    = 15   # unique ports in store = port scan
 BRUTE_FORCE_THRESHOLD  = 10   # failed logins in store = brute force
-EXFIL_RATIO_THRESHOLD  = 10.0 # bytes_out / bytes_in ratio = exfil
+# (exfil ratio is configurable — see detection.exfil_ratio in soc_config.py)
 LATERAL_HOST_THRESHOLD = 3    # unique hosts for same user = lateral move
 
 
@@ -97,7 +99,7 @@ def _detect_exfiltration(source_key: str) -> bool:
     if avg_in == 0:
         return False
 
-    return (avg_out / avg_in) >= EXFIL_RATIO_THRESHOLD
+    return (avg_out / avg_in) >= soc_config.get_float("detection.exfil_ratio")
 
 
 def _detect_lateral_movement(source_key: str) -> bool:

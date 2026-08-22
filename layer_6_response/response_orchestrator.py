@@ -9,6 +9,8 @@ yields the same playbook, so two analysts on different shifts respond the same w
 
 import re
 
+import soc_config
+
 # Priority is driven by CVSS severity, which is itself derived from the CVSS 3.1
 # base score in Layer 5. P1 = act now, P2 = same shift, P3 = queue for review.
 _PRIORITY_BY_SEVERITY = {
@@ -218,12 +220,77 @@ _DISRUPTIVE_RE = re.compile(r"\b(" + "|".join(_DISRUPTIVE_VERBS) + r")\b", re.IG
 _CRITICAL_ASSET_HINTS = ("db-core", "core-app", "payments", "ledger", "swift", "atm", "card", "prod")
 
 
-def _classify_containment(step: str, affected_host: str, _affected_user: str) -> dict:
+# Which category of action a step belongs to, for the purposes of the
+# "what may run unattended" setting. Read at call time, deliberately: the
+# disruptive-verb regex above is compiled at import, and anything that has to
+# respond to a settings change cannot live in it.
+_ACTION_CATEGORIES = (
+    ("isolate_host", ("isolate", "isolating", "quarantine", "power", "reimage", "shut", "terminate")),
+    ("disable_account", ("disable", "revoke", "lock", "lockout", "rotate", "reset", "suspend")),
+    ("block_ip", ("block", "blocking", "blackhole", "sinkhole", "deny")),
+    ("notify", ("notify", "page", "alert", "escalate", "ticket", "inform")),
+    ("monitor", ("monitor", "watch", "log", "capture", "increase")),
+    ("enrich", ("enrich", "look up", "lookup", "correlate", "query", "check")),
+)
+
+
+def _category_of(step: str) -> str | None:
+    """Which configurable action category this step falls into, if any."""
+    lowered = str(step or "").lower()
+    for category, verbs in _ACTION_CATEGORIES:
+        if any(re.search(rf"\b{re.escape(v)}", lowered) for v in verbs):
+            return category
+    return None
+
+
+def _classify_containment(
+    step: str, affected_host: str, _affected_user: str, hosts_in_scope: int = 1
+) -> dict:
     """Decide whether a containment step can auto-execute or needs sign-off."""
     disruptive = bool(_DISRUPTIVE_RE.search(step))
 
     host = str(affected_host or "").lower()
     critical_asset = any(hint in host for hint in _CRITICAL_ASSET_HINTS)
+
+    # An institution can withhold consent for a whole category of action even
+    # where the blast-radius rules below would have allowed it. Withholding is
+    # one-directional on purpose: ticking a box cannot override the
+    # service-affecting gate, because that gate is about damage, not permission.
+    category = _category_of(step)
+    permitted = soc_config.get_list("response.automatic_actions")
+    withheld = category is not None and category not in permitted
+
+    # Blast radius as a count, not just as a name. An action against a host that
+    # is one of several the same intruder owns is not a one-host decision, and an
+    # institution can set the number above which it wants to be asked.
+    limit = soc_config.get_int("response.gate_above_hosts")
+    if disruptive and hosts_in_scope > limit:
+        return {
+            "action": step,
+            "execution": "requires_approval",
+            "blast_radius": "service-affecting" if critical_asset else "multi-host",
+            "rationale": (
+                f"This intrusion spans {hosts_in_scope} hosts, above the {limit} this "
+                "institution allows an unattended disruptive action to touch. "
+                + (
+                    f"{affected_host} also serves customer-facing banking functions."
+                    if critical_asset
+                    else "A person decides the scope."
+                )
+            ),
+        }
+
+    if withheld and not (disruptive and critical_asset):
+        return {
+            "action": step,
+            "execution": "requires_approval",
+            "blast_radius": "host-affecting" if disruptive else "contained",
+            "rationale": (
+                f"This institution has not authorised “{category.replace('_', ' ')}” "
+                "to run unattended, so it waits for an analyst even though the action "
+                "itself is narrow."
+            ),
+        }
 
     if disruptive and critical_asset:
         return {
@@ -318,7 +385,15 @@ def run_response(event: dict) -> dict:
     affected_host = dashboard.get("affected_host") or raw_event.get("affected_host") or ""
     affected_user = dashboard.get("affected_user") or raw_event.get("affected_user") or ""
 
-    gated = [_classify_containment(step, affected_host, affected_user) for step in containment_steps]
+    # How wide this really is. One alert on its own is one host; an alert that
+    # belongs to a reconstructed intrusion inherits that intrusion's footprint.
+    campaign = event.get("campaign") or {}
+    hosts_in_scope = max(1, int(campaign.get("asset_count") or 1))
+
+    gated = [
+        _classify_containment(step, affected_host, affected_user, hosts_in_scope)
+        for step in containment_steps
+    ]
     auto_steps = [g for g in gated if g["execution"] == "auto"]
     approval_steps = [g for g in gated if g["execution"] == "requires_approval"]
 

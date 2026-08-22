@@ -31,6 +31,55 @@ from layer_5_cvss.cvss_orchestrator import run_cvss
 from layer_6_response.response_orchestrator import run_response
 from regulatory_clock import for_campaign, for_incident
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Layer 1 accumulates per-source history in module-level stores — unique ports
+# seen per IP, failed logins per user, byte ratios, reporting intervals. That is
+# correct for a live sensor and wrong for a repeatable run: replay two scenarios
+# in one process and the second one's verdicts depend on the first one's traffic.
+#
+# It matters most for the settings screen, which answers "what would this change
+# do" by running the pipeline twice. If the second run inherits the first run's
+# history, the comparison measures the wrong thing and the answer is confidently
+# wrong. So a caller that needs a clean slate can ask for one.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_STATEFUL_STORES = [
+    ("layer_1_feature_engineering.engine_1_temporal.tsfresh_extractor", "_event_store"),
+    ("layer_1_feature_engineering.engine_2_behavioral.user_profiler", "_user_store"),
+    ("layer_1_feature_engineering.engine_2_behavioral.baseline_comparator", "_baseline_store"),
+    ("layer_1_feature_engineering.engine_3_statistical.pattern_detector", "_pattern_store"),
+    ("layer_1_feature_engineering.engine_3_statistical.frequency_analyzer", "_rate_store"),
+    ("layer_1_feature_engineering.engine_3_statistical.frequency_analyzer", "_rate_history"),
+    ("layer_1_feature_engineering.engine_4_network.protocol_profiler", "_protocol_store"),
+    ("layer_1_feature_engineering.engine_5_web.http_analyzer", "_http_store"),
+    ("layer_1_feature_engineering.engine_5_web.session_profiler", "_session_store"),
+    ("layer_1_feature_engineering.engine_6_iot.device_profiler", "_device_store"),
+    ("layer_1_feature_engineering.engine_6_iot.telemetry_analyzer", "_telemetry_store"),
+]
+
+
+def reset_state() -> int:
+    """
+    Forget everything Layer 1 has learned, so the next run starts cold.
+
+    Cleared in place rather than rebound: several engines close over the store
+    object at import, so replacing the attribute would leave them writing to the
+    old one. Returns how many stores were cleared, which is how a test notices
+    when an engine grows a new one that nobody added here.
+    """
+    import importlib
+
+    cleared = 0
+    for module_name, attr in _STATEFUL_STORES:
+        try:
+            store = getattr(importlib.import_module(module_name), attr)
+        except (ImportError, AttributeError):
+            continue
+        if hasattr(store, "clear"):
+            store.clear()
+            cleared += 1
+    return cleared
+
 
 def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
     """
@@ -80,12 +129,14 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
         event["cvss"] = run_cvss(event["ai_analysis"])
     t = mark("layer5_cvss", t)
 
-    for event in enriched:
-        event["response"] = run_response(event)
-    t = mark("layer6_response", t)
-
     # Stamp each event with the campaign it belongs to. The correlator works on
     # detection-stage events, so match on the ids it returned.
+    #
+    # Deliberately before Layer 6 rather than after: response planning gates on
+    # blast radius, and how many hosts an action would really touch is a property
+    # of the campaign, not of the single alert in front of it. Isolating one host
+    # that happens to be one of five the same intruder owns is not a one-host
+    # decision.
     campaign_by_incident: dict[str, dict[str, Any]] = {}
     for campaign in campaign_result["campaigns"]:
         for incident_id in campaign["incident_ids"]:
@@ -101,9 +152,14 @@ def run_full_pipeline(normalized_records: list[dict]) -> dict[str, Any]:
                 "incident_count": campaign["incident_count"],
                 "furthest_stage": campaign["furthest_stage"],
                 "progression_pct": campaign["progression_pct"],
+                "asset_count": len(campaign.get("assets") or []),
             }
         else:
             event["campaign"] = None
+
+    for event in enriched:
+        event["response"] = run_response(event)
+    t = mark("layer6_response", t)
 
     # Regulatory notification clocks.
     #

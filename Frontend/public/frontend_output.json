@@ -37,46 +37,46 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.5,
-          "spike_detected": false,
-          "history_window_count": 0
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 1,
+          "unique_ports_seen": 4,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
@@ -101,17 +101,17 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "10.99.0.5",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 0,
           "current_source_ip": "10.99.0.5",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 5,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -151,10 +151,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ]
@@ -164,13 +164,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -182,8 +180,8 @@
         "confidence": 0.58,
         "reasoning": [
           "Sequential port probing consistent with service discovery",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -294,8 +292,7 @@
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 22 on 10.30.4.22.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -376,10 +373,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ],
@@ -477,13 +474,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 2,
-          "event_count_5m": 2,
-          "event_count_15m": 2,
-          "event_count_1h": 2,
+          "event_count_1m": 4,
+          "event_count_5m": 4,
+          "event_count_15m": 4,
+          "event_count_1h": 4,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 2,
+          "sequence_position_in_1m": 4,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -501,22 +498,22 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.5,
-          "spike_detected": false,
-          "history_window_count": 1
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 2,
+          "unique_ports_seen": 4,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
@@ -551,7 +548,7 @@
           "current_hour": 0,
           "current_source_ip": "10.99.0.5",
           "is_new_ip_for_user": false,
-          "total_events_seen": 2,
+          "total_events_seen": 6,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -591,20 +588,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -617,6 +618,7 @@
         "reasoning": [
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -718,6 +720,7 @@
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 80 on 10.30.4.22.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -798,8 +801,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ],
@@ -897,13 +902,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 2,
-          "event_count_5m": 3,
-          "event_count_15m": 3,
-          "event_count_1h": 3,
+          "event_count_1m": 4,
+          "event_count_5m": 6,
+          "event_count_15m": 6,
+          "event_count_1h": 6,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 2,
+          "sequence_position_in_1m": 4,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -921,22 +926,22 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.5,
-          "spike_detected": false,
-          "history_window_count": 2
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 3,
+          "unique_ports_seen": 4,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
@@ -971,7 +976,7 @@
           "current_hour": 0,
           "current_source_ip": "10.99.0.5",
           "is_new_ip_for_user": false,
-          "total_events_seen": 3,
+          "total_events_seen": 7,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -1011,20 +1016,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -1037,6 +1046,7 @@
         "reasoning": [
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -1138,6 +1148,7 @@
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 443 on 10.30.4.22.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -1218,8 +1229,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "Threat analysis mapped event to port_scan"
         ],
@@ -1317,13 +1330,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 2,
-          "event_count_5m": 4,
-          "event_count_15m": 4,
-          "event_count_1h": 4,
+          "event_count_1m": 4,
+          "event_count_5m": 8,
+          "event_count_15m": 8,
+          "event_count_1h": 8,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 2,
+          "sequence_position_in_1m": 4,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -1341,15 +1354,15 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.5,
-          "spike_detected": false,
-          "history_window_count": 3
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -1391,7 +1404,7 @@
           "current_hour": 0,
           "current_source_ip": "10.99.0.5",
           "is_new_ip_for_user": false,
-          "total_events_seen": 4,
+          "total_events_seen": 8,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -1431,20 +1444,28 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to port_scan"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
-        "anomaly_level": "low",
+        "anomaly_score": 0.55,
+        "anomaly_level": "medium",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score",
+          "suspicious_port"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port"
         ]
       },
       "threat_analysis": {
@@ -1457,6 +1478,7 @@
         "reasoning": [
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -1477,12 +1499,15 @@
       "correlation_analysis": {
         "correlated": true,
         "correlation_strength": "medium",
-        "signal_count": 2,
+        "signal_count": 4,
         "supporting_signals": [
+          "anomaly_detected",
+          "meaningful_anomaly_level",
           "threat_pattern_identified",
           "high_threat_confidence"
         ],
         "reasoning": [
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to port_scan"
         ],
         "adjusted_confidence": 0.66
@@ -1558,6 +1583,8 @@
         "summary": "Reconnaissance activity from 10.99.0.5 targeted port 3389 on 10.30.4.22.",
         "signals": [
           "off hours activity",
+          "high z score",
+          "suspicious port",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -1638,9 +1665,13 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to port_scan"
         ],
         "cis_control": "3.6",
@@ -1735,39 +1766,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.5,
-          "spike_detected": false,
-          "history_window_count": 4
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -1775,7 +1806,7 @@
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 1,
+          "failed_login_count": 7,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -1799,18 +1830,18 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "root",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -1841,7 +1872,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -1849,13 +1880,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -1865,30 +1894,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -1917,7 +1941,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -1986,8 +2010,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -2042,7 +2065,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -2068,7 +2091,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -2076,13 +2099,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -2094,7 +2115,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "root",
@@ -2116,7 +2137,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -2178,39 +2199,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 2,
-          "event_count_15m": 2,
-          "event_count_1h": 2,
+          "event_count_1m": 2,
+          "event_count_5m": 4,
+          "event_count_15m": 4,
+          "event_count_1h": 4,
           "is_frequency_accelerating": false,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 5
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -2218,7 +2239,7 @@
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 2,
+          "failed_login_count": 8,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -2248,12 +2269,12 @@
         },
         "user_profile": {
           "user_key": "admin",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -2284,7 +2305,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -2292,13 +2313,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -2308,30 +2327,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -2360,7 +2374,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -2429,8 +2443,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -2485,7 +2498,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -2511,7 +2524,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -2519,13 +2532,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -2537,7 +2548,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "admin",
@@ -2559,7 +2570,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -2621,39 +2632,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 3,
-          "event_count_15m": 3,
-          "event_count_1h": 3,
+          "event_count_1m": 2,
+          "event_count_5m": 6,
+          "event_count_15m": 6,
+          "event_count_1h": 6,
           "is_frequency_accelerating": false,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 6
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -2661,7 +2672,7 @@
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 3,
+          "failed_login_count": 9,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -2691,12 +2702,12 @@
         },
         "user_profile": {
           "user_key": "oracle",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -2727,7 +2738,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -2735,13 +2746,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -2751,30 +2760,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -2803,7 +2807,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -2872,8 +2876,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -2928,7 +2931,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -2954,7 +2957,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -2962,13 +2965,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -2980,7 +2981,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "oracle",
@@ -3002,7 +3003,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -3064,47 +3065,47 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 4,
-          "event_count_15m": 4,
-          "event_count_1h": 4,
+          "event_count_1m": 2,
+          "event_count_5m": 8,
+          "event_count_15m": 8,
+          "event_count_1h": 8,
           "is_frequency_accelerating": false,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
-          "login_failure_spike": false
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
+          "login_failure_spike": true
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 7
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
-          "brute_force_detected": false,
+          "brute_force_detected": true,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 4,
+          "failed_login_count": 10,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -3134,12 +3135,12 @@
         },
         "user_profile": {
           "user_key": "jenkins",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -3170,7 +3171,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -3178,13 +3179,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -3194,30 +3193,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -3246,7 +3240,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -3315,8 +3309,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -3371,7 +3364,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -3397,7 +3390,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -3405,13 +3398,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -3423,7 +3414,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "jenkins",
@@ -3445,7 +3436,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -3507,47 +3498,47 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 5,
-          "event_count_15m": 5,
-          "event_count_1h": 5,
+          "event_count_1m": 2,
+          "event_count_5m": 10,
+          "event_count_15m": 10,
+          "event_count_1h": 10,
           "is_frequency_accelerating": false,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
-          "login_failure_spike": false
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
+          "login_failure_spike": true
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 8
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
-          "brute_force_detected": false,
+          "brute_force_detected": true,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 5,
+          "failed_login_count": 11,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -3577,12 +3568,12 @@
         },
         "user_profile": {
           "user_key": "deploy",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 3,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -3613,7 +3604,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -3621,13 +3612,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -3637,30 +3626,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -3689,7 +3673,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -3758,8 +3742,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -3814,7 +3797,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -3840,7 +3823,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -3848,13 +3831,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -3866,7 +3847,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "deploy",
@@ -3888,7 +3869,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -3950,47 +3931,47 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 5,
-          "event_count_15m": 6,
-          "event_count_1h": 6,
+          "event_count_1m": 2,
+          "event_count_5m": 10,
+          "event_count_15m": 12,
+          "event_count_1h": 12,
           "is_frequency_accelerating": false,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
-          "login_failure_spike": false
+          "failed_login_count": 2,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
+          "login_failure_spike": true
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 9
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
-          "brute_force_detected": false,
+          "brute_force_detected": true,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 6,
+          "failed_login_count": 12,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -4020,12 +4001,12 @@
         },
         "user_profile": {
           "user_key": "postgres",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
-          "failed_login_count": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "failed_login",
           "current_event_type": "unknown"
@@ -4056,7 +4037,7 @@
         "label": "suspicious",
         "threat_type": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -4064,13 +4045,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ]
@@ -4080,30 +4059,25 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
         "matched_patterns": [
-          "brute_force_attempt",
-          "suspicious_login_behavior"
+          "brute_force_attempt"
         ],
         "mapped_pattern": "brute_force_attempt",
         "severity": "high",
-        "confidence": 0.78,
+        "confidence": 0.72,
         "reasoning": [
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt"
         ]
       },
@@ -4132,7 +4106,7 @@
         "reasoning": [
           "Threat analysis mapped event to brute_force_attempt"
         ],
-        "adjusted_confidence": 0.82
+        "adjusted_confidence": 0.77
       },
       "mitre_attack": {
         "techniques": [
@@ -4201,8 +4175,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: failed login"
         ],
         "attack_vector": "network",
@@ -4257,7 +4230,7 @@
             "action": "Lock the targeted accounts and force a credential reset.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Enable rate limiting / fail2ban on the exposed service.",
@@ -4283,7 +4256,7 @@
         "verdict": "suspicious",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -4291,13 +4264,11 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Failed authentication attempt against exposed service",
-          "Login from unusual or new IP for user",
-          "Unusual user activity detected",
           "Authentication during off-hours",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as brute_force_attempt",
           "Threat analysis mapped event to brute_force_attempt"
         ],
@@ -4309,7 +4280,7 @@
         "alert_title": "Brute Force Attempt from 45.128.62.19 against ssh-bastion-01",
         "severity": "high",
         "threat_type": "brute_force_attempt",
-        "confidence": 0.82,
+        "confidence": 0.77,
         "source_ip": "45.128.62.19",
         "destination_ip": "10.10.1.4",
         "affected_user": "postgres",
@@ -4331,7 +4302,7 @@
           "matched_domain": "CIS",
           "recommendation": "51 | P ag e\n\nConfigure the aaa authentication ssh using the TACACS+ server-group as primary method\nand the local database as backup method.\nhostname(config)#aaa authentication ssh console <server-group_name> local",
           "rationale": "Authenticates users who access the device using SSH.",
-          "confidence": 0.82
+          "confidence": 0.77
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -4393,13 +4364,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 7,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 14,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -4411,29 +4382,29 @@
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
-          "failed_login_count": 1,
+          "failed_login_count": 2,
           "rare_source_ip": false,
           "rare_user_activity": false,
-          "login_failure_spike": false
+          "login_failure_spike": true
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 10
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
-          "brute_force_detected": false,
+          "brute_force_detected": true,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
           "unique_ports_seen": 1,
-          "failed_login_count": 6,
+          "failed_login_count": 12,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
         },
@@ -4467,8 +4438,8 @@
           "current_hour": 1,
           "current_source_ip": "45.128.62.19",
           "is_new_ip_for_user": false,
-          "total_events_seen": 2,
-          "failed_login_count": 1,
+          "total_events_seen": 4,
+          "failed_login_count": 2,
           "unique_ips_seen": 1,
           "current_action": "credential_abuse",
           "current_event_type": "unknown"
@@ -4507,20 +4478,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Credential use inconsistent with the established baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "Threat analysis mapped event to credential_abuse"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -4533,6 +4508,7 @@
         "reasoning": [
           "Credential use inconsistent with the established baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse"
         ]
       },
@@ -4643,6 +4619,7 @@
         "summary": "Suspicious activity was detected from 45.128.62.19 affecting ssh-bastion-01.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: credential abuse"
         ],
         "attack_vector": "network",
@@ -4691,19 +4668,19 @@
             "action": "Suspend the affected account pending verification.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Revoke active sessions and refresh tokens for the account.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Rotate any shared or service credentials the account could reach.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           }
         ],
         "auto_executable": 0,
@@ -4731,8 +4708,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Credential use inconsistent with the established baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "Threat analysis mapped event to credential_abuse"
         ],
@@ -4830,39 +4809,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 11
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -4876,11 +4855,11 @@
         },
         "user_profile": {
           "user_key": "r.mehta",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 2,
           "current_source_ip": "10.50.1.88",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "allow",
@@ -4918,8 +4897,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "anomaly_detection": {
@@ -4927,13 +4905,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -4942,8 +4918,8 @@
         "severity": "low",
         "confidence": 0.0,
         "reasoning": [
-          "Source IP appears unusual for this activity",
-          "Activity occurred outside business hours"
+          "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window"
         ]
       },
       "ioc_enrichment": {
@@ -5004,8 +4980,7 @@
         "summary": "Suspicious web request from 10.50.1.88 targeted /retail/accounts/summary.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: allow"
         ],
         "attack_vector": "network",
@@ -5076,8 +5051,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ],
         "cis_control": "CIS-8.11",
         "cis_control_title": "Conduct Audit Log Reviews",
@@ -5129,14 +5103,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5176,39 +5150,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 12
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -5240,17 +5214,17 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "10.50.1.90",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 2,
           "current_source_ip": "10.50.1.90",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "allow",
@@ -5288,8 +5262,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "anomaly_detection": {
@@ -5297,13 +5270,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -5312,8 +5283,8 @@
         "severity": "low",
         "confidence": 0.0,
         "reasoning": [
-          "Source IP appears unusual for this activity",
-          "Activity occurred outside business hours"
+          "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window"
         ]
       },
       "ioc_enrichment": {
@@ -5374,8 +5345,7 @@
         "summary": "Suspicious network activity from 10.50.1.90 to 10.30.4.22 over tcp was detected.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: allow"
         ],
         "attack_vector": "network",
@@ -5447,8 +5417,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ],
         "cis_control": "3.6",
         "cis_control_title": "Ensure 'threat-detection statistics' is set to 'tcp-intercept'",
@@ -5500,14 +5469,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -5548,46 +5517,46 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 1
+          "z_score": 9.594,
+          "event_count_window": 3
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": 0.0,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 13
+          "current_window_count": 3,
+          "zscore": 9.594,
+          "percentile_rank": 1.0,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 1,
+          "unique_ports_seen": 2,
           "failed_login_count": 0,
           "avg_bytes_out": 0.0,
           "unique_hosts_seen": 1
@@ -5612,17 +5581,17 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "203.0.113.55",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 2,
           "current_source_ip": "203.0.113.55",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 5,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -5663,10 +5632,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=9.594)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to port_scan",
@@ -5678,13 +5647,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=9.594)"
         ]
       },
       "threat_analysis": {
@@ -5696,8 +5663,8 @@
         "confidence": 0.58,
         "reasoning": [
           "Sequential port probing consistent with service discovery",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -5810,8 +5777,7 @@
         "summary": "Reconnaissance activity from 203.0.113.55 targeted port 443 on 10.20.0.11.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -5893,10 +5859,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=9.594)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to port_scan",
@@ -5996,13 +5962,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 2,
-          "event_count_5m": 2,
-          "event_count_15m": 2,
-          "event_count_1h": 2,
+          "event_count_1m": 4,
+          "event_count_5m": 4,
+          "event_count_15m": 4,
+          "event_count_1h": 4,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 2,
+          "sequence_position_in_1m": 4,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -6020,15 +5986,15 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": 0.0,
-          "event_count_window": 2
+          "z_score": 14.498,
+          "event_count_window": 4
         },
         "frequency_features": {
-          "current_window_count": 2,
-          "zscore": 0.0,
+          "current_window_count": 4,
+          "zscore": 14.498,
           "percentile_rank": 1.0,
-          "spike_detected": false,
-          "history_window_count": 13
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -6070,7 +6036,7 @@
           "current_hour": 2,
           "current_source_ip": "203.0.113.55",
           "is_new_ip_for_user": false,
-          "total_events_seen": 2,
+          "total_events_seen": 6,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "port_scan",
@@ -6111,8 +6077,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=14.498)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to port_scan",
@@ -6120,13 +6088,15 @@
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=14.498)"
         ]
       },
       "threat_analysis": {
@@ -6139,6 +6109,7 @@
         "reasoning": [
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan"
         ]
       },
@@ -6251,6 +6222,7 @@
         "summary": "Reconnaissance activity from 203.0.113.55 targeted port 8080 on 10.20.0.11.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: port scan"
         ],
         "attack_vector": "network",
@@ -6332,8 +6304,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=14.498)",
           "Sequential port probing consistent with service discovery",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as port_scan",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to port_scan",
@@ -6433,13 +6407,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 3,
-          "event_count_1h": 3,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 6,
+          "event_count_1h": 6,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -6457,15 +6431,15 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.277,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.277,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 14
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -6483,7 +6457,7 @@
           "current_hour": 2,
           "current_source_ip": "203.0.113.55",
           "is_new_ip_for_user": false,
-          "total_events_seen": 3,
+          "total_events_seen": 7,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "web_attack",
@@ -6524,10 +6498,12 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Request pattern consistent with web application attack",
           "SQL injection payload detected in request",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to web_attack",
@@ -6535,13 +6511,15 @@
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -6557,6 +6535,7 @@
           "SQL injection payload detected in request",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack"
         ]
       },
@@ -6667,6 +6646,7 @@
         "summary": "Sql injection attempt from 203.0.113.55 targeted /retail/login?user=admin' OR '1'='1-- on dmz-web-01.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: web attack"
         ],
         "attack_vector": "network",
@@ -6756,10 +6736,12 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Request pattern consistent with web application attack",
           "SQL injection payload detected in request",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to web_attack",
@@ -6859,13 +6841,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 2,
-          "event_count_1h": 4,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 4,
+          "event_count_1h": 8,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -6883,15 +6865,15 @@
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.267,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.267,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 15
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -6909,7 +6891,7 @@
           "current_hour": 2,
           "current_source_ip": "203.0.113.55",
           "is_new_ip_for_user": false,
-          "total_events_seen": 4,
+          "total_events_seen": 8,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "web_attack",
@@ -6950,10 +6932,12 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Request pattern consistent with web application attack",
           "Request targets an uploadable or executable endpoint",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to web_attack",
@@ -6961,13 +6945,15 @@
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -6983,6 +6969,7 @@
           "Request targets an uploadable or executable endpoint",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack"
         ]
       },
@@ -7112,6 +7099,7 @@
         "summary": "Webshell / file upload abuse attempt from 203.0.113.55 targeted /admin/upload.php on dmz-web-01.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: web attack"
         ],
         "attack_vector": "network",
@@ -7201,10 +7189,12 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Request pattern consistent with web application attack",
           "Request targets an uploadable or executable endpoint",
           "Sensitive endpoint accessed",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as web_attack",
           "IOC enrichment contributed supporting threat context",
           "Threat analysis mapped event to web_attack",
@@ -7304,39 +7294,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.258,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.258,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 16
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -7350,11 +7340,11 @@
         },
         "user_profile": {
           "user_key": "s.iyer",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 2,
           "current_source_ip": "10.50.1.91",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "allow",
@@ -7392,8 +7382,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "anomaly_detection": {
@@ -7401,13 +7390,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -7416,8 +7403,8 @@
         "severity": "low",
         "confidence": 0.0,
         "reasoning": [
-          "Source IP appears unusual for this activity",
-          "Activity occurred outside business hours"
+          "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window"
         ]
       },
       "ioc_enrichment": {
@@ -7478,8 +7465,7 @@
         "summary": "Suspicious web request from 10.50.1.91 targeted /retail/statements/download.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: allow"
         ],
         "attack_vector": "network",
@@ -7550,8 +7536,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ],
         "cis_control": "CIS-8.11",
         "cis_control_title": "Conduct Audit Log Reviews",
@@ -7603,14 +7588,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -7650,49 +7635,49 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.25,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.25,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 17
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 1,
+          "unique_ports_seen": 2,
           "failed_login_count": 0,
-          "avg_bytes_out": 940.0,
-          "unique_hosts_seen": 1
+          "avg_bytes_out": 626.67,
+          "unique_hosts_seen": 2
         },
         "network_traffic_features": {
           "traffic_direction": "north_south",
@@ -7714,17 +7699,17 @@
           "is_protocol_expected": false,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": true,
-          "is_new_protocol_for_source": true,
-          "unique_protocols_for_source": 1,
+          "is_new_protocol_for_source": false,
+          "unique_protocols_for_source": 2,
           "protocol_anomaly_detected": true
         },
         "user_profile": {
           "user_key": "10.20.0.11",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 2,
           "current_source_ip": "10.20.0.11",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "beaconing",
@@ -7764,10 +7749,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Periodic outbound callbacks consistent with C2 beaconing",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as beaconing",
           "Threat analysis mapped event to beaconing"
         ]
@@ -7777,13 +7762,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -7795,8 +7778,8 @@
         "confidence": 0.72,
         "reasoning": [
           "Periodic outbound callbacks consistent with C2 beaconing",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as beaconing"
         ]
       },
@@ -7893,8 +7876,7 @@
         "summary": "Possible beaconing behavior was detected between 10.20.0.11 and 185.14.22.91.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: beaconing"
         ],
         "attack_vector": "network",
@@ -7948,7 +7930,7 @@
             "action": "Isolate the affected host from the network pending triage.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “isolate host” to run unattended, so it waits for an analyst even though the action itself is narrow."
           }
         ],
         "auto_executable": 1,
@@ -7976,10 +7958,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Periodic outbound callbacks consistent with C2 beaconing",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as beaconing",
           "Threat analysis mapped event to beaconing"
         ],
@@ -8075,39 +8057,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 2,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 4,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
-          "normal_ips_count": 1,
+          "normal_ips_count": 3,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.243,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.243,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 18
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -8139,19 +8121,19 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 2,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "svc_payments",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 3,
           "current_source_ip": "10.20.0.11",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 5,
           "failed_login_count": 0,
-          "unique_ips_seen": 1,
+          "unique_ips_seen": 3,
           "current_action": "lateral_movement",
           "current_event_type": "unknown"
         },
@@ -8189,10 +8171,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Internal host-to-host movement outside normal access paths",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement",
           "Threat analysis mapped event to lateral_movement"
         ]
@@ -8202,13 +8184,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -8220,8 +8200,8 @@
         "confidence": 0.8,
         "reasoning": [
           "Internal host-to-host movement outside normal access paths",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement"
         ]
       },
@@ -8332,8 +8312,7 @@
         "summary": "Potential lateral movement from 10.20.0.11 toward core-app-02 was detected.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: lateral movement"
         ],
         "attack_vector": "adjacent",
@@ -8422,10 +8401,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
           "Internal host-to-host movement outside normal access paths",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement",
           "Threat analysis mapped event to lateral_movement"
         ],
@@ -8520,49 +8499,49 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.35,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
+          "is_new_ip_for_user": false,
           "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
-          "normal_ips_count": 2,
+          "normal_ips_count": 3,
           "failed_login_count": 0,
-          "rare_source_ip": true,
+          "rare_source_ip": false,
           "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.236,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.236,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 19
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
           "brute_force_detected": false,
           "exfiltration_detected": false,
           "lateral_movement_detected": false,
-          "unique_ports_seen": 0,
+          "unique_ports_seen": 1,
           "failed_login_count": 0,
-          "avg_bytes_out": 0.0,
-          "unique_hosts_seen": 1
+          "avg_bytes_out": 393.33,
+          "unique_hosts_seen": 2
         },
         "network_traffic_features": {
           "traffic_direction": "east_west",
@@ -8584,8 +8563,8 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
-          "unique_protocols_for_source": 1,
+          "is_new_protocol_for_source": false,
+          "unique_protocols_for_source": 2,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
@@ -8593,10 +8572,10 @@
           "is_new_user": false,
           "current_hour": 3,
           "current_source_ip": "10.30.4.22",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 2,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 6,
           "failed_login_count": 0,
-          "unique_ips_seen": 2,
+          "unique_ips_seen": 3,
           "current_action": "credential_abuse",
           "current_event_type": "unknown"
         },
@@ -8634,23 +8613,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
+          "Statistical deviation is high (z_score=4.69)",
           "Credential use inconsistent with the established baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "Threat analysis mapped event to credential_abuse"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.25,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -8662,8 +8642,8 @@
         "confidence": 0.72,
         "reasoning": [
           "Credential use inconsistent with the established baseline",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse"
         ]
       },
@@ -8765,7 +8745,7 @@
         "summary": "Suspicious activity was detected from 10.30.4.22 affecting core-app-02.",
         "signals": [
           "off hours activity",
-          "rare source ip",
+          "high z score",
           "observed action: credential abuse"
         ],
         "attack_vector": "network",
@@ -8854,9 +8834,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
+          "Statistical deviation is high (z_score=4.69)",
           "Credential use inconsistent with the established baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "Threat analysis mapped event to credential_abuse"
         ],
@@ -8953,39 +8934,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.229,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.229,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 20
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -9017,17 +8998,17 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": false
         },
         "user_profile": {
           "user_key": "svc_reporting",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 3,
           "current_source_ip": "10.50.1.92",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "allow",
@@ -9065,8 +9046,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "anomaly_detection": {
@@ -9074,13 +9054,11 @@
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -9089,8 +9067,8 @@
         "severity": "low",
         "confidence": 0.0,
         "reasoning": [
-          "Source IP appears unusual for this activity",
-          "Activity occurred outside business hours"
+          "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window"
         ]
       },
       "ioc_enrichment": {
@@ -9151,8 +9129,7 @@
         "summary": "Suspicious network activity from 10.50.1.92 to 10.40.9.7 over tcp was detected.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
           "observed action: allow"
         ],
         "attack_vector": "network",
@@ -9224,8 +9201,7 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)"
         ],
         "cis_control": "3.6",
         "cis_control_title": "Ensure 'threat-detection statistics' is set to 'tcp-intercept'",
@@ -9277,14 +9253,14 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": false,
         "confidence": "high",
         "reasons": [
           "Not a confirmed threat — no notification obligation arises."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -9324,13 +9300,13 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 2,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 4,
           "is_frequency_accelerating": true,
           "is_first_seen_source": false,
-          "sequence_position_in_1m": 1,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
@@ -9341,22 +9317,22 @@
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
-          "normal_ips_count": 2,
+          "normal_ips_count": 3,
           "failed_login_count": 0,
           "rare_source_ip": false,
           "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.224,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.224,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 21
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -9388,7 +9364,7 @@
           "is_protocol_expected": true,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": false,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 2,
           "protocol_anomaly_detected": false
         },
@@ -9398,9 +9374,9 @@
           "current_hour": 3,
           "current_source_ip": "10.30.4.22",
           "is_new_ip_for_user": false,
-          "total_events_seen": 3,
+          "total_events_seen": 7,
           "failed_login_count": 0,
-          "unique_ips_seen": 2,
+          "unique_ips_seen": 3,
           "current_action": "lateral_movement",
           "current_event_type": "unknown"
         },
@@ -9438,20 +9414,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Internal host-to-host movement outside normal access paths",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement",
           "Threat analysis mapped event to lateral_movement"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.1,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
-          "off_hours_activity"
+          "off_hours_activity",
+          "high_z_score"
         ],
         "reasoning": [
-          "Activity observed during off-hours"
+          "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -9464,6 +9444,7 @@
         "reasoning": [
           "Internal host-to-host movement outside normal access paths",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement"
         ]
       },
@@ -9565,6 +9546,7 @@
         "summary": "Potential lateral movement from 10.30.4.22 toward db-core-01 was detected.",
         "signals": [
           "off hours activity",
+          "high z score",
           "observed action: lateral movement"
         ],
         "attack_vector": "adjacent",
@@ -9653,8 +9635,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
+          "Statistical deviation is high (z_score=4.69)",
           "Internal host-to-host movement outside normal access paths",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as lateral_movement",
           "Threat analysis mapped event to lateral_movement"
         ],
@@ -9752,39 +9736,39 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.35,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
+          "is_new_ip_for_user": false,
           "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 3,
           "failed_login_count": 0,
-          "rare_source_ip": true,
+          "rare_source_ip": false,
           "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.218,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.218,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
-          "history_window_count": 22
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
+          "history_window_count": 23
         },
         "pattern_features": {
           "port_scan_detected": false,
@@ -9816,7 +9800,7 @@
           "is_protocol_expected": false,
           "is_deprecated_protocol": false,
           "is_tunneling_capable": true,
-          "is_new_protocol_for_source": true,
+          "is_new_protocol_for_source": false,
           "unique_protocols_for_source": 1,
           "protocol_anomaly_detected": true
         },
@@ -9825,8 +9809,8 @@
           "is_new_user": false,
           "current_hour": 3,
           "current_source_ip": "10.40.9.7",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 4,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 8,
           "failed_login_count": 0,
           "unique_ips_seen": 3,
           "current_action": "data_exfiltration",
@@ -9866,23 +9850,24 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
+          "Statistical deviation is high (z_score=4.69)",
           "Large outbound transfer inconsistent with baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as data_exfiltration",
           "Threat analysis mapped event to data_exfiltration"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.25,
+        "anomaly_score": 0.4,
         "anomaly_level": "low",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip"
+          "high_z_score"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity"
+          "Statistical deviation is high (z_score=4.69)"
         ]
       },
       "threat_analysis": {
@@ -9894,8 +9879,8 @@
         "confidence": 0.8,
         "reasoning": [
           "Large outbound transfer inconsistent with baseline",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as data_exfiltration"
         ]
       },
@@ -9992,7 +9977,7 @@
         "summary": "Suspicious network activity from 10.40.9.7 to 203.0.113.55 over https was detected.",
         "signals": [
           "off hours activity",
-          "rare source ip",
+          "high z score",
           "observed action: data exfiltration"
         ],
         "attack_vector": "network",
@@ -10081,9 +10066,10 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
+          "Statistical deviation is high (z_score=4.69)",
           "Large outbound transfer inconsistent with baseline",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as data_exfiltration",
           "Threat analysis mapped event to data_exfiltration"
         ],
@@ -10180,38 +10166,38 @@
       },
       "feature_engineering": {
         "temporal_features": {
-          "event_count_1m": 1,
-          "event_count_5m": 1,
-          "event_count_15m": 1,
-          "event_count_1h": 1,
+          "event_count_1m": 2,
+          "event_count_5m": 2,
+          "event_count_15m": 2,
+          "event_count_1h": 2,
           "is_frequency_accelerating": true,
-          "is_first_seen_source": true,
-          "sequence_position_in_1m": 1,
+          "is_first_seen_source": false,
+          "sequence_position_in_1m": 2,
           "is_off_hours": true
         },
         "behavioral_features": {
-          "deviation_score": 0.5,
+          "deviation_score": 0.15,
           "is_off_hours_for_user": false,
-          "is_new_ip_for_user": true,
-          "is_new_user": true,
+          "is_new_ip_for_user": false,
+          "is_new_user": false,
           "excessive_failed_logins": false,
           "baseline_established": false,
           "normal_hours_count": 1,
           "normal_ips_count": 1,
           "failed_login_count": 0,
-          "rare_source_ip": true,
-          "rare_user_activity": true,
+          "rare_source_ip": false,
+          "rare_user_activity": false,
           "login_failure_spike": false
         },
         "statistical_features": {
-          "z_score": -0.213,
-          "event_count_window": 1
+          "z_score": 4.69,
+          "event_count_window": 2
         },
         "frequency_features": {
-          "current_window_count": 1,
-          "zscore": -0.213,
-          "percentile_rank": 0.0,
-          "spike_detected": false,
+          "current_window_count": 2,
+          "zscore": 4.69,
+          "percentile_rank": 0.957,
+          "spike_detected": true,
           "history_window_count": 23
         },
         "pattern_features": {
@@ -10226,11 +10212,11 @@
         },
         "user_profile": {
           "user_key": "192.0.2.45",
-          "is_new_user": true,
+          "is_new_user": false,
           "current_hour": 4,
           "current_source_ip": "192.0.2.45",
-          "is_new_ip_for_user": true,
-          "total_events_seen": 1,
+          "is_new_ip_for_user": false,
+          "total_events_seen": 2,
           "failed_login_count": 0,
           "unique_ips_seen": 1,
           "current_action": "credential_abuse",
@@ -10262,7 +10248,7 @@
         "label": "malicious",
         "threat_type": "credential_abuse",
         "severity": "high",
-        "confidence": 0.92,
+        "confidence": 0.95,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -10271,29 +10257,31 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port",
           "Credential use inconsistent with the established baseline",
           "Cleartext management protocol 'telnet' in use",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "IOC enrichment contributed supporting threat context",
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to credential_abuse",
           "IOC enrichment found matching indicators"
         ]
       },
       "anomaly_detection": {
-        "anomaly_score": 0.4,
-        "anomaly_level": "low",
+        "anomaly_score": 0.55,
+        "anomaly_level": "medium",
         "anomaly_flags": [
           "off_hours_activity",
-          "rare_source_ip",
-          "rare_user_activity"
+          "high_z_score",
+          "suspicious_port"
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual"
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port"
         ]
       },
       "threat_analysis": {
@@ -10307,8 +10295,8 @@
         "reasoning": [
           "Credential use inconsistent with the established baseline",
           "Cleartext management protocol 'telnet' in use",
-          "Source IP appears unusual for this activity",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse"
         ]
       },
@@ -10336,19 +10324,22 @@
       },
       "correlation_analysis": {
         "correlated": true,
-        "correlation_strength": "medium",
-        "signal_count": 4,
+        "correlation_strength": "strong",
+        "signal_count": 6,
         "supporting_signals": [
+          "anomaly_detected",
+          "meaningful_anomaly_level",
           "threat_pattern_identified",
           "high_threat_confidence",
           "ioc_match_found",
           "elevated_ioc_risk"
         ],
         "reasoning": [
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to credential_abuse",
           "IOC enrichment found matching indicators"
         ],
-        "adjusted_confidence": 0.92
+        "adjusted_confidence": 0.95
       },
       "mitre_attack": {
         "techniques": [
@@ -10429,8 +10420,8 @@
         "summary": "Suspicious IoT activity was detected involving device branch-camera-07 from source 192.0.2.45.",
         "signals": [
           "off hours activity",
-          "rare source ip",
-          "rare user activity",
+          "high z score",
+          "suspicious port",
           "observed action: credential abuse"
         ],
         "attack_vector": "adjacent",
@@ -10479,19 +10470,19 @@
             "action": "Suspend the affected account pending verification.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Revoke active sessions and refresh tokens for the account.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           },
           {
             "action": "Rotate any shared or service credentials the account could reach.",
             "execution": "requires_approval",
             "blast_radius": "host-affecting",
-            "rationale": "Interrupts access for a host or account. Reversible, but disruptive enough to warrant analyst confirmation."
+            "rationale": "This institution has not authorised “disable account” to run unattended, so it waits for an analyst even though the action itself is narrow."
           }
         ],
         "auto_executable": 0,
@@ -10511,7 +10502,7 @@
         "verdict": "malicious",
         "severity": "high",
         "threat_type": "credential_abuse",
-        "confidence": 0.92,
+        "confidence": 0.95,
         "triggered_engines": [
           "anomaly",
           "threat_analysis",
@@ -10520,13 +10511,15 @@
         ],
         "reasoning": [
           "Activity observed during off-hours",
-          "Source IP appears unusual for this activity",
-          "User behavior appears unusual",
+          "Statistical deviation is high (z_score=4.69)",
+          "Connection uses a suspicious or uncommon port",
           "Credential use inconsistent with the established baseline",
           "Cleartext management protocol 'telnet' in use",
           "Activity occurred outside business hours",
+          "Event frequency is a statistical outlier for this window",
           "Classified as credential_abuse",
           "IOC enrichment contributed supporting threat context",
+          "Anomaly engine reported score 0.55",
           "Threat analysis mapped event to credential_abuse",
           "IOC enrichment found matching indicators"
         ],
@@ -10538,7 +10531,7 @@
         "alert_title": "Credential Abuse from 192.0.2.45 against branch-camera-07",
         "severity": "high",
         "threat_type": "credential_abuse",
-        "confidence": 0.92,
+        "confidence": 0.95,
         "source_ip": "192.0.2.45",
         "destination_ip": "10.60.2.31",
         "affected_user": "unattributed",
@@ -10560,7 +10553,7 @@
           "matched_domain": "CIS",
           "recommendation": "It's recommended to restrict VTYs to SSH for management access and not allow this\ndevice to SSH to other devices:\n\nInternal Only - General\n\nvty-pool default 0 4 line-template default\nline default\ntransport input ssh\ntransport output none",
           "rationale": "Telnet is a clear-text administrative protocol. As such, both the credentials used to\nestablish the session and all commands and data within the session are readable in\nclear-text, so can be intercepted or modified by an attacker",
-          "confidence": 0.92
+          "confidence": 0.95
         },
         "cvss_handoff": {
           "attack_vector": "network",
@@ -10580,7 +10573,7 @@
         }
       },
       "campaign": null,
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10588,7 +10581,7 @@
           "Activity reached Initial Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10600,7 +10593,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T12:17:05.190198+00:00",
+            "deadline": "2026-08-22T13:22:47.018826+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10614,7 +10607,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T14:17:05.190198+00:00",
+            "deadline": "2026-08-22T15:22:47.018826+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10628,7 +10621,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T20:17:05.190198+00:00",
+            "deadline": "2026-08-23T21:22:47.018826+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10642,7 +10635,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T08:17:05.190198+00:00",
+            "deadline": "2026-08-26T09:22:47.018826+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10657,7 +10650,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T12:17:05.190198+00:00",
+          "deadline": "2026-08-22T13:22:47.018826+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10775,7 +10768,7 @@
         "activity reached 10.40.9.7 at Lateral Movement, which then originated further activity"
       ],
       "narrative": "9 alerts that were raised separately describe a single sequence of activity involving 3 assets (core-app-02, db-core-01, dmz-web-01), beginning at 203.0.113.55. Observed progression: Reconnaissance -> Initial Access -> Persistence -> Lateral Movement -> Command and Control -> Exfiltration. Correlated because same source address 203.0.113.55. The chain reaches Exfiltration, meaning data may already have left the environment — treat as an active breach and start the regulatory notification clock.",
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": true,
         "confidence": "high",
@@ -10783,7 +10776,7 @@
           "Activity reached Exfiltration, so customer or transaction data may already have been accessed or moved.",
           "Severity is critical."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10795,7 +10788,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T12:17:05.190198+00:00",
+            "deadline": "2026-08-22T13:22:47.018826+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10809,7 +10802,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T14:17:05.190198+00:00",
+            "deadline": "2026-08-22T15:22:47.018826+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10823,7 +10816,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T20:17:05.190198+00:00",
+            "deadline": "2026-08-23T21:22:47.018826+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10837,7 +10830,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T08:17:05.190198+00:00",
+            "deadline": "2026-08-26T09:22:47.018826+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10852,7 +10845,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T12:17:05.190198+00:00",
+          "deadline": "2026-08-22T13:22:47.018826+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -10875,7 +10868,7 @@
       "severity": "high",
       "member_max_severity": "high",
       "escalated": false,
-      "confidence": 0.82,
+      "confidence": 0.77,
       "first_seen": "2026-08-22T01:00:12Z",
       "last_seen": "2026-08-22T01:44:02Z",
       "furthest_stage": "Credential Access",
@@ -10922,7 +10915,7 @@
         "same source address 45.128.62.19"
       ],
       "narrative": "7 alerts that were raised separately describe a single sequence of activity involving ssh-bastion-01, beginning at 45.128.62.19. Observed progression: Initial Access -> Credential Access. Correlated because same source address 45.128.62.19. Credentials are being targeted directly; assume account compromise until disproven.",
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": true,
         "confidence": "medium",
@@ -10930,7 +10923,7 @@
           "Activity reached Credential Access, which indicates an actual foothold rather than an external probe.",
           "Severity is high."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [
           {
             "regime_id": "dora",
@@ -10942,7 +10935,7 @@
             "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
             "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
             "window_hours": 4,
-            "deadline": "2026-08-22T12:17:05.190198+00:00",
+            "deadline": "2026-08-22T13:22:47.018826+00:00",
             "seconds_remaining": 14399,
             "state": "on_track"
           },
@@ -10956,7 +10949,7 @@
             "note": "Reporting within 6 hours of noticing. The reportable list is unusually wide and explicitly includes probing and scanning of critical networks.",
             "url": "https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf",
             "window_hours": 6,
-            "deadline": "2026-08-22T14:17:05.190198+00:00",
+            "deadline": "2026-08-22T15:22:47.018826+00:00",
             "seconds_remaining": 21599,
             "state": "on_track"
           },
@@ -10970,7 +10963,7 @@
             "note": "Notify the primary federal regulator no later than 36 hours after determination.",
             "url": "https://www.federalregister.gov/documents/2021/11/23/2021-25510/computer-security-incident-notification-requirements-for-banking-organizations-and-their-bank",
             "window_hours": 36,
-            "deadline": "2026-08-23T20:17:05.190198+00:00",
+            "deadline": "2026-08-23T21:22:47.018826+00:00",
             "seconds_remaining": 129599,
             "state": "on_track"
           },
@@ -10984,7 +10977,7 @@
             "note": "Disclosure within four BUSINESS days of the materiality determination. The countdown shown here uses 96 calendar hours as a stand-in and will therefore read pessimistically across a weekend — treat it as an ordering hint, not the filing deadline.",
             "url": "https://www.sec.gov/newsroom/press-releases/2023-139",
             "window_hours": 96,
-            "deadline": "2026-08-26T08:17:05.190198+00:00",
+            "deadline": "2026-08-26T09:22:47.018826+00:00",
             "seconds_remaining": 345599,
             "state": "on_track"
           }
@@ -10999,7 +10992,7 @@
           "note": "Initial notification within 4 hours of classifying the incident as major, and no later than 24 hours from becoming aware. Intermediate report at 72 hours, final within one month.",
           "url": "https://eur-lex.europa.eu/eli/reg/2022/2554/oj",
           "window_hours": 4,
-          "deadline": "2026-08-22T12:17:05.190198+00:00",
+          "deadline": "2026-08-22T13:22:47.018826+00:00",
           "seconds_remaining": 14399,
           "state": "on_track"
         },
@@ -11050,14 +11043,14 @@
         "same source address 10.99.0.5"
       ],
       "narrative": "4 alerts that were raised separately describe a single sequence of activity involving core-app-02, beginning at 10.99.0.5. Observed progression: Reconnaissance. Correlated because same source address 10.99.0.5. Activity is still pre-compromise reconnaissance.",
-      "determined_at": "2026-08-22T08:17:05.190198+00:00",
+      "determined_at": "2026-08-22T09:22:47.018826+00:00",
       "notification": {
         "reportable": false,
         "confidence": "medium",
         "reasons": [
           "Activity has not progressed past reconnaissance and does not meet a materiality threshold on its own."
         ],
-        "determined_at": "2026-08-22T08:17:05.190198+00:00",
+        "determined_at": "2026-08-22T09:22:47.018826+00:00",
         "clocks": [],
         "tightest": null,
         "disclaimer": "Decision support, not a compliance filing and not legal advice. The pipeline flags incidents that look reportable and shows the deadline each regime would impose; the institution's compliance function makes the determination and owns the filing."
@@ -11072,14 +11065,14 @@
     "worst_stage_order": 14
   },
   "timing": {
-    "layer1_features": 0.002,
-    "layer2_detection": 0.002,
+    "layer1_features": 0.004,
+    "layer2_detection": 0.005,
     "layer3_cis": 0.052,
-    "format": 0.003,
-    "layer2_5_campaigns": 0.0,
-    "layer4_analysis": 0.026,
-    "layer5_cvss": 0.017,
-    "layer6_response": 0.001,
-    "total": 0.103
+    "format": 0.004,
+    "layer2_5_campaigns": 0.001,
+    "layer4_analysis": 0.004,
+    "layer5_cvss": 0.004,
+    "layer6_response": 0.002,
+    "total": 0.076
   }
 }

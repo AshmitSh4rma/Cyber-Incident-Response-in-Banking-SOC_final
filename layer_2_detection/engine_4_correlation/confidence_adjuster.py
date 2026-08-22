@@ -1,3 +1,5 @@
+import soc_config
+
 from .correlation_utils import safe_float
 
 
@@ -37,10 +39,13 @@ def adjust_confidence(event: dict, matched_result: dict) -> dict:
     bonus = min(bonus, 0.80)
     adjusted = base_confidence + (1.0 - base_confidence) * bonus
 
-    # 0.95 is the practical ceiling: rule-based detection does not get to claim
-    # near-certainty, and analysts need to see the difference between a 0.78 and
-    # a 0.93 to triage in the right order.
-    adjusted_confidence = min(round(adjusted, 2), 0.95)
+    # 0.95 by default: rule-based detection does not get to claim near-certainty,
+    # and analysts need to see the difference between a 0.78 and a 0.93 to triage
+    # in the right order. Configurable, but validated against the malicious
+    # threshold — a ceiling below it makes "malicious" unreachable, which is a
+    # silent, total change in behaviour and exactly the kind of foot-gun a
+    # settings screen must refuse rather than allow.
+    adjusted_confidence = min(round(adjusted, 2), soc_config.get_float("detection.confidence_cap"))
 
     return {
         "adjusted_confidence": adjusted_confidence

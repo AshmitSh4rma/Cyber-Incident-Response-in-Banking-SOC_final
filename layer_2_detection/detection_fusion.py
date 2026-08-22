@@ -1,3 +1,6 @@
+import soc_config
+
+
 def fuse_detection(event: dict) -> dict:
     anomaly = event.get("anomaly_detection", {}) or {}
     threat = event.get("threat_analysis", {}) or {}
@@ -41,8 +44,10 @@ def fuse_detection(event: dict) -> dict:
         label = "malicious"
     elif threat_type != "unknown" and adjusted_confidence >= 0.35:
         label = "suspicious"
-    elif anomaly_score >= 0.60:
+    elif anomaly_score >= soc_config.get_float("detection.suspicious_score_floor"):
         # Nothing matched a signature, but the behaviour itself is a clear outlier.
+        # The floor is configurable because where it sits is a risk appetite, not
+        # a fact: a bank that would rather read noise than miss anything lowers it.
         label = "suspicious"
     else:
         label = "benign"
@@ -90,9 +95,21 @@ def fuse_detection(event: dict) -> dict:
         "endpoint_compromise": "critical",
         "malware_execution": "critical",
         "data_exfiltration": "critical",
+        # Emitted by pattern_mapper when the anomaly score is extreme but nothing
+        # matched a signature. It was absent here, so the *most* anomalous events
+        # in the system fell through to the default and reported "low" — exactly
+        # backwards, and invisible because the default was a plausible value.
+        "anomalous_activity": "medium",
     }
 
-    final_severity = SEVERITY_BY_THREAT.get(threat_type, "low")
+    # Configured severity wins over the shipped table. What a data-exfiltration
+    # alert is *worth* differs between a retail bank and a custodian, and that
+    # judgement belongs to the institution rather than to this file.
+    override_key = f"severity.{threat_type}"
+    if override_key in soc_config.SETTINGS_BY_KEY:
+        final_severity = soc_config.get(override_key)
+    else:
+        final_severity = SEVERITY_BY_THREAT.get(threat_type, "low")
 
     # remove duplicate reasoning while preserving order
     deduped_reasoning = []

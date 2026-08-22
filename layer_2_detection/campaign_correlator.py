@@ -25,6 +25,7 @@ are the campaigns.
 
 from typing import Any
 
+import soc_config
 from layer_2_detection.mitre_mapper import TACTICS
 
 _SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -85,6 +86,9 @@ class _UnionFind:
 
 # Initial Access. Below this, the actor never achieved a foothold, so their
 # traffic reaching a host does not make that host theirs.
+# Overridable: where "the attacker now owns this host" begins is a judgement,
+# and setting it too early is what turns an authorised vulnerability scan into a
+# false mega-campaign. Named here so the default is still visible in the code.
 _ACCESS_ACHIEVED = 3
 
 
@@ -105,7 +109,7 @@ def _link_reason(a: dict, b: dict) -> str | None:
     # beyond. Without that gate, a scheduled vulnerability scan that merely sent
     # packets to a server gets chained to everything that server later did —
     # which is how an authorised scan ends up inside a breach campaign.
-    if earlier["stage_order"] >= _ACCESS_ACHIEVED:
+    if earlier["stage_order"] >= soc_config.get_int("detection.campaign_min_stage"):
         if earlier["host"] and earlier["host"] == later["source_ip"]:
             return (
                 f"{earlier['host']} was compromised at {earlier['stage']}, "

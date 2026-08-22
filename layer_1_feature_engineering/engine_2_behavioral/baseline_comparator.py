@@ -22,6 +22,8 @@
 
 from collections import defaultdict
 
+import soc_config
+
 # ─────────────────────────────────────────
 # BASELINE STORE
 # Key: user_key
@@ -135,7 +137,10 @@ def compare_to_baseline(log: dict) -> dict:
     is_new_ip = user_profile.get("is_new_ip_for_user", False)
     is_new_user = user_profile.get("is_new_user", False)
 
-    excessive_failed = user_profile.get("failed_login_count", 0) > 5
+    excessive_failed = (
+        user_profile.get("failed_login_count", 0)
+        >= soc_config.get_int("detection.brute_force_attempts")
+    )
 
     baseline_not_established = not baseline["baseline_established"]
 

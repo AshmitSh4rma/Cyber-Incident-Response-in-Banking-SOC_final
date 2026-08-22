@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useEffect, useSyncExternalStore } from "react";
 
 /**
  * Detail level.
@@ -25,7 +25,18 @@ import { createContext, useCallback, useContext, useSyncExternalStore } from "re
 export type DetailLevel = "overview" | "analyst";
 
 const STORAGE_KEY = "sentra.detail";
-const DEFAULT: DetailLevel = "overview";
+const FALLBACK: DetailLevel = "overview";
+
+/**
+ * The level configured in Settings, for viewers who have not chosen one.
+ *
+ * Held separately from the stored preference on purpose. Writing the configured
+ * default into localStorage would turn it into that viewer's own choice, which
+ * has two consequences: a later change in Settings would never reach them, and
+ * the console could no longer tell "the administrator set this" apart from "this
+ * person picked it". So it is a session-level fallback, never persisted.
+ */
+let configuredDefault: DetailLevel | null = null;
 
 function isLevel(value: unknown): value is DetailLevel {
   return value === "overview" || value === "analyst";
@@ -50,6 +61,28 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
+/** Called once, from the configuration fetch. */
+function applyConfiguredDefault(level: DetailLevel): void {
+  if (configuredDefault === level) return;
+  configuredDefault = level;
+  notify();
+}
+
+
+function hasStored(): boolean {
+  try {
+    if (isLevel(new URLSearchParams(window.location.search).get("detail"))) return true;
+  } catch {
+    /* fall through */
+  }
+  try {
+    return isLevel(window.localStorage.getItem(STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+
 function read(): DetailLevel {
   // A URL override wins over the stored preference, so a link can open the
   // console at a known detail level — useful for a demo, a bug report, or a
@@ -65,10 +98,10 @@ function read(): DetailLevel {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (isLevel(stored)) return stored;
   } catch {
-    // Private browsing, or storage disabled. The default is fine.
+    // Private browsing, or storage disabled. The fallback is fine.
   }
 
-  return DEFAULT;
+  return configuredDefault ?? FALLBACK;
 }
 
 function write(next: DetailLevel): void {
@@ -88,6 +121,14 @@ type Ctx = {
   isAnalyst: boolean;
   setLevel: (level: DetailLevel) => void;
   toggle: () => void;
+  /**
+   * Has this viewer actually chosen a level, or are they seeing the fallback?
+   *
+   * The configured default from Settings should apply to someone who has never
+   * expressed a preference, and must never overwrite someone who has. Without
+   * this the two are indistinguishable, because both look like "overview".
+   */
+  isViewerChoice: boolean;
 };
 
 const DetailContext = createContext<Ctx | null>(null);
@@ -95,7 +136,30 @@ const DetailContext = createContext<Ctx | null>(null);
 export function DetailProvider({ children }: { children: React.ReactNode }) {
   // The server has no localStorage and no URL search params it should trust for
   // this, so it always renders the default and the client corrects on hydration.
-  const level = useSyncExternalStore(subscribe, read, () => DEFAULT);
+  const level = useSyncExternalStore(subscribe, read, () => FALLBACK);
+  const isViewerChoice = useSyncExternalStore(subscribe, hasStored, () => false);
+
+  // One fetch, at the root, so the configured default applies on whichever page
+  // the visitor happens to land on rather than only on the dashboard. It never
+  // overrides a stored preference — `read()` checks that first.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/config", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { values?: Record<string, unknown> };
+        const configured = data.values?.["views.default_detail"];
+        if (alive && isLevel(configured)) applyConfiguredDefault(configured);
+      } catch {
+        // The console is perfectly usable on the fallback; a failed settings
+        // lookup is not worth surfacing here.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const setLevel = useCallback((next: DetailLevel) => write(next), []);
   const toggle = useCallback(
@@ -104,7 +168,9 @@ export function DetailProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <DetailContext.Provider value={{ level, isAnalyst: level === "analyst", setLevel, toggle }}>
+    <DetailContext.Provider
+      value={{ level, isAnalyst: level === "analyst", setLevel, toggle, isViewerChoice }}
+    >
       {children}
     </DetailContext.Provider>
   );

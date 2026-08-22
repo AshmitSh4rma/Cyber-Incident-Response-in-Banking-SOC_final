@@ -14,19 +14,12 @@ the assumption and recompute.
 
 from typing import Any
 
-# Minutes a human analyst spends establishing what a single raw alert is: pulling
-# context from the SIEM, checking the source against threat intel, deciding
-# severity, and writing it up.
-#
-# Deliberately conservative. Published SOC research puts end-to-end manual
-# investigation well above this; using a low number means the saving claimed here
-# is a floor, not a best case.
-MANUAL_TRIAGE_MINUTES_PER_ALERT = 15.0
+import soc_config
 
-# Minutes a human still spends per surviving incident: reading the generated
-# analysis, agreeing or disagreeing, and deciding the response. The system
-# removes the gathering, not the judgement.
-REVIEW_MINUTES_PER_INCIDENT = 4.0
+# The two figures behind the hours-saved claim are configuration, not constants —
+# see model.manual_minutes_per_alert and model.review_minutes_per_incident in
+# soc_config.py, which carry their provenance. A deploying bank should be able to
+# substitute its own measured numbers rather than argue with ours.
 
 
 def _severity_counts(incidents: list[dict], actionable_only: bool = False) -> dict[str, int]:
@@ -94,8 +87,11 @@ def compute_metrics(
 
     # Time model. Manual cost is every raw alert triaged by hand; automated cost
     # is a human reviewing only what survived.
-    manual_minutes = total * MANUAL_TRIAGE_MINUTES_PER_ALERT
-    assisted_minutes = investigations * REVIEW_MINUTES_PER_INCIDENT
+    manual_per_alert = soc_config.get_float("model.manual_minutes_per_alert")
+    review_per_incident = soc_config.get_float("model.review_minutes_per_incident")
+
+    manual_minutes = total * manual_per_alert
+    assisted_minutes = investigations * review_per_incident
     saved_minutes = max(0.0, manual_minutes - assisted_minutes)
 
     fp_feedback = sum(1 for f in feedback if f.get("label") == "false_positive")
@@ -151,8 +147,8 @@ def compute_metrics(
             "minutes_saved": round(saved_minutes),
             "hours_saved": round(saved_minutes / 60, 1),
             "assumptions": {
-                "manual_triage_minutes_per_alert": MANUAL_TRIAGE_MINUTES_PER_ALERT,
-                "review_minutes_per_incident": REVIEW_MINUTES_PER_INCIDENT,
+                "manual_triage_minutes_per_alert": manual_per_alert,
+                "review_minutes_per_incident": review_per_incident,
                 "note": (
                     "Manual triage time cannot be measured from inside this system. "
                     "These are stated assumptions, chosen conservatively; adjust them "

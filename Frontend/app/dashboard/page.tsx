@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, GitBranch, Search, ServerCrash, ShieldCheck, Timer } from "lucide-react";
@@ -78,6 +78,13 @@ export default function DashboardPage() {
 
   const [query, setQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState<"all" | Severity>("all");
+  // The configured defaults from Settings. Applied once, and never over the top
+  // of a choice the viewer has already made — a default that overrides a
+  // deliberate click is not a default.
+  const [grouping, setGrouping] = useState<"investigations" | "alerts">("investigations");
+  // A ref, not state: the mount-only fetch below closes over it, and a state
+  // value would still read `false` there however many times it had been set.
+  const filterTouched = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -90,13 +97,21 @@ export default function DashboardPage() {
       }
     };
     (async () => {
-      const [inc, met, notif, camp] = await Promise.all([
+      const [inc, met, notif, camp, cfg] = await Promise.all([
         get<Incident[]>("/api/incidents"),
         get<Metrics>("/api/metrics"),
         get<{ count: number; items: NotificationItem[]; disclaimer: string }>("/api/notifications"),
         get<{ campaigns: Campaign[] }>("/api/campaigns"),
+        get<{ values: Record<string, string> }>("/api/config"),
       ]);
       if (!alive) return;
+
+      const views = cfg?.values ?? {};
+      if (views["views.queue_grouping"] === "alerts") setGrouping("alerts");
+      const configuredFilter = views["views.default_severity_filter"];
+      if (configuredFilter && configuredFilter !== "all" && !filterTouched.current) {
+        setSeverityFilter(configuredFilter as Severity);
+      }
       if (inc === null && met === null) {
         setOffline(true);
         return;
@@ -109,6 +124,8 @@ export default function DashboardPage() {
     return () => {
       alive = false;
     };
+    // Mount-only: these are *initial* defaults. Re-running would overwrite a
+    // filter the viewer had since chosen.
   }, []);
 
   const queue = useMemo(() => {
@@ -134,6 +151,53 @@ export default function DashboardPage() {
         return sev(b) - sev(a) || camp(b) - camp(a);
       });
   }, [incidents, query, severityFilter]);
+
+  /**
+   * The queue, folded into one row per attack.
+   *
+   * Without this the hero says "4 things to look at" and the list underneath it
+   * shows all 21 alerts that fed into them, which reads as a contradiction and
+   * throws away the consolidation the whole system exists to do. Which
+   * arrangement is right depends on the reader, so it is a setting rather than a
+   * decision: an executive wants the four, an analyst on shift wants the 21.
+   */
+  const groups = useMemo(() => {
+    const byCampaign = new Map<string, { campaign: Incident["campaign"]; members: Incident[] }>();
+    const standalone: Incident[] = [];
+
+    for (const incident of queue) {
+      const id = incident.campaign?.campaign_id;
+      if (!id) {
+        standalone.push(incident);
+        continue;
+      }
+      const existing = byCampaign.get(id);
+      if (existing) existing.members.push(incident);
+      else byCampaign.set(id, { campaign: incident.campaign, members: [incident] });
+    }
+
+    const rank = (list: Incident[]) =>
+      Math.max(
+        ...list.map((i) => severityTone((i.detection as Record<string, string>)?.severity).rank),
+      );
+
+    return [
+      ...[...byCampaign.entries()].map(([id, g]) => ({
+        kind: "campaign" as const,
+        id,
+        campaign: g.campaign,
+        members: g.members,
+        rank: rank(g.members),
+      })),
+      ...standalone.map((incident) => ({
+        kind: "single" as const,
+        id: incident.event_id,
+        campaign: null,
+        members: [incident],
+        rank: severityTone((incident.detection as Record<string, string>)?.severity).rank,
+      })),
+    ].sort((a, b) => b.rank - a.rank || b.members.length - a.members.length);
+  }, [queue]);
 
   if (offline) {
     return (
@@ -343,7 +407,11 @@ export default function DashboardPage() {
       {/* ── Queue ────────────────────────────────────────────────────────────── */}
       <Section
         title="Things to look at"
-        hint="Most serious first"
+        hint={
+          grouping === "alerts"
+            ? "Every alert, most serious first"
+            : "One row per attack — most serious first"
+        }
         flush
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -361,7 +429,10 @@ export default function DashboardPage() {
               {(["all", "critical", "high", "medium"] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setSeverityFilter(s)}
+                  onClick={() => {
+                    setSeverityFilter(s);
+                    filterTouched.current = true;
+                  }}
                   className="relative px-2 py-1 text-[10px] font-semibold uppercase tracking-wider transition-colors"
                 >
                   {severityFilter === s ? (
@@ -394,11 +465,27 @@ export default function DashboardPage() {
           </div>
         ) : (
           <ul className="divide-y divide-rule-soft">
-            <AnimatePresence initial={false}>
-              {queue.map((inc) => (
-                <QueueRow key={inc.event_id} incident={inc} analyst={isAnalyst} />
-              ))}
-            </AnimatePresence>
+            {grouping === "alerts" ? (
+              <AnimatePresence initial={false}>
+                {queue.map((inc) => (
+                  <QueueRow key={inc.event_id} incident={inc} analyst={isAnalyst} />
+                ))}
+              </AnimatePresence>
+            ) : (
+              groups.map((group) =>
+                group.kind === "single" ? (
+                  <QueueRow key={group.id} incident={group.members[0]} analyst={isAnalyst} />
+                ) : (
+                  <GroupedRow
+                    key={group.id}
+                    campaignId={group.id}
+                    campaign={group.campaign}
+                    members={group.members}
+                    analyst={isAnalyst}
+                  />
+                ),
+              )
+            )}
           </ul>
         )}
       </Section>
@@ -494,5 +581,99 @@ function QueueRow({ incident, analyst }: { incident: Incident; analyst: boolean 
         </div>
       </Link>
     </motion.li>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   One attack, with its alerts folded inside.
+
+   The row shows what the reader needs to decide whether to open it — how
+   serious, how many alerts, how far the attacker got — and holds the individual
+   alerts behind a disclosure. That is the whole consolidation argument made
+   visible: four rows instead of twenty-one, with nothing thrown away.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function GroupedRow({
+  campaignId,
+  campaign,
+  members,
+  analyst,
+}: {
+  campaignId: string;
+  campaign: Incident["campaign"];
+  members: Incident[];
+  analyst: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+
+  // Carry the severity *word* alongside the tone: SeverityChip renders the label
+  // itself, and Tone deliberately holds only colour and rank.
+  const worst = members.reduce(
+    (acc, incident) => {
+      const value = normalizeSeverity(
+        (incident.detection as Record<string, string>)?.severity,
+      );
+      const tone = severityTone(value);
+      return tone.rank > acc.tone.rank ? { value, tone } : acc;
+    },
+    { value: "low" as Severity, tone: severityTone("low") },
+  );
+
+  const title =
+    members.find((m) => m.dashboard?.alert_title)?.dashboard?.alert_title ?? "Related activity";
+  const stage = campaign?.furthest_stage;
+
+  return (
+    <li className="relative">
+      <span className={`absolute left-0 top-0 h-full w-0.5 ${worst.tone.mark}`} aria-hidden />
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <SeverityChip value={worst.value} />
+            <span className="rounded border border-accent-deep bg-accent/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent">
+              {members.length} alerts, one attack
+            </span>
+            {analyst ? <span className="mono text-[10px] text-faint">{campaignId}</span> : null}
+          </div>
+          <Link
+            href={`/campaigns/${campaignId}`}
+            className="truncate text-[13px] font-medium text-ink transition hover:text-accent"
+          >
+            {title}
+          </Link>
+          {stage ? (
+            <p className="text-[10px] text-muted">
+              Got as far as <span className="font-medium text-ink">{stage}</span>
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="shrink-0 rounded border border-rule px-2 py-1 text-[10px] font-medium text-muted transition hover:bg-raised hover:text-ink"
+        >
+          {open ? "Hide the alerts" : `Show the ${members.length} alerts`}
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.ul
+            key="members"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: EASE_OUT }}
+            className="overflow-hidden border-t border-rule-soft bg-sunk/40 pl-4"
+          >
+            {members.map((incident) => (
+              <QueueRow key={incident.event_id} incident={incident} analyst={analyst} />
+            ))}
+          </motion.ul>
+        ) : null}
+      </AnimatePresence>
+    </li>
   );
 }

@@ -17,3 +17,8 @@ build/
 layer1_output.json
 layer2_output.json
 layer3_output.json
+
+# Runtime configuration. Per-deployment state, not source: a fresh clone runs on
+# the shipped defaults in soc_config.py until someone changes something.
+soc_config.json
+soc_config_audit.json

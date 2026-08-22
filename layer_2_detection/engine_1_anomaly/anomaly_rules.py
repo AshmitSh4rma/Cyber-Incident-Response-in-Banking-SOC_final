@@ -1,3 +1,5 @@
+import soc_config
+
 from .anomaly_utils import append_flag, append_reason, as_bool, safe_float
 
 
@@ -9,7 +11,6 @@ def evaluate_anomaly_rules(event: dict) -> dict:
     behavioral = event.get("behavioral_features", {}) or {}
     statistical = event.get("statistical_features", {}) or {}
     network = event.get("network_features", {}) or {}
-    web = event.get("web_features", {}) or {}
     identity = event.get("identity_features", {}) or {}
 
     flags: list[str] = []
@@ -22,7 +23,7 @@ def evaluate_anomaly_rules(event: dict) -> dict:
 
     # Behavioral
     failed_login_count = safe_float(behavioral.get("failed_login_count"), 0)
-    if failed_login_count >= 5:
+    if failed_login_count >= soc_config.get_int("detection.brute_force_attempts"):
         append_flag(flags, "login_failure_spike")
         append_reason(reasons, f"Failed login count is high ({int(failed_login_count)})")
 
@@ -50,10 +51,12 @@ def evaluate_anomaly_rules(event: dict) -> dict:
         append_flag(flags, "suspicious_port")
         append_reason(reasons, "Connection uses a suspicious or uncommon port")
 
-    # Web
-    if as_bool(web.get("sensitive_path_access")):
-        append_flag(flags, "sensitive_path_access")
-        append_reason(reasons, "Sensitive web path was accessed")
+    # There is deliberately no "sensitive path" flag. The only Layer 1 field that
+    # could feed one, web_http_features.is_suspicious_path, matches 32 substrings
+    # including "api", "v1", "login" and "auth" — so it fires on very nearly every
+    # request a bank serves. A flag that is always raised carries no information;
+    # it would just add a constant to every web event's anomaly score and move
+    # the meaning of every threshold compared against it.
 
     # Identity
     if as_bool(identity.get("risky_signin")):

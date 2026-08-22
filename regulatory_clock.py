@@ -27,6 +27,8 @@ not opinion.
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import soc_config
+
 # ─────────────────────────────────────────────────────────────────────────────
 # The regimes. Deadlines are from the regulation; the `applies_when` note says
 # in plain words which incidents each one is really about.
@@ -140,6 +142,12 @@ def assess_reportability(
     rank = _SEVERITY_RANK.get(str(severity).lower(), 1)
     verdict = str(verdict or "").lower()
 
+    # Both gates are institution policy, not fact. A bank that reports at medium
+    # severity, or that wants scanning to count, is making a legitimate choice
+    # about its own obligations; the code should not decide it for them.
+    floor = _SEVERITY_RANK.get(str(soc_config.get("reporting.min_severity")).lower(), 3)
+    require_foothold = soc_config.get_bool("reporting.require_foothold")
+
     # Benign and analyst-dismissed activity is never reportable.
     if verdict in {"benign", "suppressed"}:
         return {
@@ -169,7 +177,7 @@ def assess_reportability(
     # The threshold: data at risk on its own is enough. Otherwise we want both a
     # foothold and material severity — a high-severity probe that never landed is
     # a security event, not a reportable operational incident.
-    reportable = data_at_risk or (post_compromise and rank >= 3)
+    reportable = data_at_risk or ((post_compromise or not require_foothold) and rank >= floor)
 
     if not reportable:
         return {
@@ -228,7 +236,9 @@ def build_clocks(
             "disclaimer": _DISCLAIMER,
         }
 
-    chosen = regime_ids or [r["id"] for r in REGIMES]
+    # An explicit argument wins (used by tests and by callers that already know
+    # the entity), otherwise the configured jurisdiction set applies.
+    chosen = regime_ids or soc_config.get_list("reporting.regimes") or [r["id"] for r in REGIMES]
     clocks: list[dict[str, Any]] = []
 
     for regime_id in chosen:

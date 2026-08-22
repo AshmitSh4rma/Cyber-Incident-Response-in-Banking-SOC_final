@@ -8,7 +8,6 @@ FLAG_WEIGHTS = {
     "high_z_score": 0.20,
     "event_volume_spike": 0.20,
     "suspicious_port": 0.15,
-    "sensitive_path_access": 0.15,
     "risky_signin": 0.20,
 }
 

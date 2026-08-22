@@ -10,6 +10,8 @@ def adapt_layer1_event(event: dict) -> dict:
     frequency = event.get("frequency_features", {}) or {}
     pattern = event.get("pattern_features", {}) or {}
     identity = event.get("identity_features", {}) or {}
+    traffic = event.get("network_traffic_features", {}) or {}
+    iot_device = event.get("iot_device_features", {}) or {}
 
     adapted["source_ip"] = (
         event.get("source_ip")
@@ -91,6 +93,19 @@ def adapt_layer1_event(event: dict) -> dict:
         or 0
     )
     adapted["statistical_features"] = statistical
+
+    # Layer 1 reports a high-risk destination port under a different name, and
+    # the anomaly rule looking for it was reading a `network_features` block
+    # nothing ever wrote — so that flag's 0.15 could never be earned. The narrow
+    # port set (telnet, SNMP, SMB, RDP, VNC) is worth the weight.
+    network_features = dict(event.get("network_features", {}) or {})
+    network_features["suspicious_port"] = (
+        network_features.get("suspicious_port")
+        or traffic.get("is_high_risk_port")
+        or iot_device.get("suspicious_port_detected")
+        or False
+    )
+    adapted["network_features"] = network_features
 
     identity_features = dict(identity)
     identity_features["risky_signin"] = (

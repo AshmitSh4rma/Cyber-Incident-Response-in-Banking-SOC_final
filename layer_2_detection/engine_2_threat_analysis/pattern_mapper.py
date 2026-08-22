@@ -1,3 +1,6 @@
+
+import soc_config
+
 from .threat_utils import append_reason, as_bool, normalize_text, safe_float
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +96,7 @@ def map_threat_patterns(event: dict) -> dict:
     # log has to be an auth log *and* describe a login before these rules apply.
     is_login_action = any(x in normalized_action for x in ("login", "signin"))
     if is_signin or (log_type == "auth" and is_login_action):
-        if failed_logins >= 3 or is_failed:
+        if failed_logins >= soc_config.get_int("detection.brute_force_attempts") or is_failed:
             patterns.append("brute_force_attempt")
             append_reason(reasons, "Multiple authentication attempts observed")
 

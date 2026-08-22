@@ -22,6 +22,32 @@ export async function proxyJson(path: string) {
   }
 }
 
+/**
+ * Forward a body-carrying request and pass the response through unchanged.
+ *
+ * The status code matters more here than on a GET: the config endpoints answer
+ * 422 with per-field messages, and swallowing that into a generic failure would
+ * throw away the only thing that tells an operator which control to fix.
+ */
+export async function proxyWithBody(path: string, method: "POST" | "PUT", body: unknown) {
+  try {
+    const res = await fetch(backendUrl(path), {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body ?? {}),
+      cache: "no-store",
+    });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { status: "error", message: `Could not reach the SOC backend: ${msg}` },
+      { status: 502 },
+    );
+  }
+}
+
 /** Same, for endpoints that return Markdown rather than JSON. */
 export async function proxyText(path: string, filename: string) {
   try {

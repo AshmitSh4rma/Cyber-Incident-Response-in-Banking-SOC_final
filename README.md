@@ -53,6 +53,7 @@ Seven stages. Each is independently testable, and data flows strictly forward.
 | **L5** | Scores how bad it is, consistently | CVSS 3.1 base score computed from the published equations |
 | **L6** | Says what to do, and what needs a person | Threat-specific playbook + blast-radius approval gate |
 | **Clock** | **Says how long until you must tell the regulator** | Reportability assessment + per-regime countdown |
+| **Settings** | **Lets the bank change any of the above without a developer** | 22 declared settings read at the point of use; validated, previewable, reversible |
 
 ### Campaign correlation is the interesting bit
 
@@ -132,6 +133,65 @@ That disclaimer ships in every API response.
 
 ---
 
+## Nothing here needs a developer to change
+
+Every number that decides how this system behaves was a Python literal, and a
+system whose risk appetite is a literal cannot be deployed twice. **Settings**
+(`/settings`) exposes 22 of them — thresholds, severity policy, jurisdiction,
+response autonomy, the savings model, and console defaults — with no code change
+and no restart.
+
+The mechanism is small on purpose:
+
+- **Declared, not hardcoded twice.** `soc_config.py` holds one list of settings,
+  each carrying its plain-English question, its bounds, and a sentence on what
+  observably changes when you move it. The console renders from that list, so
+  adding a setting server-side makes it appear in the UI with no frontend change.
+- **Read at the point of use.** Nothing is captured at import, so a saved change
+  applies to the next event without a restart. `get()` re-reads the file when it
+  changes on disk, which is what lets the API server and the offline runner share
+  one source of truth.
+- **Applied whole or not at all.** Every problem in a patch is reported at once,
+  keyed by setting, and nothing is written if any of them fails. A half-applied
+  configuration is the one failure mode that leaves an operator confidently wrong
+  about their own system.
+- **Only differences are stored.** `soc_config.json` holds overrides, so "what
+  has been changed here" is answerable by comparison, and a later release can
+  re-tune a default without silently inheriting an old one.
+
+### Refusals that matter more than the bounds
+
+Per-field bounds are the easy half. Two cross-field rules exist because the
+values are coupled, and breaking the coupling fails *silently*:
+
+- The confidence ceiling must stay above the threshold at which a verdict becomes
+  `malicious`. Set it lower and no incident can ever be labelled malicious again —
+  a total change in behaviour with no error anywhere.
+- Reviewing an investigation cannot cost as much as triaging every alert by hand,
+  or the dashboard reports a negative saving as a positive one.
+
+### "What would this do?"
+
+The part that makes the rest safe to touch. `POST /api/config/preview` runs the
+demo records through all seven layers twice — once as configured, once with the
+candidate applied — and returns both outcomes and their difference. Nothing is
+saved.
+
+```
+Withhold automatic IP blocking      actions_automatic        39 -> 19
+                                    actions_needing_approval 21 -> 41
+Only CERT-In applies to us          notification_deadlines    8 -> 2
+Analyst triage 15 -> 25 minutes     hours_saved             6.0 -> 10.2
+Port scans are critical, not medium severity spread  medium 6 · high 12 · critical 3
+                                                  -> critical 9 · high 12
+Compromise gate at Reconnaissance   campaigns                 3 -> 2
+```
+
+Layer 1 accumulates per-source history in module state, so `pipeline.reset_state()`
+runs before each of the two comparison runs. Without it the second inherits the
+first one's traffic and the comparison measures the wrong thing.
+
+
 ## Quick start
 
 ```bash
@@ -162,7 +222,7 @@ incidents in place instead of duplicating them.
 ### Tests
 
 ```bash
-pytest -q        # 94 tests
+pytest -q        # 136 tests
 ```
 
 ### Optional: local LLM for Layer 4
@@ -211,6 +271,10 @@ The dashboard reads the backend through Next.js route handlers, defaulting to
 | `POST` | `/api/approvals/{id}/decision` | Approve or reject |
 | `GET` | `/api/incidents/{id}/report` | Incident as a Markdown audit record |
 | `GET` | `/api/campaigns/{id}/report` | Campaign as a Markdown audit report |
+| `GET` | `/api/config` | Settings schema, current values, what differs from default, recent changes |
+| `PUT` | `/api/config` | Apply a change; `422` with per-field messages and nothing written if invalid |
+| `POST` | `/api/config/preview` | Run the pipeline twice and return the difference, saving nothing |
+| `POST` | `/api/config/reset` | Return every setting to its shipped default |
 
 ---
 
@@ -249,6 +313,7 @@ layer_2_detection/            4 detection engines + suppression
   mitre_mapper.py             ATT&CK techniques and tactics
   campaign_correlator.py      Layer 2.5
 layer_3_cis/                  CIS/OWASP catalogues + IDF-weighted matcher
+soc_config.py                 the 22 runtime settings: schema, validation, storage
 layer_4_ai_analysis/          deterministic analyst + optional LLM enrichment
 layer_5_cvss/                 4 CVSS engines
 layer_6_response/             playbooks + blast-radius approval gate
@@ -285,7 +350,7 @@ Measured on the shipped scenario:
 | | |
 | --- | --- |
 | Full pipeline, 25 records ingest to stored incident | **0.09 s** (median of 7) |
-| Test suite | **94 / 94** |
+| Test suite | **136 / 136** |
 | CVSS 3.1 vs published reference vectors | **7 / 7 exact** |
 | Incidents mapped to a named CIS control | **100%** |
 | Incidents mapped to an ATT&CK technique | **84%** |
