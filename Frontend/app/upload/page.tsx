@@ -3,32 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   CheckCircle2,
   ChevronRight,
   Loader2,
   Play,
   Terminal,
   Upload,
+  Zap
 } from "lucide-react";
-
-/**
- * Scenario replay.
- *
- * Every scenario here produces nothing but RAW LOG RECORDS, which are posted to
- * POST /run-pipeline exactly as an uploaded log file would be. The verdict,
- * severity, control mapping, CVSS score and campaign grouping are all decided by
- * the Python pipeline.
- *
- * This page used to carry a pre-built incident for every scenario — detection,
- * CIS, CVSS, response, the lot — and throw all of it away except `raw_event`,
- * because the backend recomputes it. Worse, it kept those fabrications as an
- * offline fallback, so with the backend down the dashboard filled with
- * convincing fake incidents. Both are gone: nothing on this page decides
- * anything about a threat.
- */
-
-// ─── Raw log helpers ─────────────────────────────────────────────────────────
+import { motion } from "framer-motion";
 
 const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const externalIp = (prefix: string) => `${prefix}.${randInt(1, 254)}.${randInt(1, 254)}`;
@@ -41,7 +24,6 @@ type Scenario = {
   label: string;
   technique: string;
   summary: string;
-  /** What the pipeline should conclude — shown so you can check it did. */
   expect: string;
   generate: () => RawLog[];
 };
@@ -144,28 +126,6 @@ const SCENARIOS: Scenario[] = [
     },
   },
   {
-    id: "c2_beaconing",
-    label: "C2 beaconing",
-    technique: "T1071.001",
-    summary: "Regular-interval HTTPS callbacks to a known command-and-control host.",
-    expect: "Command and Control · high",
-    generate: () => {
-      return Array.from({ length: 5 }, (_, i) => ({
-        timestamp: at(i * 60_000),
-        log_type: "network",
-        source_ip: "10.20.0.11",
-        destination_ip: "185.14.22.91",
-        port: 443,
-        protocol: "https",
-        action: "beaconing",
-        affected_host: "dmz-web-01",
-        bytes_in: randInt(1100, 1260),
-        bytes_out: randInt(900, 980),
-        duration_ms: randInt(780, 860),
-      }));
-    },
-  },
-  {
     id: "lateral_movement",
     label: "Lateral movement",
     technique: "T1021",
@@ -199,61 +159,16 @@ const SCENARIOS: Scenario[] = [
       },
     ],
   },
-  {
-    id: "data_exfil",
-    label: "Data exfiltration",
-    technique: "T1041",
-    summary: "Bulk outbound transfer from the database tier to an external host.",
-    expect: "Exfiltration · critical",
-    generate: () => [
-      {
-        timestamp: at(0),
-        log_type: "network",
-        source_ip: "10.40.9.7",
-        destination_ip: externalIp("203.0"),
-        port: 443,
-        protocol: "https",
-        action: "data_exfiltration",
-        affected_host: "db-core-01",
-        affected_user: "svc_payments",
-        bytes_in: 1420,
-        bytes_out: 486_203_914,
-        duration_ms: 214_880,
-      },
-    ],
-  },
-  {
-    id: "iot_telnet",
-    label: "Exposed IoT device",
-    technique: "T1552",
-    summary: "Branch camera reachable over cleartext Telnet with default credentials.",
-    expect: "Credential Access · medium",
-    generate: () => [
-      {
-        timestamp: at(0),
-        log_type: "iot",
-        source_ip: externalIp("192.0"),
-        destination_ip: "10.60.2.31",
-        port: 23,
-        protocol: "telnet",
-        action: "credential_abuse",
-        affected_host: "branch-camera-07",
-        device_id: "AXIS-P3245-07",
-        firmware_version: "9.80.3",
-        device_type: "ip_camera",
-      },
-    ],
-  },
 ];
 
 const LAYERS = [
-  { label: "Feature engineering", detail: "normalise, classify, extract" },
-  { label: "Detection", detail: "anomaly · patterns · intel · correlation" },
-  { label: "Campaign correlation", detail: "group alerts into intrusions" },
-  { label: "Control mapping", detail: "CIS / OWASP benchmark retrieval" },
-  { label: "Incident analysis", detail: "narrative and CVSS metrics" },
-  { label: "CVSS scoring", detail: "3.1 base score and vector" },
-  { label: "Response planning", detail: "playbook and approval gate" },
+  { prefix: "01", short: "FEAT_ENG", label: "Feature engineering", detail: "normalise, classify, extract" },
+  { prefix: "02", short: "DET_ENGINE", label: "Detection", detail: "anomaly · patterns · intel · correlation" },
+  { prefix: "03", short: "CAM_CORR", label: "Campaign correlation", detail: "group alerts into intrusions" },
+  { prefix: "04", short: "CTL_MAP", label: "Control mapping", detail: "CIS / OWASP benchmark retrieval" },
+  { prefix: "05", short: "AI_ANAL", label: "Incident analysis", detail: "narrative and CVSS metrics" },
+  { prefix: "06", short: "CVSS_SC", label: "CVSS scoring", detail: "3.1 base score and vector" },
+  { prefix: "07", short: "RESP_PLN", label: "Response planning", detail: "playbook and approval gate" },
 ];
 
 type Phase = "idle" | "running" | "done" | "error";
@@ -265,6 +180,18 @@ type RunResult = {
   message?: string;
 };
 
+// SVG geometry based on 1400x200 viewBox.
+// Every branch is given a real horizontal sweep via its control points — a
+// near-vertical path (the old centre branch) collapses to a zero-width
+// bounding box, which breaks stroke animation and glow rendering.
+const NODE_X = [100, 300, 500, 700, 900, 1100, 1300];
+const ENTRY_X = [500, 566, 633, 700, 766, 833, 900];
+const TRACE_PATHS = NODE_X.map((nx, i) => {
+  const ex = ENTRY_X[i];
+  const bow = i <= 3 ? 46 : -46;
+  return `M ${nx} 0 C ${nx + bow} 70, ${ex - bow} 120, ${ex} 190`;
+});
+
 export default function ScenarioReplayPage() {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
@@ -275,6 +202,7 @@ export default function ScenarioReplayPage() {
   const [error, setError] = useState<string | null>(null);
   const logEnd = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const runIdRef = useRef(0);
 
   useEffect(() => {
     logEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -282,6 +210,9 @@ export default function ScenarioReplayPage() {
 
   const submit = useCallback(
     async (logs: RawLog[], filename: string, label: string, id: string | null) => {
+      runIdRef.current += 1;
+      const currentRunId = runIdRef.current;
+
       setActiveId(id);
       setPhase("running");
       setError(null);
@@ -289,19 +220,32 @@ export default function ScenarioReplayPage() {
       setLogLines([]);
       setLayerIndex(-1);
 
-      // Stream the raw records so it is visible that these are logs, not verdicts.
-      for (let i = 0; i < logs.length; i += 1) {
-        setLogLines((prev) => [...prev, logs[i]]);
-        await new Promise((r) => setTimeout(r, Math.min(180, 900 / logs.length)));
-      }
-
-      // Advance the layer indicator while the request is in flight, then settle
-      // on the real outcome.
-      let running = true;
+      // Advance layers and stream logs sequentially
       const advance = (async () => {
-        for (let i = 0; i < LAYERS.length && running; i += 1) {
+        const total = LAYERS.length;
+        const count = logs.length;
+        const perLayer = Math.floor(count / total);
+        const remainder = count % total;
+        let cursor = 0;
+
+        for (let i = 0; i < total; i += 1) {
+          if (runIdRef.current !== currentRunId) return;
           setLayerIndex(i);
-          await new Promise((r) => setTimeout(r, 260));
+
+          // Every layer must ingest at least one record. Scenarios with fewer
+          // records than layers cycle through what was submitted instead of
+          // leaving the later layers empty.
+          const batch = count >= total ? perLayer + (i < remainder ? 1 : 0) : 1;
+
+          for (let j = 0; j < batch; j += 1) {
+            if (runIdRef.current !== currentRunId) return;
+            setLogLines((prev) => [...prev, logs[cursor % count]]);
+            cursor += 1;
+            await new Promise((r) => setTimeout(r, 150));
+          }
+
+          if (runIdRef.current !== currentRunId) return;
+          await new Promise((r) => setTimeout(r, 600));
         }
       })();
 
@@ -315,8 +259,9 @@ export default function ScenarioReplayPage() {
         const res = await fetch("/api/run-pipeline", { method: "POST", body: form });
         const data = (await res.json().catch(() => ({}))) as RunResult;
 
-        running = false;
         await advance;
+        if (runIdRef.current !== currentRunId) return;
+
         setLayerIndex(LAYERS.length);
 
         if (!res.ok) throw new Error(data?.message ?? `Pipeline returned ${res.status}`);
@@ -324,11 +269,12 @@ export default function ScenarioReplayPage() {
         setResult(data);
         setPhase("done");
       } catch (err) {
-        running = false;
         await advance;
+        if (runIdRef.current !== currentRunId) return;
+
         setError(
           `${err instanceof Error ? err.message : String(err)} — start the backend with ` +
-            `"uvicorn api_server:app --port 8000" and replay ${label} again.`,
+          `"uvicorn api_server:app --port 8000" and replay ${label} again.`,
         );
         setPhase("error");
       }
@@ -344,23 +290,17 @@ export default function ScenarioReplayPage() {
         const parsed = JSON.parse(text);
         logs = Array.isArray(parsed) ? parsed : [parsed];
       } catch {
-        // JSONL: one object per line. The backend accepts it either way, but
-        // parsing here lets us stream the records for display.
         logs = text
           .split("\n")
           .map((l) => l.trim())
           .filter(Boolean)
           .map((l) => {
-            try {
-              return JSON.parse(l);
-            } catch {
-              return null;
-            }
+            try { return JSON.parse(l); } catch { return null; }
           })
           .filter(Boolean) as RawLog[];
       }
       if (logs.length === 0) {
-        setError("No log records found in that file. Expecting a JSON array or JSONL.");
+        setError("No log records found in that file.");
         setPhase("error");
         return;
       }
@@ -378,215 +318,334 @@ export default function ScenarioReplayPage() {
     setError(null);
   };
 
-  return (
-    <div className="mx-auto max-w-[1400px] space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1.5">
-          <p className="eyebrow">Scenario replay</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-            Send telemetry through the pipeline
-          </h1>
-          <p className="max-w-2xl text-xs leading-relaxed text-slate-400">
-            Each scenario emits raw log records and nothing else. Every verdict,
-            score, control mapping and campaign grouping you see afterwards was
-            decided by the backend, not by this page.
-          </p>
-        </div>
+  const activeScenario = SCENARIOS.find((s) => s.id === activeId);
 
-        <div className="flex items-center gap-2">
-          <input
-            ref={fileInput}
-            type="file"
-            accept=".json,.jsonl,.txt,application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onUpload(f);
-              e.target.value = "";
-            }}
-          />
-          <button
-            onClick={() => fileInput.current?.click()}
-            disabled={phase === "running"}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-600 hover:bg-slate-800 disabled:opacity-50"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            Upload your own logs
-          </button>
-          {phase !== "idle" && (
+  return (
+    <div className="min-h-screen bg-[#020202] text-slate-300">
+      <div className="mx-auto max-w-[1400px] p-6 space-y-8">
+
+        {/* Top Header & Scenario Picker / Status */}
+        <div className="flex items-center justify-between border-b border-slate-900 pb-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Send telemetry through the pipeline</h1>
+            <div className="mt-2 text-sm text-slate-500 flex items-center gap-2">
+              <span className="uppercase tracking-widest text-[10px] font-bold text-slate-600">Scenario Replay</span>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".json,.jsonl,.txt,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onUpload(f);
+                e.target.value = "";
+              }}
+            />
+            <button
+              onClick={() => fileInput.current?.click()}
+              disabled={phase === "running"}
+              className="inline-flex items-center gap-2 rounded border border-slate-800 bg-[#0a0a0a] px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-700 hover:text-white disabled:opacity-50"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload your own logs
+            </button>
             <button
               onClick={reset}
-              className="rounded-md border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded border border-slate-800 bg-[#0a0a0a] px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-700 hover:text-white"
             >
-              Reset
+              Reset Simulation
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Scenario picker */}
-      {phase === "idle" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {SCENARIOS.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => submit(s.generate(), `${s.id}.json`, s.label, s.id)}
-              className="group flex flex-col gap-2 rounded-md border border-slate-800 bg-slate-900/60 p-4 text-left transition hover:border-slate-700 hover:bg-slate-900"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="mono rounded border border-cyan-900/50 bg-cyan-950/25 px-1.5 py-0.5 text-[10px] text-cyan-300">
-                  {s.technique}
-                </span>
-                <ChevronRight className="h-3.5 w-3.5 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" />
-              </div>
-              <span className="text-sm font-medium text-slate-100">{s.label}</span>
-              <span className="text-[11px] leading-relaxed text-slate-400">{s.summary}</span>
-              <span className="mono mt-auto pt-1 text-[10px] text-slate-600">
-                expect → {s.expect}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Run view */}
-      {phase !== "idle" && (
-        <div className="grid gap-5 lg:grid-cols-5">
-          {/* Raw log stream */}
-          <div className="flex flex-col overflow-hidden rounded-md border border-slate-800 bg-slate-950 lg:col-span-3">
-            <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2.5">
-              <Terminal className="h-3.5 w-3.5 text-slate-500" />
-              <span className="eyebrow">Raw records submitted</span>
-              <span className="mono ml-auto text-[10px] text-slate-500">
-                {logLines.length} record{logLines.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            <div className="mono max-h-[420px] min-h-[240px] space-y-1 overflow-y-auto p-4 text-[10.5px] leading-relaxed">
-              {logLines.map((line, i) => (
-                <div key={i} className="flex gap-2 text-slate-400">
-                  <span className="shrink-0 text-slate-600">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0 break-all">
-                    <span className="text-slate-500">{String(line.timestamp ?? "").slice(11, 19)}</span>{" "}
-                    <span className="text-cyan-500/80">{String(line.log_type ?? "")}</span>{" "}
-                    <span className="text-slate-300">{String(line.source_ip ?? "")}</span>
-                    {line.destination_ip ? (
-                      <>
-                        <span className="text-slate-600"> → </span>
-                        <span className="text-slate-300">{String(line.destination_ip)}</span>
-                      </>
-                    ) : null}
-                    {line.action ? <span className="text-amber-500/80"> {String(line.action)}</span> : null}
-                    {line.url ? <span className="text-slate-500"> {String(line.url)}</span> : null}
-                    {line.affected_user ? (
-                      <span className="text-slate-500"> user={String(line.affected_user)}</span>
-                    ) : null}
-                  </span>
-                </div>
-              ))}
-              <div ref={logEnd} />
-            </div>
           </div>
+        </div>
 
-          {/* Pipeline progress + outcome */}
-          <div className="space-y-4 lg:col-span-2">
-            <div className="rounded-md border border-slate-800 bg-slate-900/60 p-4">
-              <p className="eyebrow mb-3">Pipeline</p>
-              <ol className="space-y-2">
-                {LAYERS.map((layer, i) => {
-                  const state = layerIndex > i ? "done" : layerIndex === i ? "active" : "waiting";
-                  return (
-                    <li key={layer.label} className="flex items-start gap-2.5">
-                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                        {state === "done" ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                        ) : state === "active" ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
-                        ) : (
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                        )}
+        {/* Selected Scenario Bar */}
+        {activeScenario && (
+          <div className="flex items-center gap-3 rounded border border-slate-800 bg-[#050505] px-4 py-3 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+            <span className="flex h-6 w-6 items-center justify-center rounded bg-slate-900">
+              <Terminal className="h-3.5 w-3.5 text-slate-500" />
+            </span>
+            <p className="text-sm">
+              <span className="text-slate-500">Scenario: </span>
+              <span className="font-mono text-emerald-400 font-semibold">{activeScenario.technique}</span>
+              <span className="text-slate-200 ml-2">- {activeScenario.label}</span>
+              <span className="text-slate-500 ml-2">({activeScenario.expect})</span>
+            </p>
+          </div>
+        )}
+
+        {/* Pipeline Visualizer Layout */}
+        {phase !== "idle" && (
+          <div className="relative mt-8">
+
+            {/* Top Row: 7 Nodes */}
+            <div className="relative z-10 flex w-full justify-between gap-4">
+              {LAYERS.map((layer, i) => {
+                const isFinished = layerIndex > i;
+                const isActive = layerIndex === i;
+
+                const baseClass = "flex-1 flex flex-col rounded-lg border p-3 transition-all duration-300";
+                const stateClass = isActive
+                  ? "border-emerald-500 bg-[#05100a] shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                  : isFinished
+                    ? "border-emerald-900/50 bg-[#050a07]"
+                    : "border-slate-800/80 bg-[#080808]";
+
+                return (
+                  <div key={i} className={`${baseClass} ${stateClass}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`font-mono text-[10px] font-bold ${isActive || isFinished ? 'text-emerald-400' : 'text-slate-600'}`}>
+                        {layer.prefix}
                       </span>
-                      <span className="min-w-0">
-                        <span
-                          className={[
-                            "block text-xs",
-                            state === "waiting" ? "text-slate-600" : "text-slate-200",
-                          ].join(" ")}
-                        >
-                          {layer.label}
+                      <span className={`font-mono text-xs font-bold tracking-wider ${isActive ? 'text-white' : isFinished ? 'text-emerald-500/80' : 'text-slate-400'}`}>
+                        {layer.short}
+                      </span>
+                      {isActive && <Zap className="h-3 w-3 text-emerald-400 ml-auto animate-pulse" />}
+                    </div>
+                    <h3 className={`text-xs font-medium mb-1 ${isActive ? 'text-white' : 'text-slate-300'}`}>{layer.label}</h3>
+                    <p className="text-[9px] text-slate-500 leading-tight mb-4 flex-1">{layer.detail}</p>
+
+                    <div className="flex items-center gap-1.5 mt-auto">
+                      {isFinished ? (
+                        <span className="text-[10px] text-emerald-500 flex items-center gap-1">
+                          Complete Check <CheckCircle2 className="h-3 w-3" />
                         </span>
-                        <span className="block text-[10px] text-slate-600">{layer.detail}</span>
-                      </span>
-                    </li>
+                      ) : isActive ? (
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                          Processing Zap <Zap className="h-3 w-3 animate-pulse" />
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-600 flex items-center gap-1">
+                          Idle Circle <span className="h-2.5 w-2.5 rounded-full border border-slate-600"></span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Converging SVG Traces */}
+            <div className="pointer-events-none relative z-0 h-[200px] w-full">
+              <svg
+                viewBox="0 0 1400 200"
+                preserveAspectRatio="none"
+                className="absolute inset-0 h-full w-full"
+              >
+                <defs>
+                  <marker id="arrow-idle" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e293b" />
+                  </marker>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+                  </marker>
+                </defs>
+
+                {TRACE_PATHS.map((d, i) => {
+                  const isFinished = layerIndex > i;
+                  const isActive = layerIndex === i;
+                  const isLit = isActive || isFinished;
+
+                  return (
+                    <g key={i}>
+                      {/* Base dim line */}
+                      <path
+                        id={`trace-path-${i}`}
+                        d={d}
+                        fill="none"
+                        stroke="#0f172a"
+                        strokeWidth="3"
+                        markerEnd="url(#arrow-idle)"
+                        vectorEffect="non-scaling-stroke"
+                      />
+
+                      {/* Lit underlay glow — CSS drop-shadow instead of an SVG
+                        filter, which fails on near-zero-width paths */}
+                      {isLit && (
+                        <motion.path
+                          d={d}
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="9"
+                          strokeLinecap="round"
+                          opacity={isFinished ? 0.16 : 0.24}
+                          style={{ filter: "drop-shadow(0 0 6px rgba(16,185,129,0.55))" }}
+                          initial={{ pathLength: 1 }}
+                          vectorEffect="non-scaling-stroke"
+                          markerEnd="url(#arrow-active)"
+                        />
+                      )}
+
+                      {/* Solid lit line: draws in once when the stage activates,
+                        then stays put for the rest of the run */}
+                      {isLit && (
+                        <motion.path
+                          d={d}
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          initial={{ pathLength: 1 }}
+                          vectorEffect="non-scaling-stroke"
+                          markerEnd="url(#arrow-active)"
+                        />
+                      )}
+
+                      {/* Pulse travelling along the trace while it processes.
+                        A straight-line path still animates reliably with SMIL. */}
+                      {isActive && (
+                        <>
+                          <motion.path
+                            d={d}
+                            fill="none"
+                            stroke="#34d399"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            style={{ filter: "drop-shadow(0 0 4px rgba(52,211,153,0.7))" }}
+                            initial={{ pathLength: 0, opacity: 0 }}
+                            animate={{ pathLength: 1, opacity: 1 }}
+                            transition={{ duration: 0.55, ease: "easeOut" }}
+                            vectorEffect="non-scaling-stroke"
+                            markerEnd="url(#arrow-active)"
+                          />
+                          <circle r={4} fill="#34d399">
+                            <animateMotion dur="1.15s" repeatCount="indefinite">
+                              <mpath href={`#trace-path-${i}`} />
+                            </animateMotion>
+                          </circle>
+                        </>
+                      )}
+                    </g>
                   );
                 })}
-              </ol>
+              </svg>
             </div>
 
-            {phase === "done" && result && (
-              <div className="space-y-3 rounded-md border border-emerald-900/40 bg-emerald-950/15 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Pipeline complete
-                </p>
-                <dl className="space-y-1.5 text-[11px]">
-                  {[
-                    ["Records scored", result.events],
-                    ["Campaigns correlated", result.campaigns],
-                    ["Wall clock", result.seconds != null ? `${result.seconds}s` : undefined],
-                  ]
-                    .filter(([, v]) => v !== undefined)
-                    .map(([k, v]) => (
-                      <div key={String(k)} className="flex justify-between gap-3">
-                        <dt className="text-slate-400">{k}</dt>
-                        <dd className="mono font-semibold text-slate-100">{String(v)}</dd>
-                      </div>
-                    ))}
-                </dl>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => router.push("/dashboard")}
-                    className="flex-1 rounded-md bg-cyan-500 px-3 py-2 text-[11px] font-semibold text-slate-950 transition hover:bg-cyan-400"
-                  >
-                    Open dashboard
-                  </button>
-                  {(result.campaigns ?? 0) > 0 && (
-                    <button
-                      onClick={() => router.push("/campaigns")}
-                      className="flex-1 rounded-md border border-slate-700 px-3 py-2 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-800"
-                    >
-                      View campaigns
-                    </button>
-                  )}
+            {/* Central Core Terminal */}
+            <div className="relative z-10 mx-auto -mt-6 w-full max-w-[900px] overflow-hidden rounded-xl border border-slate-800 bg-[#050505] shadow-2xl">
+
+              {/* Terminal Header */}
+              <div className="flex items-center justify-between border-b border-slate-800/80 bg-[#0a0a0a] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-sm font-bold text-slate-300">
+                    {">_ RAW RECORDS SUBMITTED"}
+                  </span>
                 </div>
+                <span className="rounded-full border border-slate-800 bg-[#080808] px-3 py-1 font-mono text-[10px] text-slate-500">
+                  ({logLines.length} records ingested)
+                </span>
               </div>
-            )}
 
-            {phase === "error" && (
-              <div className="space-y-2 rounded-md border border-red-900/50 bg-red-950/20 p-4">
-                <p className="flex items-center gap-2 text-xs font-semibold text-red-300">
-                  <AlertTriangle className="h-4 w-4" />
-                  Pipeline did not run
-                </p>
-                <p className="text-[11px] leading-relaxed text-slate-400">{error}</p>
-                <p className="text-[10px] text-slate-500">
-                  No incidents were created. Nothing on this page fabricates results
-                  when the backend is unreachable.
-                </p>
-              </div>
-            )}
+              {/* Terminal Body: Logs */}
+              <div className="font-mono relative h-[320px] flex-col space-y-1.5 overflow-y-auto p-5 text-[11px] leading-relaxed">
+                {/* Subtle Grid Background */}
+                <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
 
-            {phase === "running" && (
-              <div className="flex items-center gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-4 py-3 text-[11px] text-slate-400">
-                <Play className="h-3.5 w-3.5 text-cyan-400" />
-                Replaying {SCENARIOS.find((s) => s.id === activeId)?.label ?? "uploaded logs"}…
+                {logLines.length === 0 && phase === "running" && (
+                  <div className="flex h-full items-center justify-center text-slate-700">
+                    Awaiting payload injection...
+                  </div>
+                )}
+                {logLines.map((line, i) => (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    key={i}
+                    className="relative z-10 flex gap-3 text-slate-400"
+                  >
+                    <span className="shrink-0 text-slate-600">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="min-w-0 break-all">
+                      <span className="text-slate-500">{String(line.timestamp ?? "").slice(11, 19)}</span>{" "}
+                      <span className="text-emerald-500/80">{String(line.log_type ?? "")}</span>{" "}
+                      <span className="text-slate-300">{String(line.source_ip ?? "")}</span>
+                      {line.destination_ip && (
+                        <>
+                          <span className="text-slate-600"> → </span>
+                          <span className="text-slate-300">{String(line.destination_ip)}</span>
+                        </>
+                      )}
+                      {line.action && <span className="text-emerald-400/80 font-bold"> {String(line.action)}</span>}
+                      {line.url && <span className="text-slate-500"> {String(line.url)}</span>}
+                    </span>
+                  </motion.div>
+                ))}
+                <div ref={logEnd} className="h-8" />
+
+                {/* Terminal Footer Overlay (appears when done) */}
+                {phase === "done" && result && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mx-auto mt-6 w-[95%] rounded-lg border border-emerald-900 bg-[#05100a] p-5 shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+                  >
+                    <div className="text-center">
+                      <h3 className="font-mono text-base font-bold text-emerald-400 flex items-center justify-center gap-2">
+                        [ Pipeline complete <CheckCircle2 className="h-4 w-4" /> ]
+                      </h3>
+                      <p className="mt-3 font-mono text-[11px] text-slate-400">
+                        Records scored: <span className="text-emerald-300">{result.events}</span> <span className="text-slate-700 mx-2">|</span>
+                        Campaigns Correlated: <span className="text-emerald-300">{result.campaigns}</span> <span className="text-slate-700 mx-2">|</span>
+                        Wall clock execution: <span className="text-emerald-300">{result.seconds}s</span>
+                      </p>
+
+                      <div className="mt-6 flex justify-center gap-4">
+                        <button
+                          onClick={() => router.push("/dashboard")}
+                          className="rounded border border-emerald-500 bg-emerald-500/10 px-6 py-2 font-mono text-[11px] font-bold text-emerald-400 transition hover:bg-emerald-500 hover:text-black shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                        >
+                          Open Dashboard
+                        </button>
+                        {(result.campaigns ?? 0) > 0 && (
+                          <button
+                            onClick={() => router.push("/campaigns")}
+                            className="rounded border border-slate-700 bg-black px-6 py-2 font-mono text-[11px] font-bold text-slate-300 transition hover:border-slate-500 hover:text-white"
+                          >
+                            View Campaigns
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Scenario Picker Grid (if no active scenario yet) */}
+        {phase === "idle" && (
+          <div className="pt-8">
+            <h2 className="mb-4 font-mono text-sm tracking-wider text-slate-500">AVAILABLE SCENARIOS</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {SCENARIOS.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    submit(s.generate(), `${s.id}.json`, s.label, s.id);
+                  }}
+                  className="group flex flex-col gap-2 rounded-lg border border-slate-800/80 bg-[#0a0a0a] p-5 text-left transition-all hover:border-emerald-500/50 hover:bg-[#0a0f0c]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono rounded border border-slate-800 bg-black px-1.5 py-0.5 text-[10px] text-emerald-500">
+                      {s.technique}
+                    </span>
+                    <Play className="h-4 w-4 text-slate-600 transition group-hover:text-emerald-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-200">{s.label}</span>
+                  <span className="text-[11px] leading-relaxed text-slate-500 flex-1">{s.summary}</span>
+                  <span className="font-mono mt-auto pt-3 text-[10px] text-slate-600">
+                    expect → <span className="text-slate-400">{s.expect}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
